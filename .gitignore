@@ -1,0 +1,11 @@
+.idea/
+.gradle/
+build/
+out/
+src/main/java/athena/main
+
+*.class
+
+*.gradle
+
+gradlew
