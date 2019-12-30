@@ -1,6 +1,7 @@
 package athena.friend;
 
 import athena.exception.EpicGamesErrorException;
+import athena.friend.resource.blocked.Blocked;
 import athena.friend.resource.Friend;
 import athena.friend.resource.profile.FriendProfile;
 import athena.friend.resource.settings.FriendSettings;
@@ -101,14 +102,13 @@ public final class Friends {
 
     /**
      * Gets a list of all blocked friends.
-     * TODO:
      *
      * @return a list of all blocked friends
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public List<Friend> getAllBlocked() throws EpicGamesErrorException {
+    public List<Blocked> getAllBlocked() throws EpicGamesErrorException {
         final var call = service.blocked(localAccountId);
-        return List.of(); // TODO
+        return Requests.executeCall("Failed to get blocklist for account " + localAccountId, call);
     }
 
     /**

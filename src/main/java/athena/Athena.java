@@ -17,8 +17,6 @@ import athena.stats.service.StatsproxyPublicService;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 
-import java.io.IOException;
-
 public interface Athena {
 
     /**
@@ -228,7 +226,7 @@ public interface Athena {
          * @throws UnsupportedBuildException       if there are fields like username and password left empty.
          * @throws FortniteAuthenticationException if there was an authentication exception
          */
-        public Athena build() throws UnsupportedBuildException, FortniteAuthenticationException, IOException {
+        public Athena build() throws UnsupportedBuildException, FortniteAuthenticationException {
             if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");
             if (password == null || password.isEmpty()) throw new UnsupportedBuildException("Athena needs a password to login.");
             return new AthenaImpl(this);

@@ -1,9 +1,9 @@
 package athena.friend.service;
 
 import athena.friend.resource.Friend;
+import athena.friend.resource.blocked.Blocked;
 import athena.friend.resource.profile.FriendProfile;
 import athena.friend.resource.settings.FriendSettings;
-import com.google.gson.JsonObject;
 import retrofit2.Call;
 import retrofit2.http.*;
 
@@ -31,13 +31,12 @@ public interface FriendsPublicService {
 
     /**
      * Gets all block friends for the specified {@code accountId}
-     * TODO:
      *
      * @param accountId the account ID of the current authenticated account.
-     * @return a {@link Call} returned by Retrofit with a {@link JsonObject} that will contain any blocked.
+     * @return a {@link Call} returned by Retrofit with the blocked list, if the call was successful.
      */
     @GET("friends/api/v1/{accountId}/blocklist")
-    Call<JsonObject> blocked(@Path("accountId") String accountId);
+    Call<List<Blocked>> blocked(@Path("accountId") String accountId);
 
     /**
      * Adds a friend by account ID.
