@@ -46,14 +46,13 @@ public interface EventsPublicService {
 
     /**
      * Get the event data for the provided {@code accountId}
-     * TODO:
      *
      * @param accountId      the account ID
      * @param region         the region, eg: NAE
      * @param showPastEvents {@code true} if past events should be given?
      */
     @GET("api/v1/events/Fortnite/data/{accountId}")
-    Call<JsonElement> data(@Path("accountId") String accountId, @Query("region") String region, @Query("showPastEvents") boolean showPastEvents);
+    Call<FortniteEventDownload> data(@Path("accountId") String accountId, @Query("region") String region, @Query("showPastEvents") boolean showPastEvents);
 
     /**
      * Get the event window history for the provided {@code accountId}

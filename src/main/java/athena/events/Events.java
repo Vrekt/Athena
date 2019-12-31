@@ -48,6 +48,18 @@ public final class Events {
     }
 
     /**
+     * Download event data for this account.
+     *
+     * @param region         the region, ex: NAE
+     * @param showPastEvents {@code true} if past events should be given.
+     * @return a {@link FortniteEventDownload} representing the response.
+     */
+    public FortniteEventDownload downloadData(String region, boolean showPastEvents) {
+        final var call = service.data(localAccountId, region, showPastEvents);
+        return Requests.executeCall("Failed to download data for " + localAccountId + ", region: " + region + ", showPastEvents: " + showPastEvents, call);
+    }
+
+    /**
      * Retrieve leaderboards for an event.
      *
      * @param eventId          the event ID.
