@@ -7,6 +7,9 @@ import athena.adapter.ObjectJsonAdapter;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
 import athena.eula.EulatrackingPublicService;
+import athena.events.Events;
+import athena.events.EventsPublicService;
+import athena.events.resource.leaderboard.statistic.LeaderboardStatistic;
 import athena.exception.FortniteAuthenticationException;
 import athena.friend.Friends;
 import athena.friend.resource.Friend;
@@ -16,6 +19,9 @@ import athena.stats.StatisticsV2;
 import athena.stats.resource.UnfilteredStatistic;
 import athena.stats.resource.leaderboard.LeaderboardResponse;
 import athena.stats.service.StatsproxyPublicService;
+import athena.types.Input;
+import athena.types.Platform;
+import athena.types.Region;
 import athena.util.json.BasicJsonDeserializer;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
@@ -76,10 +82,19 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private final StatisticsV2 statisticsV2;
 
+    /**
+     * Manages events/tournaments.
+     */
+    private final Events events;
+
+    /**
+     * Retrofit services
+     */
     private final AccountPublicService accountPublicService;
     private final FriendsPublicService friendsPublicService;
     private final StatsproxyPublicService statsproxyPublicService;
     private final EulatrackingPublicService eulatrackingPublicService;
+    private final EventsPublicService eventsPublicService;
 
     /**
      * Account and friend adapter.
@@ -158,6 +173,12 @@ final class AthenaImpl implements Athena, Interceptor {
                 .client(client)
                 .build()
                 .create(EulatrackingPublicService.class);
+        eventsPublicService = new Retrofit.Builder()
+                .baseUrl(EventsPublicService.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .client(client)
+                .build()
+                .create(EventsPublicService.class);
 
         // initialize our account/friend adapter now.
         accountObjectJsonAdapter.initialize(this);
@@ -168,6 +189,7 @@ final class AthenaImpl implements Athena, Interceptor {
         accounts = new Accounts(accountPublicService);
         friends = new Friends(friendsPublicService, session.accountId());
         statisticsV2 = new StatisticsV2(statsproxyPublicService, accountPublicService);
+        events = new Events(eventsPublicService, session.accountId());
         // find our own account.
         accounts.findOneByAccountId(session.accountId()).ifPresent(acc -> this.account = acc);
 
@@ -187,6 +209,10 @@ final class AthenaImpl implements Athena, Interceptor {
                 .registerTypeAdapter(UnfilteredStatistic.class, UnfilteredStatistic.ADAPTER)
                 .registerTypeAdapter(LeaderboardResponse.class, LeaderboardResponse.ADAPTER)
                 .registerTypeAdapter(Instant.class, (BasicJsonDeserializer<Instant>) (json) -> Instant.parse(json.getAsJsonPrimitive().getAsString()))
+                .registerTypeAdapter(Input.class, (BasicJsonDeserializer<Input>) (json) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()))
+                .registerTypeAdapter(Platform.class, (BasicJsonDeserializer<Platform>) (json) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()))
+                .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()))
+                .registerTypeAdapter(LeaderboardStatistic.class, (BasicJsonDeserializer<LeaderboardStatistic>) (json) -> LeaderboardStatistic.valueOf(json.getAsJsonPrimitive().getAsString()))
                 .create();
 
     }
@@ -234,6 +260,16 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public StatsproxyPublicService statsproxyPublicService() {
         return statsproxyPublicService;
+    }
+
+    @Override
+    public Events events() {
+        return events;
+    }
+
+    @Override
+    public EventsPublicService eventsPublicService() {
+        return eventsPublicService;
     }
 
     @Override

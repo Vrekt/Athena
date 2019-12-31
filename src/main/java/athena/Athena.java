@@ -6,6 +6,8 @@ import athena.account.service.AccountPublicService;
 import athena.adapter.ObjectJsonAdapter;
 import athena.authentication.session.Session;
 import athena.eula.EulatrackingPublicService;
+import athena.events.Events;
+import athena.events.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
 import athena.exception.UnsupportedBuildException;
 import athena.friend.Friends;
@@ -73,6 +75,16 @@ public interface Athena {
      * @return the {@link StatsproxyPublicService} instance
      */
     StatsproxyPublicService statsproxyPublicService();
+
+    /**
+     * @return the events class that handles events/tournaments.
+     */
+    Events events();
+
+    /**
+     * @return the {@link EventsPublicService} instance.
+     */
+    EventsPublicService eventsPublicService();
 
     /**
      * @return the {@link EulatrackingPublicService} instance

@@ -1,4 +1,4 @@
-package athena.platform;
+package athena.types;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package athena.stats.resource;
 
-import athena.platform.Input;
+import athena.types.Input;
 import athena.stats.resource.type.StatisticType;
 import com.google.gson.JsonElement;
 import org.apache.commons.lang3.StringUtils;
