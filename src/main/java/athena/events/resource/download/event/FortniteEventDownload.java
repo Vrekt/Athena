@@ -1,6 +1,7 @@
 package athena.events.resource.download.event;
 
 import athena.events.resource.download.player.EventPlayer;
+import athena.events.resource.download.template.EventTemplate;
 import athena.events.resource.download.window.FortniteEventWindow;
 
 import java.util.List;
@@ -22,6 +23,11 @@ public final class FortniteEventDownload {
     private List<FortniteEvent> events;
 
     /**
+     * List of event templates.
+     */
+    private List<EventTemplate> templates;
+
+    /**
      * @return The player for this event download.
      */
     public EventPlayer player() {
@@ -33,6 +39,13 @@ public final class FortniteEventDownload {
      */
     public List<FortniteEvent> events() {
         return events;
+    }
+
+    /**
+     * @return the list of templates.
+     */
+    public List<EventTemplate> templates() {
+        return templates;
     }
 
     /**
@@ -65,6 +78,16 @@ public final class FortniteEventDownload {
         final var matching = getEventByWindowId(windowId);
         if (matching.isEmpty()) return Optional.empty();
         return matching.get().eventWindows().stream().filter(event -> event.eventWindowId().equals(windowId)).findAny();
+    }
+
+    /**
+     * Get a {@link EventTemplate} by the ID.
+     *
+     * @param eventTemplateId the event template ID.
+     * @return a {@link Optional} containing the {@link EventTemplate} if found.
+     */
+    public Optional<EventTemplate> getTemplateById(String eventTemplateId) {
+        return templates.stream().filter(eventTemplate -> eventTemplate.eventTemplateId().equalsIgnoreCase(eventTemplateId)).findAny();
     }
 
 }

@@ -1,5 +1,6 @@
-package athena.events.resource.leaderboard;
+package athena.events.resource.leaderboard.entry;
 
+import athena.events.resource.leaderboard.EventLeaderboard;
 import athena.events.resource.leaderboard.session.EventSession;
 
 import java.util.List;
