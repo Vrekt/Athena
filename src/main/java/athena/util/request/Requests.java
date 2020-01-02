@@ -15,17 +15,17 @@ import java.util.Optional;
 /**
  * A utility class used to execute requests.
  */
-public final class Requests {
+public interface RequestExecutor {
 
     /**
      * The LOGGER.
      */
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+    FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     /**
      * The main GSON object.
      */
-    private static final Gson GSON = new Gson();
+    Gson GSON = new Gson();
 
     /**
      * Execute a call.
@@ -36,7 +36,7 @@ public final class Requests {
      * @return a {@link Optional} containing the type or empty.
      */
     @SuppressWarnings("ConstantConditions")
-    public static <T> Optional<T> executeCallOptional(String message, Call<T> call) {
+    default <T> Optional<T> executeCallOptional(String message, Call<T> call) {
         Response<T> result;
         try {
             result = call.execute();
@@ -64,7 +64,7 @@ public final class Requests {
      * @param <T>     the TYPE.
      * @return the TYPE or {@code null} if an error occurred.
      */
-    public static <T> T executeCall(String message, Call<T> call) {
+    default <T> T executeCall(String message, Call<T> call) {
         return executeCallOptional(message, call).orElse(null);
     }
 
@@ -75,7 +75,7 @@ public final class Requests {
      * @param resultPost the result callback.
      * @param <T>        the TYPE.
      */
-    public static <T> void executeCallAsync(Call<T> call, Result<T> resultPost) {
+    default <T> void executeCallAsync(Call<T> call, Result<T> resultPost) {
         call.enqueue(new Callback<>() {
             @Override
             @EverythingIsNonNull
@@ -107,8 +107,10 @@ public final class Requests {
      * @param call    the call
      * @param <T>     the TYPE.
      */
-    public static <T> void executeVoidCall(String message, Call<T> call) {
+    default <T> void executeVoidCall(String message, Call<T> call) {
         executeCall(message, call);
     }
+
+
 
 }

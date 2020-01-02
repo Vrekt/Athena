@@ -8,6 +8,8 @@ import java.util.Optional;
  */
 public final class ExternalAuth {
 
+    private  String type, externalAuthIdType, accountId, externalDisplayName;
+
     private final ExternalPlatform platform;
     private final String externalAuthId, externalDisplayName;
 
