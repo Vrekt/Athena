@@ -8,9 +8,11 @@ import athena.events.Events;
 import athena.events.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
 import athena.exception.UnsupportedBuildException;
+import athena.fortnite.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
+import athena.shop.Shop;
 import athena.stats.StatisticsV2;
 import athena.stats.service.StatsproxyPublicService;
 import com.google.gson.Gson;
@@ -87,6 +89,16 @@ public interface Athena {
      * @return the {@link EulatrackingPublicService} instance
      */
     EulatrackingPublicService eulatrackingPublicService();
+
+    /**
+     * @return the {@link FortnitePublicService} instance.
+     */
+    FortnitePublicService fortnitePublicService();
+
+    /**
+     * @return the shop class that handles the storefront catalog.
+     */
+    Shop shop();
 
     /**
      * @return the HTTP client used within Athena.

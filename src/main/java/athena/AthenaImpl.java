@@ -10,12 +10,14 @@ import athena.eula.EulatrackingPublicService;
 import athena.events.Events;
 import athena.events.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
+import athena.fortnite.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.resource.Friend;
 import athena.friend.resource.types.FriendDirection;
 import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
+import athena.shop.Shop;
 import athena.stats.StatisticsV2;
 import athena.stats.resource.UnfilteredStatistic;
 import athena.stats.service.StatsproxyPublicService;
@@ -88,6 +90,11 @@ final class AthenaImpl implements Athena, Interceptor {
     private final Events events;
 
     /**
+     * Manages the shop.
+     */
+    private final Shop shop;
+
+    /**
      * Retrofit services
      */
     private final AccountPublicService accountPublicService;
@@ -95,6 +102,7 @@ final class AthenaImpl implements Athena, Interceptor {
     private final StatsproxyPublicService statsproxyPublicService;
     private final EulatrackingPublicService eulatrackingPublicService;
     private final EventsPublicService eventsPublicService;
+    private final FortnitePublicService fortnitePublicService;
 
     /**
      * GSON instance.
@@ -169,6 +177,12 @@ final class AthenaImpl implements Athena, Interceptor {
                 .client(client)
                 .build()
                 .create(EventsPublicService.class);
+        fortnitePublicService = new Retrofit.Builder()
+                .baseUrl(FortnitePublicService.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .client(client)
+                .build()
+                .create(FortnitePublicService.class);
 
         LOGGER.atInfo().log("Initializing resources.");
         // initialize each resource/provider.
@@ -176,6 +190,8 @@ final class AthenaImpl implements Athena, Interceptor {
         friends = new Friends(friendsPublicService, session.accountId());
         statisticsV2 = new StatisticsV2(statsproxyPublicService, accountPublicService);
         events = new Events(eventsPublicService, session.accountId());
+        shop = new Shop(fortnitePublicService);
+
         // find our own account.
         accounts.findOneByAccountId(session.accountId()).ifPresent(acc -> this.account = acc);
 
@@ -272,6 +288,16 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public EulatrackingPublicService eulatrackingPublicService() {
         return eulatrackingPublicService;
+    }
+
+    @Override
+    public FortnitePublicService fortnitePublicService() {
+        return fortnitePublicService;
+    }
+
+    @Override
+    public Shop shop() {
+        return shop;
     }
 
     @Override
