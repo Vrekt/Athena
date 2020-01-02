@@ -6,7 +6,11 @@ import athena.friend.service.FriendsPublicService;
 /**
  * A utility class used to post process objects with the necessary services.
  */
-public interface PostProcessable {
+public abstract class PostProcessable {
+
+    protected AccountPublicService accountPublicService;
+    protected FriendsPublicService friendsPublicService;
+    protected String localAccountId;
 
     /**
      * Post process
@@ -15,7 +19,9 @@ public interface PostProcessable {
      * @param friendsPublicService the {@link FriendsPublicService}
      * @param localAccountId       the local account ID.
      */
-    default void postProcess(AccountPublicService accountPublicService, FriendsPublicService friendsPublicService, String localAccountId) {
-        //
+    public void postProcess(AccountPublicService accountPublicService, FriendsPublicService friendsPublicService, String localAccountId) {
+        this.accountPublicService = accountPublicService;
+        this.friendsPublicService = friendsPublicService;
+        this.localAccountId = localAccountId;
     }
 }

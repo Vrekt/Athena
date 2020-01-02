@@ -1,8 +1,6 @@
 package athena.account.resource;
 
 import athena.account.resource.external.ExternalAuth;
-import athena.account.service.AccountPublicService;
-import athena.friend.service.FriendsPublicService;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
@@ -12,7 +10,7 @@ import java.util.Map;
 /**
  * Represents a Fortnite account.
  */
-public final class Account implements PostProcessable {
+public final class Account extends PostProcessable {
 
     /**
      * The account ID for this account.
@@ -27,12 +25,6 @@ public final class Account implements PostProcessable {
      * A list of external auths.
      */
     private Map<String, ExternalAuth> externalAuths;
-
-    /**
-     * Used to manage friend actions from within this class.
-     */
-    private FriendsPublicService friendsPublicService;
-    private String localAccountId;
 
     private Account() {
     }
@@ -84,12 +76,6 @@ public final class Account implements PostProcessable {
      */
     public void unblock() {
         Requests.executeVoidCall("Failed to unblock account " + accountId, friendsPublicService.unblockFriendByAccountId(localAccountId, accountId));
-    }
-
-    @Override
-    public void postProcess(AccountPublicService accountPublicService, FriendsPublicService friendsPublicService, String localAccountId) {
-        this.friendsPublicService = friendsPublicService;
-        this.localAccountId = localAccountId;
     }
 
 }

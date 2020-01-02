@@ -1,11 +1,9 @@
 package athena.friend.resource;
 
 import athena.account.resource.Account;
-import athena.account.service.AccountPublicService;
 import athena.friend.resource.profile.FriendProfile;
 import athena.friend.resource.types.FriendDirection;
 import athena.friend.resource.types.FriendStatus;
-import athena.friend.service.FriendsPublicService;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
 
@@ -15,7 +13,7 @@ import java.util.Optional;
 /**
  * Represents an Epic Games/Fortnite friend.
  */
-public final class Friend implements PostProcessable {
+public final class Friend extends PostProcessable {
 
     /**
      * The account ID.
@@ -37,16 +35,6 @@ public final class Friend implements PostProcessable {
      * If this friend is a favorite.
      */
     private boolean favorite;
-    /**
-     * Account ID of the athena instance this friend belongs to.
-     */
-    private String localAccountId;
-
-    /**
-     * Services used by this class.
-     */
-    private FriendsPublicService friendsPublicService;
-    private AccountPublicService accountPublicService;
 
     private Friend() {
 
@@ -169,13 +157,6 @@ public final class Friend implements PostProcessable {
     public FriendProfile profile() {
         final var call = friendsPublicService.friendProfile(localAccountId, accountId);
         return Requests.executeCall("Failed to get profile for friend " + accountId, call);
-    }
-
-    @Override
-    public void postProcess(AccountPublicService accountPublicService, FriendsPublicService friendsPublicService, String localAccountId) {
-        this.friendsPublicService = friendsPublicService;
-        this.accountPublicService = accountPublicService;
-        this.localAccountId = accountId;
     }
 
 }
