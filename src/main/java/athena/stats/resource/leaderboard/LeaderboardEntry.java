@@ -5,19 +5,20 @@ package athena.stats.resource.leaderboard;
  */
 public final class LeaderboardEntry {
 
-    private final String accountId;
-    private final int value;
-
-    LeaderboardEntry(String accountId, int value) {
-        this.accountId = accountId;
-        this.value = value;
-    }
+    /**
+     * The account ID.
+     */
+    private String account;
+    /**
+     * The value.
+     */
+    private int value;
 
     /**
      * @return the ID of the account.
      */
     public String accountId() {
-        return accountId;
+        return account;
     }
 
     /**

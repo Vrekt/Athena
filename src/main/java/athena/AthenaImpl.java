@@ -2,30 +2,31 @@ package athena;
 
 import athena.account.Accounts;
 import athena.account.resource.Account;
+import athena.account.resource.external.ExternalAuth;
 import athena.account.service.AccountPublicService;
-import athena.adapter.ObjectJsonAdapter;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
 import athena.eula.EulatrackingPublicService;
 import athena.events.Events;
 import athena.events.EventsPublicService;
-import athena.events.resource.leaderboard.statistic.LeaderboardStatistic;
 import athena.exception.FortniteAuthenticationException;
 import athena.friend.Friends;
 import athena.friend.resource.Friend;
+import athena.friend.resource.types.FriendDirection;
+import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
 import athena.stats.StatisticsV2;
 import athena.stats.resource.UnfilteredStatistic;
-import athena.stats.resource.leaderboard.LeaderboardResponse;
 import athena.stats.service.StatsproxyPublicService;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.types.Region;
 import athena.util.json.BasicJsonDeserializer;
+import athena.util.json.BasicPostProcessor;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import io.gsonfire.GsonFireBuilder;
 import okhttp3.Interceptor;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
@@ -67,7 +68,6 @@ final class AthenaImpl implements Athena, Interceptor {
      * A list of interceptor actions.
      */
     private final CopyOnWriteArrayList<InterceptorAction> interceptorActions = new CopyOnWriteArrayList<>();
-
     /**
      * Manages account actions like: Finding them by ID and display name.
      */
@@ -97,12 +97,6 @@ final class AthenaImpl implements Athena, Interceptor {
     private final EventsPublicService eventsPublicService;
 
     /**
-     * Account and friend adapter.
-     */
-    private final ObjectJsonAdapter<Account> accountObjectJsonAdapter;
-    private final ObjectJsonAdapter<Friend> friendObjectJsonAdapter;
-
-    /**
      * GSON instance.
      */
     private final Gson gson;
@@ -118,10 +112,6 @@ final class AthenaImpl implements Athena, Interceptor {
         manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
         // build the client.
         client = new OkHttpClient.Builder().cookieJar(new JavaNetCookieJar(manager)).addInterceptor(this).build();
-
-        // friend and account adapters.
-        accountObjectJsonAdapter = Account.newAdapter();
-        friendObjectJsonAdapter = Friend.newAdapter();
 
         // initialize our gson instance
         gson = initializeGson();
@@ -180,10 +170,6 @@ final class AthenaImpl implements Athena, Interceptor {
                 .build()
                 .create(EventsPublicService.class);
 
-        // initialize our account/friend adapter now.
-        accountObjectJsonAdapter.initialize(this);
-        friendObjectJsonAdapter.initialize(this);
-
         LOGGER.atInfo().log("Initializing resources.");
         // initialize each resource/provider.
         accounts = new Accounts(accountPublicService);
@@ -203,19 +189,30 @@ final class AthenaImpl implements Athena, Interceptor {
      * @return the GSON instance.
      */
     private Gson initializeGson() {
-        return new GsonBuilder()
-                .registerTypeAdapter(Account.class, accountObjectJsonAdapter)
-                .registerTypeAdapter(Friend.class, friendObjectJsonAdapter)
-                .registerTypeAdapter(UnfilteredStatistic.class, UnfilteredStatistic.ADAPTER)
-                .registerTypeAdapter(LeaderboardResponse.class, LeaderboardResponse.ADAPTER)
+        final var fireGson = new GsonFireBuilder();
+
+        // enable post-deserialize hook for statistics/external auth.
+        fireGson.enableHooks(UnfilteredStatistic.class);
+        fireGson.enableHooks(ExternalAuth.class);
+        // default enum values for friends.
+        fireGson.enumDefaultValue(FriendStatus.class, FriendStatus.UNKNOWN);
+        fireGson.enumDefaultValue(FriendDirection.class, FriendDirection.UNKNOWN);
+        // post processors for account and friend.
+        fireGson.registerPostProcessor(Account.class, (BasicPostProcessor<Account>) (result, src, gson) ->
+                result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
+        fireGson.registerPostProcessor(Friend.class, (BasicPostProcessor<Friend>) (result, src, gson) ->
+                result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
+        // register our type adapters.
+        final var builder = fireGson.createGsonBuilder();
+        builder
                 .registerTypeAdapter(Instant.class, (BasicJsonDeserializer<Instant>) (json) -> Instant.parse(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(Input.class, (BasicJsonDeserializer<Input>) (json) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(Platform.class, (BasicJsonDeserializer<Platform>) (json) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(LeaderboardStatistic.class, (BasicJsonDeserializer<LeaderboardStatistic>) (json) -> LeaderboardStatistic.valueOf(json.getAsJsonPrimitive().getAsString()))
-                .create();
+                .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
 
+        return builder.create();
     }
+
 
     @Override
     public void addInterceptorAction(InterceptorAction action) {
@@ -275,16 +272,6 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public EulatrackingPublicService eulatrackingPublicService() {
         return eulatrackingPublicService;
-    }
-
-    @Override
-    public ObjectJsonAdapter<Account> accountAdapter() {
-        return accountObjectJsonAdapter;
-    }
-
-    @Override
-    public ObjectJsonAdapter<Friend> friendAdapter() {
-        return friendObjectJsonAdapter;
     }
 
     @Override

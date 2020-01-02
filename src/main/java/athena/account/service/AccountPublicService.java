@@ -33,7 +33,7 @@ public interface AccountPublicService {
      * @param account the account ID.
      */
     @GET("account/api/public/account")
-    Call<Account> findOneByAccountId(@Query("accountId") String account);
+    Call<Account[]> findOneByAccountId(@Query("accountId") String account);
 
     /**
      * Finds multiple accounts by account ID.

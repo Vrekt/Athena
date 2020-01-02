@@ -1,10 +1,8 @@
 package athena.stats.resource.leaderboard;
 
-import athena.util.json.BasicJsonDeserializer;
-
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -13,42 +11,23 @@ import java.util.stream.Collectors;
 public final class LeaderboardResponse {
 
     /**
-     * the JSON adapter.
+     * List of entries.
      */
-    public static final BasicJsonDeserializer<LeaderboardResponse> ADAPTER = json -> {
-        final var array = json.getAsJsonObject().getAsJsonArray("entries");
-        final var map = new LinkedHashMap<String, Integer>();
-
-        array.forEach(jsonElement -> {
-            final var object = jsonElement.getAsJsonObject();
-            final var account = object.get("account").getAsString();
-            final var value = object.get("value").getAsInt();
-            map.put(account, value);
-        });
-        return new LeaderboardResponse(map);
-    };
+    private LinkedList<LeaderboardEntry> entries;
 
     /**
-     * Entries.
+     * Collect the list of entries to a map and return.
+     *
+     * @return a map of entries, key is account ID and value is value.
      */
-    private final Map<String, Integer> entries;
-
-    private LeaderboardResponse(Map<String, Integer> map) {
-        this.entries = map;
+    public LinkedHashMap<String, Integer> mapOfEntries() {
+        return entries.stream().collect(Collectors.toMap(LeaderboardEntry::accountId, LeaderboardEntry::value, ((integer, integer2) -> integer), LinkedHashMap::new));
     }
 
     /**
-     * @return all values
+     * @return list of entries.
      */
-    public Map<String, Integer> values() {
+    public List<LeaderboardEntry> listOfEntries() {
         return entries;
     }
-
-    /**
-     * @return maps the map of values to a list of {@link LeaderboardEntry}
-     */
-    public List<LeaderboardEntry> asEntries() {
-        return entries.entrySet().stream().map(entry -> new LeaderboardEntry(entry.getKey(), entry.getValue())).collect(Collectors.toList());
-    }
-
 }

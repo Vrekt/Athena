@@ -51,7 +51,7 @@ public final class Accounts {
      * @param callback    the callback
      */
     public void findByDisplayNameAsync(String displayName, Result<Account> callback) {
-        if (displayName == null || callback == null) throw new NullPointerException("displayName and or result is null.");
+        if (displayName == null || callback == null) throw new NullPointerException("displayName or callback is null.");
         final var call = service.findByDisplayName(displayName);
         Requests.executeCallAsync(call, callback);
     }
@@ -66,7 +66,21 @@ public final class Accounts {
     public Optional<Account> findOneByAccountId(String accountId) throws EpicGamesErrorException {
         if (accountId == null) throw new NullPointerException("accountId is null.");
         final var call = service.findOneByAccountId(accountId);
-        return Requests.executeCallOptional("Failed to find account " + accountId + " by account ID.", call);
+        final var result = Requests.executeCallOptional("Failed to find account " + accountId + " by account ID.", call);
+        if (result.isEmpty() || result.get().length == 0) return Optional.empty();
+        return Optional.of(result.get()[0]);
+    }
+
+    /**
+     * Find an account by ID.
+     *
+     * @param accountId the ID of the account
+     * @param callback  the callback
+     */
+    public void findOneByAccountIdAsync(String accountId, Result<Account[]> callback) {
+        if (accountId == null || callback == null) throw new NullPointerException("accountId or callback is null.");
+        final var call = service.findOneByAccountId(accountId);
+        Requests.executeCallAsync(call, callback);
     }
 
     /**
@@ -83,6 +97,18 @@ public final class Accounts {
     }
 
     /**
+     * Find multiple accounts async.
+     *
+     * @param callback the callback
+     * @param accounts an array of accounts
+     */
+    public void findManyByAccountIdAsync(Result<List<Account>> callback, String... accounts) {
+        if (callback == null || accounts == null) throw new NullPointerException("callback or accounts is null.");
+        final var call = service.findManyByAccountId(accounts);
+        Requests.executeCallAsync(call, callback);
+    }
+
+    /**
      * Find multiple accounts by account ID.
      *
      * @param accounts a collection of accounts
@@ -91,6 +117,16 @@ public final class Accounts {
      */
     public List<Account> findManyByAccountId(Collection<String> accounts) throws EpicGamesErrorException {
         return findManyByAccountId(accounts.toArray(String[]::new));
+    }
+
+    /**
+     * Find multiple accounts async.
+     *
+     * @param callback the callback
+     * @param accounts an array of accounts
+     */
+    public void findManyByAccountIdAsync(Result<List<Account>> callback, Collection<String> accounts) {
+        findManyByAccountIdAsync(callback, accounts.toArray(String[]::new));
     }
 
 }

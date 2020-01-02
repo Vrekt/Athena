@@ -1,9 +1,7 @@
 package athena;
 
 import athena.account.Accounts;
-import athena.account.resource.Account;
 import athena.account.service.AccountPublicService;
-import athena.adapter.ObjectJsonAdapter;
 import athena.authentication.session.Session;
 import athena.eula.EulatrackingPublicService;
 import athena.events.Events;
@@ -11,7 +9,6 @@ import athena.events.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
 import athena.exception.UnsupportedBuildException;
 import athena.friend.Friends;
-import athena.friend.resource.Friend;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
 import athena.stats.StatisticsV2;
@@ -90,16 +87,6 @@ public interface Athena {
      * @return the {@link EulatrackingPublicService} instance
      */
     EulatrackingPublicService eulatrackingPublicService();
-
-    /**
-     * @return internal {@link ObjectJsonAdapter<Account>} adapter.
-     */
-    ObjectJsonAdapter<Account> accountAdapter();
-
-    /**
-     * @return internal {@link ObjectJsonAdapter<Friend>} adapter.
-     */
-    ObjectJsonAdapter<Friend> friendAdapter();
 
     /**
      * @return the HTTP client used within Athena.

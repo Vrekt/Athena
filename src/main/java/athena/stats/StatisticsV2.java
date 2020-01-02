@@ -3,7 +3,6 @@ package athena.stats;
 import athena.account.resource.Account;
 import athena.account.service.AccountPublicService;
 import athena.stats.resource.UnfilteredStatistic;
-import athena.stats.resource.leaderboard.LeaderboardEntry;
 import athena.stats.resource.leaderboard.LeaderboardResponse;
 import athena.stats.resource.query.IndividualQueryResponse;
 import athena.stats.resource.query.StatisticsQuery;
@@ -13,7 +12,6 @@ import com.google.common.collect.Lists;
 import com.google.common.flogger.FluentLogger;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +46,7 @@ public final class StatisticsV2 {
      * @param accountId the ID of the account
      * @return a {@link UnfilteredStatistic} object
      */
-    public UnfilteredStatistic retrieveStatsFor(String accountId) {
+    public UnfilteredStatistic stats(String accountId) {
         final var call = service.stats(accountId);
         return Requests.executeCall("Failed to get stats for " + accountId, call);
     }
@@ -93,7 +91,7 @@ public final class StatisticsV2 {
      * @param type the statistic type, ex: 'br_placetop1_keyboardmouse_m0_playlist_defaultsolo"
      * @return a {@link Map} that contains entries by account ID and their value.
      */
-    public LeaderboardResponse retrieveLeaderboardFor(String type) {
+    public LeaderboardResponse leaderboard(String type) {
         final var call = service.leaderboard(type);
         return Requests.executeCall("Failed to retrieve leaderboard for " + type, call);
     }
@@ -105,31 +103,24 @@ public final class StatisticsV2 {
      * @param type the statistic type, ex: 'br_placetop1_keyboardmouse_m0_playlist_defaultsolo"
      * @return a {@link LinkedHashMap} (that is sorted) that contains entries by account and their value.
      */
-    public Map<Account, Integer> retrieveLeaderboardAndGetAccountsFor(String type) {
-        final var response = retrieveLeaderboardFor(type);
-        final var values = response.values();
-        final var entries = response.asEntries();
-        final var map = new HashMap<Account, Integer>();
-        final var partitioned = Lists.partition(entries, 100);
+    public Map<Account, Integer> leaderboardWithAccounts(String type) {
+        // leaderboard response
+        final var response = leaderboard(type);
+        final var entriesMap = response.mapOfEntries();
+        final var accountIds = new ArrayList<>(entriesMap.keySet());
 
-        // go through each partitioned list.
+        // the final map to return.
+        final var map = new LinkedHashMap<Account, Integer>();
+        // split account IDs into lists of 100 for bulk find.
+        final var partitioned = Lists.partition(accountIds, 100);
         partitioned.forEach(list -> {
-            try {
-                // map them to account ID.
-                final var as = list.stream().map(LeaderboardEntry::accountId).collect(Collectors.toList());
-                // find each account.
-                final var accounts = accountPublicService.findManyByAccountId(as.toArray(String[]::new)).execute().body();
-                if (accounts == null) {
-                    // failed
-                    LOGGER.atSevere().log("Failed to retrieve leaderboard entries for " + type + " and convert results to accounts.");
-                } else {
-                    accounts.forEach(account -> map.put(account, values.get(account.accountId())));
-                }
-            } catch (final IOException exception) {
-                LOGGER.atSevere().withCause(exception).log("Failed to retrieve leaderboard entries for " + type + " and convert results to accounts.");
-            }
+            // find and execute then put in map.
+            final var call = accountPublicService.findManyByAccountId(list.toArray(String[]::new));
+            final var result = Requests.executeCall("Failed to find accounts for leaderboards.", call);
+            result.forEach(account -> map.put(account, entriesMap.get(account.accountId())));
         });
-        // finally re-order the elements and return;
+
+        // finally sort and then return.
         return map.entrySet().stream().sorted((Map.Entry.<Account, Integer>comparingByValue().reversed())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 

@@ -6,7 +6,14 @@ import java.util.List;
  * Represents all the platforms.
  */
 public enum Platform {
-    WIN("Windows"), MAC("Mac"), IOS("IOS"), AND("Android"), PSN("PS4"), XBL("XboxOne"), SWT("Switch");
+    WIN("WIN", "Windows"),
+    MAC("MAC", "Mac"),
+    IOS("IOS"),
+    AND("AND", "Android"),
+    PSN("PS4", "PSN"),
+    XBL("XBL", "XboxOne", "XUID", "XB1"),
+    SWT("SWT", "Switch", "Nintendo"),
+    NONE("NONE");
 
     private static final List<Platform> TYPES = List.of(values());
 
@@ -24,7 +31,7 @@ public enum Platform {
      */
     public static Platform typeOf(String platform) {
         if (platform == null) return null;
-        return TYPES.stream().filter(type -> type.name().equalsIgnoreCase(platform) || type.names.contains(platform)).findAny().orElse(null);
+        return TYPES.stream().filter(type -> type.name().equalsIgnoreCase(platform) || type.names.stream().anyMatch(str -> str.equalsIgnoreCase(platform))).findAny().orElse(NONE);
     }
 
     /**

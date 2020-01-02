@@ -15,17 +15,17 @@ import java.util.Optional;
 /**
  * A utility class used to execute requests.
  */
-public interface RequestExecutor {
+public final class Requests {
 
     /**
      * The LOGGER.
      */
-    FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     /**
      * The main GSON object.
      */
-    Gson GSON = new Gson();
+    private static final Gson GSON = new Gson();
 
     /**
      * Execute a call.
@@ -36,7 +36,7 @@ public interface RequestExecutor {
      * @return a {@link Optional} containing the type or empty.
      */
     @SuppressWarnings("ConstantConditions")
-    default <T> Optional<T> executeCallOptional(String message, Call<T> call) {
+    public static <T> Optional<T> executeCallOptional(String message, Call<T> call) {
         Response<T> result;
         try {
             result = call.execute();
@@ -64,8 +64,8 @@ public interface RequestExecutor {
      * @param <T>     the TYPE.
      * @return the TYPE or {@code null} if an error occurred.
      */
-    default <T> T executeCall(String message, Call<T> call) {
-        return executeCallOptional(message, call).orElse(null);
+    public static <T> T executeCall(String message, Call<T> call) {
+        return executeCallOptional(message, call).orElseThrow();
     }
 
     /**
@@ -75,7 +75,7 @@ public interface RequestExecutor {
      * @param resultPost the result callback.
      * @param <T>        the TYPE.
      */
-    default <T> void executeCallAsync(Call<T> call, Result<T> resultPost) {
+    public static <T> void executeCallAsync(Call<T> call, Result<T> resultPost) {
         call.enqueue(new Callback<>() {
             @Override
             @EverythingIsNonNull
@@ -107,10 +107,8 @@ public interface RequestExecutor {
      * @param call    the call
      * @param <T>     the TYPE.
      */
-    default <T> void executeVoidCall(String message, Call<T> call) {
+    public static <T> void executeVoidCall(String message, Call<T> call) {
         executeCall(message, call);
     }
-
-
 
 }

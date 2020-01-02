@@ -1,12 +1,13 @@
 package athena.stats.resource;
 
-import athena.types.Input;
 import athena.stats.resource.type.StatisticType;
-import athena.util.json.BasicJsonDeserializer;
+import athena.types.Input;
+import io.gsonfire.annotations.PostDeserialize;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -15,31 +16,35 @@ import java.util.stream.Collectors;
 public final class UnfilteredStatistic {
 
     /**
-     * The adapter for this object
+     * The start and end time of this statistic.
      */
-    public static final BasicJsonDeserializer<UnfilteredStatistic> ADAPTER = json -> {
-        // get the stats object.
-        final var object = json.getAsJsonObject().getAsJsonObject("stats");
-        // a map of all statistics.
-        final var all = new HashMap<StatisticType, Long>();
-        // initialize map with all types.
-        for (final var type : StatisticType.values()) all.put(type, 0L);
-        // map object to a statistic value object.
-        final var values = object.entrySet().stream().map(entry -> new StatisticValue(entry.getKey(), entry.getValue())).collect(Collectors.toSet());
-        // collect all stats
-        values.forEach(value -> all.put(value.type(), all.getOrDefault(value.type(), 0L) + value.value()));
-        return new UnfilteredStatistic(values, all);
-    };
+    private long startTime, endTime;
+    /**
+     * The statistics that GSON will map to.
+     */
+    private Map<String, Long> stats;
 
     /**
-     * The groups of values and all values added together.
+     * The post types that will be collected from the resulting {@code stats}
      */
-    private final Set<StatisticValue> statisticGroups;
-    private final Map<StatisticType, Long> values;
+    private final Map<StatisticType, Long> statsByType = new HashMap<>();
+    private final List<StatisticValue> statisticValues = new ArrayList<>();
 
-    private UnfilteredStatistic(Set<StatisticValue> statisticGroups, Map<StatisticType, Long> values) {
-        this.statisticGroups = statisticGroups;
-        this.values = values;
+    /**
+     * The account ID of who these stats belong to.
+     */
+    private String accountId;
+
+    /**
+     * Fill the {@code statsByType} and {@code statisticValues}
+     */
+    @PostDeserialize
+    private void postDeserialize() {
+        stats.forEach((key, value) -> {
+            final var statisticValue = new StatisticValue(key, value);
+            statisticValues.add(statisticValue);
+            statsByType.put(statisticValue.type(), statsByType.getOrDefault(statisticValue.type(), 0L) + value);
+        });
     }
 
     /**
@@ -49,7 +54,7 @@ public final class UnfilteredStatistic {
      * @return a new {@link Statistic} containing only stats from the provided {@code input}
      */
     public Statistic byInput(Input input) {
-        final var groups = statisticGroups.stream().filter(group -> group.input() == input).collect(Collectors.toSet());
+        final var groups = statisticValues.stream().filter(group -> group.input() == input).collect(Collectors.toSet());
         final var map = new HashMap<StatisticType, Long>();
         for (final var type : StatisticType.values()) {
             final var withType = groups.stream().filter(value -> value.type() == type).collect(Collectors.toSet());
@@ -66,7 +71,7 @@ public final class UnfilteredStatistic {
      * @return a new {@link Statistic} containing only stats from the provided {@code playlist}
      */
     public Statistic byPlaylist(String playlist) {
-        final var groups = statisticGroups.stream().filter(group -> group.playlist().equalsIgnoreCase(playlist)).collect(Collectors.toSet());
+        final var groups = statisticValues.stream().filter(group -> group.playlist().equalsIgnoreCase(playlist)).collect(Collectors.toSet());
         final var map = new HashMap<StatisticType, Long>();
         for (final var type : StatisticType.values()) {
             final var withType = groups.stream().filter(value -> value.type() == type).collect(Collectors.toSet());
@@ -84,7 +89,7 @@ public final class UnfilteredStatistic {
      * @return a new {@link Statistic} containing only stats from the provided {@code playlist} and {@code input}
      */
     public Statistic byInputAndPlaylist(Input input, String playlist) {
-        final var groups = statisticGroups.stream().filter(group -> group.input() == input && group.playlist().equalsIgnoreCase(playlist)).collect(Collectors.toSet());
+        final var groups = statisticValues.stream().filter(group -> group.input() == input && group.playlist().equalsIgnoreCase(playlist)).collect(Collectors.toSet());
         final var map = new HashMap<StatisticType, Long>();
         for (final var type : StatisticType.values()) {
             final var withType = groups.stream().filter(value -> value.type() == type).collect(Collectors.toSet());
@@ -94,87 +99,128 @@ public final class UnfilteredStatistic {
     }
 
     /**
+     * @return the startTime.
+     */
+    public long startTime() {
+        return startTime;
+    }
+
+    /**
+     * @return the endTime.
+     */
+    public long endTime() {
+        return endTime;
+    }
+
+    /**
+     * @return all statistics unfiltered.
+     */
+    public Map<String, Long> rawStatistics() {
+        return stats;
+    }
+
+    /**
+     * @return statistics collected by type.
+     */
+    public Map<StatisticType, Long> statisticsByType() {
+        return statsByType;
+    }
+
+    /**
+     * @return a list of {@link StatisticValue}
+     */
+    public List<StatisticValue> statisticValues() {
+        return statisticValues;
+    }
+
+    /**
+     * @return The account ID of who these stats belong to.
+     */
+    public String accountId() {
+        return accountId;
+    }
+
+    /**
      * @return total number of players outlived all together.
      */
     public int playersOutlived() {
-        return values.get(StatisticType.PLAYERS_OUTLIVED).intValue();
+        return statsByType.get(StatisticType.PLAYERS_OUTLIVED).intValue();
     }
 
     /**
      * @return total number of kills all together.
      */
     public int kills() {
-        return values.get(StatisticType.KILLS).intValue();
+        return statsByType.get(StatisticType.KILLS).intValue();
     }
 
     /**
      * @return total number of wins all together.
      */
     public int wins() {
-        return values.get(StatisticType.PLACED_TOP1).intValue();
+        return statsByType.get(StatisticType.PLACED_TOP1).intValue();
     }
 
     /**
      * @return total number of 3rd places all together.
      */
     public int timesPlaced3rd() {
-        return values.get(StatisticType.PLACED_TOP3).intValue();
+        return statsByType.get(StatisticType.PLACED_TOP3).intValue();
     }
 
     /**
      * @return total number of 5th places all together.
      */
     public int timesPlaced5th() {
-        return values.get(StatisticType.PLACED_TOP5).intValue();
+        return statsByType.get(StatisticType.PLACED_TOP5).intValue();
     }
 
     /**
      * @return total number of 6th places all together.
      */
     public int timesPlaced6th() {
-        return values.get(StatisticType.PLACED_TOP6).intValue();
+        return statsByType.get(StatisticType.PLACED_TOP6).intValue();
     }
 
     /**
      * @return total number of 10th places all together.
      */
     public int timesPlaced10th() {
-        return values.get(StatisticType.PLACED_TOP10).intValue();
+        return statsByType.get(StatisticType.PLACED_TOP10).intValue();
     }
 
     /**
      * @return total number of 25th places all together.
      */
     public int timesPlaced25th() {
-        return values.get(StatisticType.PLACED_TOP25).intValue();
+        return statsByType.get(StatisticType.PLACED_TOP25).intValue();
     }
 
     /**
      * @return total number of minutes played all together
      */
     public int minutesPlayed() {
-        return values.get(StatisticType.MINUTES_PLAYED).intValue();
+        return statsByType.get(StatisticType.MINUTES_PLAYED).intValue();
     }
 
     /**
      * @return total number of matches played all together
      */
     public int matchesPlayed() {
-        return values.get(StatisticType.MATCHES_PLAYED).intValue();
+        return statsByType.get(StatisticType.MATCHES_PLAYED).intValue();
     }
 
     /**
      * @return total score all together
      */
     public int score() {
-        return values.get(StatisticType.SCORE).intValue();
+        return statsByType.get(StatisticType.SCORE).intValue();
     }
 
     /**
      * @return current BP level.
      */
     public int battlePassLevel() {
-        return values.get(StatisticType.BP_LEVEL).intValue();
+        return statsByType.get(StatisticType.BP_LEVEL).intValue();
     }
-
 }

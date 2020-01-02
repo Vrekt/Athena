@@ -1,8 +1,7 @@
 package athena.stats.resource;
 
-import athena.types.Input;
 import athena.stats.resource.type.StatisticType;
-import com.google.gson.JsonElement;
+import athena.types.Input;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -15,7 +14,7 @@ final class StatisticValue {
     private final String playlist;
     private final long value;
 
-    StatisticValue(String key, JsonElement element) {
+    StatisticValue(String key, long value) {
         // the type of statistic, ex: placetop1
         final var typeRaw = key.startsWith("s11") ? "s11_social_bp_level" : StringUtils.substringBetween(key, "br_", "_");
         // If typeRaw == null we hit a weird ass value like 'crucible2_timezone4_keyboardmouse_m0_playlist_crucible_solo'
@@ -30,7 +29,7 @@ final class StatisticValue {
 
         // the playlist, ex: 'playlist_defaultsolo'
         playlist = StringUtils.substringAfter(key, inputRaw + "_m0_");
-        value = element.getAsLong();
+        this.value = value;
     }
 
     /**
@@ -60,5 +59,4 @@ final class StatisticValue {
     Long value() {
         return value;
     }
-
 }

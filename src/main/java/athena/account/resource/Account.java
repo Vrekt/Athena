@@ -1,38 +1,32 @@
 package athena.account.resource;
 
-import athena.Athena;
-import athena.adapter.ObjectJsonAdapter;
+import athena.account.resource.external.ExternalAuth;
+import athena.account.service.AccountPublicService;
 import athena.friend.service.FriendsPublicService;
+import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
+import com.google.gson.annotations.SerializedName;
 
-import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Represents a Fortnite account.
  */
-public final class Account {
+public final class Account implements PostProcessable {
 
     /**
-     * @return a new adapter for this object.
+     * The account ID for this account.
      */
-    public static ObjectJsonAdapter<Account> newAdapter() {
-        return new Adapter();
-    }
-
+    @SerializedName("id")
+    private String accountId;
     /**
-     * Account ID and display name.
+     * The display name of this account.
      */
-    private final String accountId, displayName;
-
+    private String displayName;
     /**
-     * A list of external auths
+     * A list of external auths.
      */
-    private final Map<ExternalAuth.ExternalPlatform, ExternalAuth> externalAuth;
+    private Map<String, ExternalAuth> externalAuths;
 
     /**
      * Used to manage friend actions from within this class.
@@ -40,13 +34,7 @@ public final class Account {
     private FriendsPublicService friendsPublicService;
     private String localAccountId;
 
-    private Account(String accountId, String displayName, Map<ExternalAuth.ExternalPlatform, ExternalAuth> externalAuth,
-                    String localAccountId, FriendsPublicService friendsPublicService) {
-        this.accountId = accountId;
-        this.displayName = displayName;
-        this.externalAuth = externalAuth;
-        this.localAccountId = localAccountId;
-        this.friendsPublicService = friendsPublicService;
+    private Account() {
     }
 
     /**
@@ -64,11 +52,10 @@ public final class Account {
     }
 
     /**
-     * @return a map of external auths for this account.
-     * Things such as the external platform (psn, xbl), the auth ID and the display name for that platform.
+     * @return a map of external auths.
      */
-    public Map<ExternalAuth.ExternalPlatform, ExternalAuth> externalAuth() {
-        return externalAuth;
+    public Map<String, ExternalAuth> externalAuths() {
+        return externalAuths;
     }
 
     /**
@@ -89,7 +76,7 @@ public final class Account {
      * Block this account.
      */
     public void block() {
-        Requests.executeVoidCall("Failed to block account " + accountId + ".", friendsPublicService.blockFriendByAccountId(localAccountId, accountId));
+        Requests.executeVoidCall("Failed to block account " + accountId, friendsPublicService.blockFriendByAccountId(localAccountId, accountId));
     }
 
     /**
@@ -99,55 +86,10 @@ public final class Account {
         Requests.executeVoidCall("Failed to unblock account " + accountId, friendsPublicService.unblockFriendByAccountId(localAccountId, accountId));
     }
 
-    /**
-     * The adapter to convert JsonObjects to this type.
-     */
-    private static final class Adapter implements ObjectJsonAdapter<Account> {
-
-        /**
-         * Used for each individual account.
-         */
-        private String localAccountId;
-        private FriendsPublicService friendsPublicService;
-
-        @Override
-        public Account deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-            final var object = json.isJsonArray() ? json.getAsJsonArray().get(0).getAsJsonObject() : json.getAsJsonObject();
-            final var accountId = object.get("id").getAsString();
-            final var displayName = object.get("displayName").getAsString();
-            final var auths = object.getAsJsonObject("externalAuths");
-            final var map = new HashMap<ExternalAuth.ExternalPlatform, ExternalAuth>();
-
-            // go through all external auths and add them to a list if valid
-            auths.keySet().forEach(key -> ExternalAuth.ExternalPlatform.get(key).ifPresent(platform -> {
-                final var authObject = auths.getAsJsonObject(key);
-
-                // For some reason there is externalAuthIdType instead of externalAuthId for some accounts i think its only with XBL.
-                // so we need to support this.
-                if (authObject.has("externalAuthIdType")) {
-                    final var type = authObject.get("externalAuthIdType").getAsString();
-                    final var authIdsArray = authObject.getAsJsonArray("authIds");
-                    // go through all the auth ids to find the right type.
-                    authIdsArray.forEach(jsonElement -> {
-                        final var elementAsJsonObject = jsonElement.getAsJsonObject();
-                        if (elementAsJsonObject.get("type").getAsString().equalsIgnoreCase(type)) {
-                            // we have the correct ID.
-                            final var authId = elementAsJsonObject.get("id").getAsString();
-                            map.put(platform, new ExternalAuth(platform, authId, authObject.get("externalDisplayName").getAsString()));
-                        }
-                    });
-                } else {
-                    map.put(platform, new ExternalAuth(platform, authObject.get("externalAuthId").getAsString(), authObject.get("externalDisplayName").getAsString()));
-                }
-            }));
-
-            return new Account(accountId, displayName, map, localAccountId, friendsPublicService);
-        }
-
-        @Override
-        public void initialize(Athena athena) {
-            this.localAccountId = athena.accountId();
-            this.friendsPublicService = athena.friendsPublicService();
-        }
+    @Override
+    public void postProcess(AccountPublicService accountPublicService, FriendsPublicService friendsPublicService, String localAccountId) {
+        this.friendsPublicService = friendsPublicService;
+        this.localAccountId = localAccountId;
     }
+
 }

@@ -1,54 +1,42 @@
 package athena.friend.resource;
 
-import athena.Athena;
 import athena.account.resource.Account;
 import athena.account.service.AccountPublicService;
-import athena.adapter.ObjectJsonAdapter;
 import athena.friend.resource.profile.FriendProfile;
 import athena.friend.resource.types.FriendDirection;
 import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
+import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 
-import java.lang.reflect.Type;
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Represents an Epic Games/Fortnite friend.
  */
-public final class Friend {
-
-    /**
-     * @return a new adapter for this object.
-     */
-    public static ObjectJsonAdapter<Friend> newAdapter() {
-        return new Adapter();
-    }
+public final class Friend implements PostProcessable {
 
     /**
      * The account ID.
      */
-    private final String accountId;
+    private String accountId;
     /**
      * The status of this friend (accepted or pending)
      */
-    private final FriendStatus status;
+    private FriendStatus status;
     /**
      * The direction of this friend
      */
-    private final FriendDirection direction;
+    private FriendDirection direction;
     /**
      * When this friend was created. (sent?)
      */
-    private final Instant created;
+    private Instant created;
     /**
      * If this friend is a favorite.
      */
-    private final boolean favorite;
-
+    private boolean favorite;
     /**
      * Account ID of the athena instance this friend belongs to.
      */
@@ -60,16 +48,8 @@ public final class Friend {
     private FriendsPublicService friendsPublicService;
     private AccountPublicService accountPublicService;
 
-    private Friend(String accountId, FriendStatus status, FriendDirection direction, Instant created, boolean favorite,
-                   FriendsPublicService friendsPublicService, AccountPublicService accountPublicService, String localAccountId) {
-        this.accountId = accountId;
-        this.status = status;
-        this.direction = direction;
-        this.created = created;
-        this.favorite = favorite;
-        this.friendsPublicService = friendsPublicService;
-        this.accountPublicService = accountPublicService;
-        this.localAccountId = localAccountId;
+    private Friend() {
+
     }
 
     /**
@@ -113,9 +93,10 @@ public final class Friend {
      *
      * @return the account of this friend.
      */
-    public Account account() {
+    public Optional<Account> account() {
         final var call = accountPublicService.findOneByAccountId(accountId);
-        return Requests.executeCall("Failed to find account for " + accountId, call);
+        final var result = Requests.executeCall("Failed to find account for " + accountId, call);
+        return result.length == 0 ? Optional.empty() : Optional.of(result[0]); // return an empty account if not found.
     }
 
     /**
@@ -190,32 +171,11 @@ public final class Friend {
         return Requests.executeCall("Failed to get profile for friend " + accountId, call);
     }
 
-    /**
-     * The adapter for friends
-     */
-    private static final class Adapter implements ObjectJsonAdapter<Friend> {
-
-        private FriendsPublicService friendsPublicService;
-        private AccountPublicService accountPublicService;
-        private String localAccountId;
-
-        @Override
-        public Friend deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-            final var object = json.getAsJsonObject();
-            final var id = object.get("accountId").getAsString();
-            final var status = object.get("status").getAsString();
-            final var direction = object.get("direction").getAsString();
-            final var created = object.get("created").getAsString();
-            final var favorite = object.get("favorite").getAsBoolean();
-            return new Friend(id, FriendStatus.valueOf(status), FriendDirection.valueOf(direction), Instant.parse(created), favorite,
-                    friendsPublicService, accountPublicService, localAccountId);
-        }
-
-        @Override
-        public void initialize(Athena athena) {
-            this.friendsPublicService = athena.friendsPublicService();
-            this.accountPublicService = athena.accountPublicService();
-            this.localAccountId = athena.accountId();
-        }
+    @Override
+    public void postProcess(AccountPublicService accountPublicService, FriendsPublicService friendsPublicService, String localAccountId) {
+        this.friendsPublicService = friendsPublicService;
+        this.accountPublicService = accountPublicService;
+        this.localAccountId = accountId;
     }
+
 }
