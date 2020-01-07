@@ -23,6 +23,7 @@ public interface AccountPublicService {
      * Finds an account by display name.
      *
      * @param displayName the display name of the account
+     * @return a {@link Call} returned by retrofit containing the {@link Account} if the call was successful.
      */
     @GET("account/api/public/account/displayName/{displayName}")
     Call<Account> findByDisplayName(@Path("displayName") String displayName);
@@ -31,6 +32,7 @@ public interface AccountPublicService {
      * Finds a single account by account ID.
      *
      * @param account the account ID.
+     * @return a {@link Call} returned by retrofit containing the {@link Account[]} if the call was successful.
      */
     @GET("account/api/public/account")
     Call<Account[]> findOneByAccountId(@Query("accountId") String account);
@@ -39,6 +41,7 @@ public interface AccountPublicService {
      * Finds multiple accounts by account ID.
      *
      * @param accounts an array of accounts.
+     * @return a {@link Call} returned by retrofit containing the {@link List<Account>} if the call was successful.
      */
     @GET("account/api/public/account")
     Call<List<Account>> findManyByAccountId(@Query("accountId") String... accounts);
@@ -75,7 +78,7 @@ public interface AccountPublicService {
      *                  .add("includePerms", "false")
      *                  .add("token_type", "eg1")
      *                  .build();
-     * @return a new {@link Session}
+     * @return a {@link Call} returned by retrofit containing the {@link Session} if the call was successful.
      * TODO: May or may not work.
      */
     @Headers("Authorization: basic " + Athena.EPIC_GAMES_LAUNCHER_TOKEN)

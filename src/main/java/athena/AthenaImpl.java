@@ -6,13 +6,14 @@ import athena.account.resource.external.ExternalAuth;
 import athena.account.service.AccountPublicService;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
-import athena.eula.EulatrackingPublicService;
+import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
-import athena.events.EventsPublicService;
+import athena.events.service.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
-import athena.fortnite.FortnitePublicService;
+import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.resource.Friend;
+import athena.friend.resource.summary.Profile;
 import athena.friend.resource.types.FriendDirection;
 import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
@@ -28,6 +29,7 @@ import athena.util.json.BasicJsonDeserializer;
 import athena.util.json.BasicPostProcessor;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.gsonfire.GsonFireBuilder;
 import okhttp3.Interceptor;
 import okhttp3.JavaNetCookieJar;
@@ -41,7 +43,11 @@ import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 final class AthenaImpl implements Athena, Interceptor {
@@ -60,6 +66,11 @@ final class AthenaImpl implements Athena, Interceptor {
      * The authentication manager.
      */
     private final FortniteAuthenticationManager fortniteAuthenticationManager;
+
+    /**
+     * Scheduled executor service for refreshes.
+     */
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     /**
      * The reference for the session.
@@ -114,7 +125,7 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private Account account;
 
-    AthenaImpl(final Builder builder) throws FortniteAuthenticationException {
+    AthenaImpl(Builder builder) throws FortniteAuthenticationException {
         // Create a new cookie manager for the cookie jar.
         final var manager = new CookieManager();
         manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
@@ -123,7 +134,7 @@ final class AthenaImpl implements Athena, Interceptor {
 
         // initialize our gson instance
         gson = initializeGson();
-        fortniteAuthenticationManager = new FortniteAuthenticationManager(builder.email(), builder.password(), builder.code(), builder.epicGamesLauncherToken(), builder.rememberDevice(), client, gson);
+        fortniteAuthenticationManager = new FortniteAuthenticationManager(builder.email(), builder.password(), builder.code(), builder.epicGamesLauncherToken(), builder.shouldRememberDevice(), client, gson);
         // authenticate!
         final var session = fortniteAuthenticationManager.authenticate();
         this.session.set(session); // set the session
@@ -132,11 +143,13 @@ final class AthenaImpl implements Athena, Interceptor {
 
         try {
             // create shutdown hook if necessary
-            if (builder.handleShutdown()) Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+            if (builder.shouldHandleShutdown()) Runtime.getRuntime().addShutdownHook(new Thread(this::close));
             // kill other sessions if enabled.
-            if (builder.killOtherSessions()) fortniteAuthenticationManager.killOtherSessions();
+            if (builder.shouldKillOtherSessions()) fortniteAuthenticationManager.killOtherSessions();
             // accept EULA.
-            if (builder.acceptEula()) fortniteAuthenticationManager.acceptEulaIfNeeded(session.accountId());
+            if (builder.shouldAcceptEula()) fortniteAuthenticationManager.acceptEulaIfNeeded(session.accountId());
+            // refresh automatically.
+            if (builder.shouldRefreshAutomatically()) scheduleRefresh();
 
             LOGGER.atInfo().log("Finished post-authentication actions.");
         } catch (final IOException exception) {
@@ -147,42 +160,13 @@ final class AthenaImpl implements Athena, Interceptor {
         LOGGER.atInfo().log("Initializing Retrofit services.");
 
         // initialize retrofit services.
-        accountPublicService = new Retrofit.Builder()
-                .baseUrl(AccountPublicService.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(client)
-                .build()
-                .create(AccountPublicService.class);
-        friendsPublicService = new Retrofit.Builder()
-                .baseUrl(FriendsPublicService.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(client)
-                .build()
-                .create(FriendsPublicService.class);
-        statsproxyPublicService = new Retrofit.Builder()
-                .baseUrl(StatsproxyPublicService.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(client)
-                .build()
-                .create(StatsproxyPublicService.class);
-        eulatrackingPublicService = new Retrofit.Builder()
-                .baseUrl(EulatrackingPublicService.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(client)
-                .build()
-                .create(EulatrackingPublicService.class);
-        eventsPublicService = new Retrofit.Builder()
-                .baseUrl(EventsPublicService.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(client)
-                .build()
-                .create(EventsPublicService.class);
-        fortnitePublicService = new Retrofit.Builder()
-                .baseUrl(FortnitePublicService.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(client)
-                .build()
-                .create(FortnitePublicService.class);
+        final var factory = GsonConverterFactory.create(gson);
+        accountPublicService = initializeRetrofitService(AccountPublicService.BASE_URL, factory, AccountPublicService.class);
+        friendsPublicService = initializeRetrofitService(FriendsPublicService.BASE_URL, GsonConverterFactory.create(gson), FriendsPublicService.class);
+        statsproxyPublicService = initializeRetrofitService(StatsproxyPublicService.BASE_URL, factory, StatsproxyPublicService.class);
+        eulatrackingPublicService = initializeRetrofitService(EulatrackingPublicService.BASE_URL, factory, EulatrackingPublicService.class);
+        eventsPublicService = initializeRetrofitService(EventsPublicService.BASE_URL, factory, EventsPublicService.class);
+        fortnitePublicService = initializeRetrofitService(FortnitePublicService.BASE_URL, factory, FortnitePublicService.class);
 
         LOGGER.atInfo().log("Initializing resources.");
         // initialize each resource/provider.
@@ -193,7 +177,7 @@ final class AthenaImpl implements Athena, Interceptor {
         shop = new Shop(fortnitePublicService);
 
         // find our own account.
-        accounts.findOneByAccountId(session.accountId()).ifPresent(acc -> this.account = acc);
+        account = accounts.findByAccountId(session.accountId());
 
         // done!
         LOGGER.atInfo().log("Ready!");
@@ -218,17 +202,46 @@ final class AthenaImpl implements Athena, Interceptor {
                 result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
         fireGson.registerPostProcessor(Friend.class, (BasicPostProcessor<Friend>) (result, src, gson) ->
                 result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
+        fireGson.registerPostProcessor(Profile.class, (BasicPostProcessor<Profile>) (result, src, gson) ->
+                result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
+
         // register our type adapters.
         final var builder = fireGson.createGsonBuilder();
         builder
                 .registerTypeAdapter(Instant.class, (BasicJsonDeserializer<Instant>) (json) -> Instant.parse(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(Input.class, (BasicJsonDeserializer<Input>) (json) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(Platform.class, (BasicJsonDeserializer<Platform>) (json) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
+                .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()))
+                .registerTypeAdapter(new TypeToken<List<Profile>>() {
+                }.getType(), (BasicJsonDeserializer<List<Profile>>) (json) -> {
+                    // fixes Summary class
+                    final var array = json.isJsonArray() ? json.getAsJsonArray() : json.getAsJsonObject().getAsJsonArray("friends");
+                    final var list = new ArrayList<Profile>();
+                    for (final var element : array) {
+                        list.add(gson.fromJson(element, Profile.class));
+                    }
+                    return list;
+                });
 
         return builder.create();
     }
 
+    /**
+     * Initialize a single retrofit service.
+     *
+     * @param baseUrl the base URL.
+     * @param factory the converter factory.
+     * @param type    the type
+     * @param <T>     TYPE.
+     * @return the new service
+     */
+    private <T> T initializeRetrofitService(String baseUrl, GsonConverterFactory factory, Class<T> type) {
+        return new Retrofit.Builder().baseUrl(baseUrl).addConverterFactory(factory).client(client).build().create(type);
+    }
+
+    private void scheduleRefresh() {
+
+    }
 
     @Override
     public void addInterceptorAction(InterceptorAction action) {
@@ -312,7 +325,7 @@ final class AthenaImpl implements Athena, Interceptor {
 
     @Override
     public String displayName() {
-        return account.accountId();
+        return account.displayName();
     }
 
     @Override

@@ -1,11 +1,12 @@
 package athena.events.resource.download.player;
 
+import athena.events.service.EventsPublicService;
 import com.google.gson.JsonObject;
 
 import java.util.List;
 
 /**
- * Represents a player in the {@link athena.events.EventsPublicService}
+ * Represents a player in the {@link EventsPublicService}
  */
 public final class EventPlayer {
 

@@ -1,4 +1,4 @@
-package athena.events;
+package athena.events.service;
 
 import athena.events.resource.download.event.FortniteEventDownload;
 import athena.events.resource.leaderboard.EventLeaderboard;
@@ -25,6 +25,7 @@ public interface EventsPublicService {
      * @param region         the region
      * @param platform       the platform.
      * @param teamAccountIds the team account IDs, usually just the {@code accountId}
+     * @return a {@link Call} returned by retrofit containing the {@link FortniteEventDownload} if the call was successful.
      */
     @GET("api/v1/events/Fortnite/download/{accountId}")
     Call<FortniteEventDownload> download(@Path("accountId") String accountId, @Query("region") String region, @Query("platform") String platform, @Query("teamAccountIds") String teamAccountIds);
@@ -40,6 +41,7 @@ public interface EventsPublicService {
      * @param teamAccountIds   the account IDs, usually "".
      * @param appId            the app ID, always "Fortnite"
      * @param showLiveSessions {@code true} if live sessions should be given.
+     * @return a {@link Call} returned by retrofit containing the {@link EventLeaderboard} if the call was successful.
      */
     @GET("api/v1/leaderboards/Fortnite/{eventId}/{eventWindowId}/{accountId}")
     Call<EventLeaderboard> leaderboards(@Path("eventId") String eventId, @Path("eventWindowId") String eventWindowId, @Path("accountId") String accountId, @Query("page") int page, @Query("rank") int rank, @Query("teamAccountIds") String teamAccountIds, @Query("appId") String appId, @Query("showLiveSessions") boolean showLiveSessions);
@@ -50,6 +52,7 @@ public interface EventsPublicService {
      * @param accountId      the account ID
      * @param region         the region, eg: NAE
      * @param showPastEvents {@code true} if past events should be given?
+     * @return a {@link Call} returned by retrofit containing the {@link FortniteEventDownload} if the call was successful.
      */
     @GET("api/v1/events/Fortnite/data/{accountId}")
     Call<FortniteEventDownload> data(@Path("accountId") String accountId, @Query("region") String region, @Query("showPastEvents") boolean showPastEvents);

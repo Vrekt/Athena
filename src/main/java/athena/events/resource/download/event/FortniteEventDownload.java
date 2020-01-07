@@ -3,12 +3,13 @@ package athena.events.resource.download.event;
 import athena.events.resource.download.player.EventPlayer;
 import athena.events.resource.download.template.EventTemplate;
 import athena.events.resource.download.window.FortniteEventWindow;
+import athena.events.service.EventsPublicService;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Represents a response from the {@link athena.events.EventsPublicService} download endpoint.
+ * Represents a response from the {@link EventsPublicService} download endpoint.
  */
 public final class FortniteEventDownload {
 

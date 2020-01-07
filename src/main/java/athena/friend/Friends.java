@@ -1,15 +1,18 @@
 package athena.friend;
 
 import athena.exception.EpicGamesErrorException;
-import athena.friend.resource.blocked.Blocked;
 import athena.friend.resource.Friend;
-import athena.friend.resource.profile.FriendProfile;
+import athena.friend.resource.blocked.Blocked;
 import athena.friend.resource.settings.FriendSettings;
+import athena.friend.resource.summary.Profile;
+import athena.friend.resource.summary.Summary;
 import athena.friend.service.FriendsPublicService;
 import athena.util.request.Requests;
+import okhttp3.RequestBody;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Provides easy access to the {@link FriendsPublicService}
@@ -50,9 +53,9 @@ public final class Friends {
      * @param accountId the ID of the account
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public void addFriendByAccountId(String accountId) throws EpicGamesErrorException {
-        final var call = service.addFriendByAccountId(localAccountId, accountId);
-        Requests.executeVoidCall("Failed to add account " + accountId + " as a friend.", call);
+    public void add(String accountId) throws EpicGamesErrorException {
+        final var call = service.add(localAccountId, accountId);
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -61,9 +64,9 @@ public final class Friends {
      * @param accountId the ID of the account.
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public void removeOrDeclineFriendByAccountId(String accountId) throws EpicGamesErrorException {
-        final var call = service.removeFriendByAccountId(localAccountId, accountId);
-        Requests.executeVoidCall("Failed to remove/decline account " + accountId, call);
+    public void removeOrDecline(String accountId) throws EpicGamesErrorException {
+        final var call = service.remove(localAccountId, accountId);
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -72,9 +75,9 @@ public final class Friends {
      * @param accountId the ID of the account.
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public void blockFriendByAccountId(String accountId) throws EpicGamesErrorException {
-        final var call = service.blockFriendByAccountId(localAccountId, accountId);
-        Requests.executeVoidCall("Failed to block account " + accountId, call);
+    public void block(String accountId) throws EpicGamesErrorException {
+        final var call = service.block(localAccountId, accountId);
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -83,9 +86,9 @@ public final class Friends {
      * @param accountId the ID of the account.
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public void unblockFriendByAccountId(String accountId) throws EpicGamesErrorException {
-        final var call = service.unblockFriendByAccountId(localAccountId, accountId);
-        Requests.executeVoidCall("Failed to unblock account " + accountId, call);
+    public void unblock(String accountId) throws EpicGamesErrorException {
+        final var call = service.unblock(localAccountId, accountId);
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -95,20 +98,20 @@ public final class Friends {
      * @return a list of friends
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public List<Friend> getAllFriends(boolean includePending) throws EpicGamesErrorException {
+    public List<Friend> friends(boolean includePending) throws EpicGamesErrorException {
         final var call = service.friends(localAccountId, includePending);
-        return Requests.executeCallOptional("Failed to get all friends for account " + localAccountId, call).orElse(List.of());
+        return Requests.executeCall(call);
     }
 
     /**
      * Gets a list of all blocked friends.
      *
-     * @return a list of all blocked friends
+     * @return a list of all blocked friends (account IDs)
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public List<Blocked> getAllBlocked() throws EpicGamesErrorException {
+    public List<String> blocked() throws EpicGamesErrorException {
         final var call = service.blocked(localAccountId);
-        return Requests.executeCall("Failed to get blocklist for account " + localAccountId, call);
+        return Requests.executeCall(call).stream().map(Blocked::accountId).collect(Collectors.toList());
     }
 
     /**
@@ -120,8 +123,8 @@ public final class Friends {
      */
     public void setFriendAlias(String accountId, String alias) throws EpicGamesErrorException {
         if (alias.length() < 3 || alias.length() > 16) throw new IllegalArgumentException("Alias must be 3 characters minimum and 16 characters maximum.");
-        final var call = service.setFriendAlias(localAccountId, accountId, alias);
-        Requests.executeVoidCall("Failed to set alias for friend " + accountId, call);
+        final var call = service.setAlias(localAccountId, accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -142,8 +145,8 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendAlias(String accountId) throws EpicGamesErrorException {
-        final var call = service.removeFriendAlias(localAccountId, accountId);
-        Requests.executeVoidCall("Failed to remove alias for friend " + accountId, call);
+        final var call = service.remove(localAccountId, accountId);
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -165,8 +168,8 @@ public final class Friends {
      */
     public void setFriendNote(String accountId, String note) throws EpicGamesErrorException {
         if (note.length() < 3 || note.length() > 255) throw new IllegalArgumentException("Note must be 3 characters minimum and 255 characters maximum.");
-        final var call = service.setFriendNote(localAccountId, accountId, note);
-        Requests.executeVoidCall("Failed to set note for friend " + accountId, call);
+        final var call = service.setNote(localAccountId, accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -187,8 +190,8 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendNote(String accountId) throws EpicGamesErrorException {
-        final var call = service.removeFriendNote(localAccountId, accountId);
-        Requests.executeVoidCall("Failed to remove note for friend " + accountId, call);
+        final var call = service.remove(localAccountId, accountId);
+        Requests.executeVoidCall(call);
     }
 
     /**
@@ -205,23 +208,34 @@ public final class Friends {
      * Get a friend profile.
      *
      * @param accountId the account ID of the friend.
-     * @return a {@link FriendProfile} that represents their profile.
+     * @return a {@link Profile} that represents their profile.
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public FriendProfile getFriendProfile(String accountId) throws EpicGamesErrorException {
-        final var call = service.friendProfile(localAccountId, accountId);
-        return Requests.executeCall("Failed to retrieve profile for " + accountId, call);
+    public Profile friendProfile(String accountId) throws EpicGamesErrorException {
+        final var call = service.profile(localAccountId, accountId, true);
+        return Requests.executeCall(call);
     }
 
     /**
      * Get a friend profile.
      *
      * @param friend the friend
-     * @return a {@link FriendProfile} that represents their profile.
+     * @return a {@link Profile} that represents their profile.
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public FriendProfile getFriendProfile(Friend friend) throws EpicGamesErrorException {
-        return getFriendProfile(friend.accountId());
+    public Profile friendProfile(Friend friend) throws EpicGamesErrorException {
+        return friendProfile(friend.accountId());
+    }
+
+    /**
+     * Get the friend summary.
+     *
+     * @return a {@link Summary} representing the response.
+     * @throws EpicGamesErrorException if the API returned an error response.
+     */
+    public Summary summary() throws EpicGamesErrorException {
+        final var call = service.summary(localAccountId, true);
+        return Requests.executeCall(call);
     }
 
     /**
@@ -230,9 +244,9 @@ public final class Friends {
      * @return a {@link FriendSettings} that represents the settings.
      * @throws EpicGamesErrorException if the API returned an error response.
      */
-    public FriendSettings getSettings() throws EpicGamesErrorException {
+    public FriendSettings settings() throws EpicGamesErrorException {
         final var call = service.settings(localAccountId);
-        return Requests.executeCall("Failed to retrieve settings", call);
+        return Requests.executeCall(call);
     }
 
     /**
@@ -243,7 +257,7 @@ public final class Friends {
      */
     public FriendSettings setSettings(FriendSettings settings) throws EpicGamesErrorException {
         final var call = service.setSettings(localAccountId, settings);
-        return Requests.executeCall("Failed to set settings", call);
+        return Requests.executeCall(call);
     }
 
     /**

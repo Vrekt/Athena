@@ -48,6 +48,10 @@ public final class EpicGamesErrorException extends RuntimeException {
         super(cause, other);
     }
 
+    private EpicGamesErrorException(String cause) {
+        super(cause);
+    }
+
     /**
      * Create a new exception from another one.
      *
@@ -83,6 +87,16 @@ public final class EpicGamesErrorException extends RuntimeException {
     public static EpicGamesErrorException createFromHttpError(final String url, final int code) {
         final var cause = "Failed to execute a request to: [" + url + "]\nError: HTTP " + code;
         return new EpicGamesErrorException(cause, url);
+    }
+
+    /**
+     * Create a super general error.
+     *
+     * @param cause the cause of this exception
+     * @return a new {@link EpicGamesErrorException}
+     */
+    public static EpicGamesErrorException create(String cause) {
+        return new EpicGamesErrorException(cause);
     }
 
     /**

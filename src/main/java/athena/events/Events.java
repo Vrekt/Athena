@@ -2,6 +2,7 @@ package athena.events;
 
 import athena.events.resource.download.event.FortniteEventDownload;
 import athena.events.resource.leaderboard.EventLeaderboard;
+import athena.events.service.EventsPublicService;
 import athena.util.request.Requests;
 
 /**
@@ -44,7 +45,7 @@ public final class Events {
      */
     public FortniteEventDownload downloadEvents(String region, String platform, String teamAccountIds) {
         final var call = service.download(localAccountId, region, platform, teamAccountIds);
-        return Requests.executeCall("Failed to download events for " + localAccountId + ", region: " + region + ", platform: " + platform + ", team: " + teamAccountIds, call);
+        return Requests.executeCall(call);
     }
 
     /**
@@ -56,7 +57,7 @@ public final class Events {
      */
     public FortniteEventDownload downloadData(String region, boolean showPastEvents) {
         final var call = service.data(localAccountId, region, showPastEvents);
-        return Requests.executeCall("Failed to download data for " + localAccountId + ", region: " + region + ", showPastEvents: " + showPastEvents, call);
+        return Requests.executeCall(call);
     }
 
     /**
@@ -86,7 +87,7 @@ public final class Events {
      */
     public EventLeaderboard leaderboards(String eventId, String eventWindowId, String teamAccountIds, int page, int rank, boolean showLiveSessions) {
         final var call = service.leaderboards(eventId, eventWindowId, localAccountId, page, rank, teamAccountIds, "Fortnite", showLiveSessions);
-        return Requests.executeCall("Failed to get leaderboard for " + eventId + ", window: " + eventWindowId + ", page: " + page + ", rank: " + rank, call);
+        return Requests.executeCall(call);
     }
 
 }

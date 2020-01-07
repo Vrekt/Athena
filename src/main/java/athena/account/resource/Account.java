@@ -1,6 +1,7 @@
 package athena.account.resource;
 
 import athena.account.resource.external.ExternalAuth;
+import athena.types.Platform;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
@@ -51,31 +52,72 @@ public final class Account extends PostProcessable {
     }
 
     /**
+     * Checks if the external auth is present.
+     *
+     * @param platform the platform, ex: "psn, "xbl"
+     * @return {@code true} if the external auth is present.
+     */
+    public boolean hasExternalAuth(String platform) {
+        return externalAuths.containsKey(platform);
+    }
+
+    /**
+     * Checks if the external auth is present.
+     *
+     * @param platform the platform.
+     * @return {@code true} if the external auth is present.
+     */
+    public boolean hasExternalAuth(Platform platform) {
+        return externalAuths.values().stream().anyMatch(externalAuth -> externalAuth.platform() == platform);
+    }
+
+    /**
+     * Get the external auth.
+     *
+     * @param platform the platform, ex: "psn, "xbl"
+     * @return the external auth or {@code null} if not found.
+     */
+    public ExternalAuth getExternalAuth(String platform) {
+        return externalAuths.get(platform);
+    }
+
+    /**
+     * Get the external auth.
+     *
+     * @param platform the platform
+     * @return the external auth.
+     * @throws java.util.NoSuchElementException if the external auth was not found.
+     */
+    public ExternalAuth getExternalAuth(Platform platform) {
+        return externalAuths.values().stream().filter(externalAuth -> externalAuth.platform() == platform).findAny().orElseThrow();
+    }
+
+    /**
      * Add this account as a friend.
      */
-    public void addAsFriend() {
-        Requests.executeVoidCall("Failed to add account " + accountId + " as a friend.", friendsPublicService.removeFriendByAccountId(localAccountId, accountId));
+    public void friend() {
+        Requests.executeVoidCall(friendsPublicService.add(localAccountId, accountId));
     }
 
     /**
      * Remove this account as a friend.
      */
-    public void removeFriend() {
-        Requests.executeVoidCall("Failed to remove friend " + accountId, friendsPublicService.removeFriendByAccountId(localAccountId, accountId));
+    public void unfriend() {
+        Requests.executeVoidCall(friendsPublicService.remove(localAccountId, accountId));
     }
 
     /**
      * Block this account.
      */
     public void block() {
-        Requests.executeVoidCall("Failed to block account " + accountId, friendsPublicService.blockFriendByAccountId(localAccountId, accountId));
+        Requests.executeVoidCall(friendsPublicService.block(localAccountId, accountId));
     }
 
     /**
      * Unblock this account.
      */
     public void unblock() {
-        Requests.executeVoidCall("Failed to unblock account " + accountId, friendsPublicService.unblockFriendByAccountId(localAccountId, accountId));
+        Requests.executeVoidCall(friendsPublicService.unblock(localAccountId, accountId));
     }
 
 }

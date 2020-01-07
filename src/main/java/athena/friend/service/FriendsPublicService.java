@@ -2,8 +2,11 @@ package athena.friend.service;
 
 import athena.friend.resource.Friend;
 import athena.friend.resource.blocked.Blocked;
-import athena.friend.resource.profile.FriendProfile;
 import athena.friend.resource.settings.FriendSettings;
+import athena.friend.resource.summary.Profile;
+import athena.friend.resource.summary.Summary;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
@@ -17,7 +20,11 @@ public interface FriendsPublicService {
     /**
      * The base url for the FriendsPublicService
      */
-    String BASE_URL = "https://friends-public-service-prod.ol.epicgames.com";
+    String BASE_URL = "https://friends-public-service-prod.ol.epicgames.com/";
+    /**
+     * Media type for note and alias.
+     */
+    MediaType MEDIA_TYPE = MediaType.get("text/plain");
 
     /**
      * Gets all friends for the specified {@code accountId}
@@ -45,7 +52,7 @@ public interface FriendsPublicService {
      * @param accountId      the account ID to add.
      */
     @POST("friends/api/v1/{localAccountId}/friends/{accountId}")
-    Call<Void> addFriendByAccountId(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> add(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
      * Removes a friend by account ID.
@@ -54,7 +61,7 @@ public interface FriendsPublicService {
      * @param accountId      the account ID to remove.
      */
     @DELETE("friends/api/v1/{localAccountId}/friends/{accountId}")
-    Call<Void> removeFriendByAccountId(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> remove(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
      * Blocks a friend by account ID.
@@ -63,7 +70,7 @@ public interface FriendsPublicService {
      * @param accountId      the account ID to remove.
      */
     @POST("friends/api/public/blocklist/{localAccountId}/{accountId}")
-    Call<Void> blockFriendByAccountId(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> block(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
      * Unblocks a friend by account ID.
@@ -72,7 +79,7 @@ public interface FriendsPublicService {
      * @param accountId      the account ID to unblock.
      */
     @DELETE("friends/api/public/blocklist/{localAccountId}/{accountId}")
-    Call<Void> unblockFriendByAccountId(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> unblock(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
      * Sets a friend alias.
@@ -80,11 +87,10 @@ public interface FriendsPublicService {
      *
      * @param localAccountId the account ID of the current authenticated account.
      * @param accountId      the account ID to apply the alias to.
-     * @param alias          the alias.
+     * @param alias          the request body {@code RequestBody.create(text, MediaType.get("text/plain")}
      */
-    @Headers("Content-Type: text/plain")
     @PUT("friends/api/v1/{localAccountId}/friends/{accountId}/alias")
-    Call<Void> setFriendAlias(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId, @Body String alias);
+    Call<Void> setAlias(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId, @Body RequestBody alias);
 
     /**
      * Removes a friend alias.
@@ -93,7 +99,7 @@ public interface FriendsPublicService {
      * @param accountId      the account ID to remove the alias from.
      */
     @DELETE("friends/api/v1/{localAccountId}/friends/{accountId}/alias")
-    Call<Void> removeFriendAlias(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> removeAlias(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
      * Sets the note for a friend.
@@ -101,11 +107,10 @@ public interface FriendsPublicService {
      *
      * @param localAccountId the account ID of the current authenticated account.
      * @param accountId      the account ID to apply the note to.
-     * @param note           the note.
+     * @param note           the request body {@code RequestBody.create(text, MediaType.get("text/plain")}
      */
-    @Headers("Content-Type: text/plain")
     @PUT("friends/api/v1/{localAccountId}/friends/{accountId}/note")
-    Call<Void> setFriendNote(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId, @Body String note);
+    Call<Void> setNote(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId, @Body RequestBody note);
 
     /**
      * Removes a friend note.
@@ -114,21 +119,34 @@ public interface FriendsPublicService {
      * @param accountId      the account ID to remove the note from.
      */
     @DELETE("friends/api/v1/{localAccountId}/friends/{accountId}/note")
-    Call<Void> removeFriendNote(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> removeNote(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
-     * Retrieve the profile of a friend.
+     * Retrieve the summary of a friend.
      *
      * @param localAccountId the account ID of the current authenticated account.
      * @param accountId      the account ID of the friend.
+     * @param displayNames   {@code true} if the display name should be given.
+     * @return a {@link Call} returned by retrofit containing the {@link Profile} if the call was successful.
      */
     @GET("friends/api/v1/{localAccountId}/friends/{accountId}")
-    Call<FriendProfile> friendProfile(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Profile> profile(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId, @Query("displayNames") boolean displayNames);
+
+    /**
+     * Retrieve the summary of all friends.
+     *
+     * @param localAccountId the account ID of the current authenticated account.
+     * @param displayNames   {@code true} if display names should be given with each summary.
+     * @return a {@link Call} returned by retrofit containing the {@link Summary} if the call was successful.
+     */
+    @GET("friends/api/v1/{localAccountId}/summary")
+    Call<Summary> summary(@Path("localAccountId") String localAccountId, @Query("displayNames") boolean displayNames);
 
     /**
      * Get the friend settings for the current authenticated account.
      *
      * @param accountId the account ID of the current authenticated account.
+     * @return a {@link Call} returned by retrofit containing the {@link FriendSettings} if the call was successful.
      */
     @GET("friends/api/v1/{accountId}/settings")
     Call<FriendSettings> settings(@Path("accountId") String accountId);
@@ -138,6 +156,7 @@ public interface FriendsPublicService {
      *
      * @param accountId the account ID of the current authenticated account.
      * @param settings  the settings
+     * @return a {@link Call} returned by retrofit containing the {@link FriendSettings} if the call was successful.
      */
     @PUT("friends/api/v1/{accountId}/settings")
     Call<FriendSettings> setSettings(@Path("accountId") String accountId, @Body FriendSettings settings);

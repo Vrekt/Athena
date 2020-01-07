@@ -1,7 +1,6 @@
-package athena.eula;
+package athena.eula.service;
 
 import athena.eula.resource.Eula;
-import com.google.gson.JsonObject;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
@@ -20,7 +19,7 @@ public interface EulatrackingPublicService {
      *
      * @param accountId the ID of the account
      * @param locale    the locale, usually 'en-US'
-     * @return a {@link JsonObject} response
+     * @return a {@link Call} returned by retrofit containing the {@link Eula} if the call was successful.
      */
     @GET("eulatracking/api/public/agreements/fn/account/{accountId}?locale=en-US")
     Call<Eula> eula(@Path("accountId") String accountId, @Query("locale") String locale);

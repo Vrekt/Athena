@@ -9,21 +9,17 @@ import athena.stats.resource.query.StatisticsQuery;
 import athena.stats.service.StatsproxyPublicService;
 import athena.util.request.Requests;
 import com.google.common.collect.Lists;
-import com.google.common.flogger.FluentLogger;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Provides easy access to {@link StatsproxyPublicService}
  */
 public final class StatisticsV2 {
-
-    /**
-     * The LOGGER
-     */
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     /**
      * The service that handles the requests.
@@ -48,7 +44,7 @@ public final class StatisticsV2 {
      */
     public UnfilteredStatistic stats(String accountId) {
         final var call = service.stats(accountId);
-        return Requests.executeCall("Failed to get stats for " + accountId, call);
+        return Requests.executeCall(call);
     }
 
     /**
@@ -59,7 +55,7 @@ public final class StatisticsV2 {
      */
     public List<IndividualQueryResponse> query(StatisticsQuery query) {
         final var call = service.query(query);
-        return Requests.executeCallOptional("Failed to query stats for account(s) " + Arrays.toString(query.accounts()), call).orElse(List.of());
+        return Requests.executeCall(call);
     }
 
     /**
@@ -82,7 +78,7 @@ public final class StatisticsV2 {
      */
     public List<IndividualQueryResponse> query(String[] stats, String... accounts) {
         final var call = service.query(new StatisticsQuery.Builder(stats, accounts).build());
-        return Requests.executeCallOptional("Failed to query stats for account(s) " + ArrayUtils.toString(accounts), call).orElse(List.of());
+        return Requests.executeCall(call);
     }
 
     /**
@@ -93,7 +89,7 @@ public final class StatisticsV2 {
      */
     public LeaderboardResponse leaderboard(String type) {
         final var call = service.leaderboard(type);
-        return Requests.executeCall("Failed to retrieve leaderboard for " + type, call);
+        return Requests.executeCall(call);
     }
 
     /**
@@ -116,7 +112,7 @@ public final class StatisticsV2 {
         partitioned.forEach(list -> {
             // find and execute then put in map.
             final var call = accountPublicService.findManyByAccountId(list.toArray(String[]::new));
-            final var result = Requests.executeCall("Failed to find accounts for leaderboards.", call);
+            final var result = Requests.executeCall(call);
             result.forEach(account -> map.put(account, entriesMap.get(account.accountId())));
         });
 

@@ -10,6 +10,9 @@ public final class Blocked {
      */
     private String accountId;
 
+    private Blocked() {
+    }
+
     /**
      * @return the account ID of this blocked account.
      */

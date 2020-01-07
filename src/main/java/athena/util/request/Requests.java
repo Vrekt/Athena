@@ -30,27 +30,27 @@ public final class Requests {
     /**
      * Execute a call.
      *
-     * @param message the message to log upon error.
-     * @param call    the call
-     * @param <T>     the TYPE.
+     * @param call the call
+     * @param <T>  the TYPE.
      * @return a {@link Optional} containing the type or empty.
      */
     @SuppressWarnings("ConstantConditions")
-    public static <T> Optional<T> executeCallOptional(String message, Call<T> call) {
+    public static <T> Optional<T> executeCallOptional(Call<T> call) {
         Response<T> result;
         try {
             result = call.execute();
         } catch (final Exception exception) {
-            LOGGER.atWarning().withCause(exception).log("Failed to execute a request to [" + call.request().url().toString() + "].\n" + message);
-            return Optional.empty();
+            LOGGER.atWarning().withCause(exception).log("Failed to execute a request to [" + call.request().url().toString() + "].\n");
+            throw EpicGamesErrorException.create("Failed to execute a request to [" + call.request().url().toString() + "].\n");
         }
 
         if (!result.isSuccessful()) {
             try {
                 final var object = GSON.fromJson(result.errorBody().string(), JsonObject.class);
                 throw EpicGamesErrorException.create(call.request().url().toString(), object);
-            } catch (final IOException exception) {
-                LOGGER.atWarning().withCause(exception).log("Failed to execute a request to [" + call.request().url().toString() + "].\n" + message);
+            } catch (final IOException | NullPointerException exception) {
+                LOGGER.atWarning().withCause(exception).log("Failed to execute a request to [" + call.request().url().toString() + "].\n");
+                throw EpicGamesErrorException.create("Failed to execute a request to [" + call.request().url().toString() + "].\n");
             }
         }
         return Optional.ofNullable(result.body());
@@ -59,13 +59,12 @@ public final class Requests {
     /**
      * Execute a call.
      *
-     * @param message the message to log upon error.
-     * @param call    the call
-     * @param <T>     the TYPE.
+     * @param call the call
+     * @param <T>  the TYPE.
      * @return the TYPE or {@code null} if an error occurred.
      */
-    public static <T> T executeCall(String message, Call<T> call) {
-        return executeCallOptional(message, call).orElseThrow();
+    public static <T> T executeCall(Call<T> call) {
+        return executeCallOptional(call).orElseThrow(() -> EpicGamesErrorException.create("Failed to execute a request to [" + call.request().url().toString() + "].\n"));
     }
 
     /**
@@ -79,13 +78,15 @@ public final class Requests {
         call.enqueue(new Callback<>() {
             @Override
             @EverythingIsNonNull
+            @SuppressWarnings("ConstantConditions")
             public void onResponse(Call<T> call, Response<T> response) {
                 if (!response.isSuccessful()) {
                     try {
                         final var object = GSON.fromJson(response.errorBody().string(), JsonObject.class);
                         resultPost.result(null, true, EpicGamesErrorException.create(call.request().url().toString(), object));
-                    } catch (final IOException exception) {
+                    } catch (final IOException | NullPointerException exception) {
                         LOGGER.atWarning().withCause(exception).log("Failed to execute a request to [" + call.request().url().toString() + "]");
+                        resultPost.result(null, true, EpicGamesErrorException.createFromOther(exception));
                     }
                 } else {
                     resultPost.result(response.body(), response.body() == null, null);
@@ -103,12 +104,11 @@ public final class Requests {
     /**
      * Executes a call that has no return.
      *
-     * @param message the message to log upon error.
-     * @param call    the call
-     * @param <T>     the TYPE.
+     * @param call the call
+     * @param <T>  the TYPE.
      */
-    public static <T> void executeVoidCall(String message, Call<T> call) {
-        executeCall(message, call);
+    public static <T> void executeVoidCall(Call<T> call) {
+        executeCallOptional(call);
     }
 
 }

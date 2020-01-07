@@ -53,7 +53,7 @@ public final class UnfilteredStatistic {
      * @param input the input type
      * @return a new {@link Statistic} containing only stats from the provided {@code input}
      */
-    public Statistic byInput(Input input) {
+    public Statistic filterByInput(Input input) {
         final var groups = statisticValues.stream().filter(group -> group.input() == input).collect(Collectors.toSet());
         final var map = new HashMap<StatisticType, Long>();
         for (final var type : StatisticType.values()) {
@@ -70,7 +70,7 @@ public final class UnfilteredStatistic {
      * @param playlist the playlist
      * @return a new {@link Statistic} containing only stats from the provided {@code playlist}
      */
-    public Statistic byPlaylist(String playlist) {
+    public Statistic filterByPlaylist(String playlist) {
         final var groups = statisticValues.stream().filter(group -> group.playlist().equalsIgnoreCase(playlist)).collect(Collectors.toSet());
         final var map = new HashMap<StatisticType, Long>();
         for (final var type : StatisticType.values()) {
@@ -88,7 +88,7 @@ public final class UnfilteredStatistic {
      * @param playlist the playlist
      * @return a new {@link Statistic} containing only stats from the provided {@code playlist} and {@code input}
      */
-    public Statistic byInputAndPlaylist(Input input, String playlist) {
+    public Statistic filterByInputAndPlaylist(Input input, String playlist) {
         final var groups = statisticValues.stream().filter(group -> group.input() == input && group.playlist().equalsIgnoreCase(playlist)).collect(Collectors.toSet());
         final var map = new HashMap<StatisticType, Long>();
         for (final var type : StatisticType.values()) {

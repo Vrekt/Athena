@@ -1,45 +1,57 @@
-package athena.friend.resource;
+package athena.friend.resource.summary;
 
 import athena.account.resource.Account;
 import athena.exception.EpicGamesErrorException;
-import athena.friend.resource.summary.Profile;
-import athena.friend.resource.types.FriendDirection;
-import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
+import com.google.gson.JsonObject;
+import com.google.gson.annotations.Expose;
 import okhttp3.RequestBody;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
- * Represents an Epic Games/Fortnite friend.
+ * Represents a friend profile.
  */
-public final class Friend extends PostProcessable {
+public final class Profile extends PostProcessable {
 
     /**
-     * The account ID.
+     * Account ID, their alias and note.
      */
-    private String accountId;
+    private String accountId, alias, note, displayName;
+
     /**
-     * The status of this friend (accepted or pending)
+     * Groups? Currently un-implemented/unknown.
+     * TODO:
      */
-    private FriendStatus status;
+    @Expose(deserialize = false)
+    private String[] groups;
+
     /**
-     * The direction of this friend
+     * Map of connections.
+     * ex: key=xbl value=xxx
      */
-    private FriendDirection direction;
+    private Map<String, JsonObject> connections;
+
     /**
-     * When this friend was created. (sent?)
+     * Number of mutual friends.
      */
-    private Instant created;
+    private int mutual;
+
     /**
-     * If this friend is a favorite.
+     * If this friend is a favorite currently un-implemented/unknown
+     * TODO:
      */
     private boolean favorite;
 
-    private Friend() {
+    /**
+     * When this friend was created.
+     */
+    private Instant created;
 
+    private Profile() {
     }
 
     /**
@@ -50,31 +62,60 @@ public final class Friend extends PostProcessable {
     }
 
     /**
-     * @return the status of this friend, (pending, accepted)
+     * @return the display-name of this friend, only present if query was set to {@code true} in the original request.
      */
-    public FriendStatus status() {
-        return status;
+    public String displayName() {
+        return displayName;
     }
 
     /**
-     * @return the direction this friend was sent in, (outbound = you sent, inbound = they sent).
+     * @return the alias set for this friend.
      */
-    public FriendDirection direction() {
-        return direction;
+    public String alias() {
+        return alias;
     }
 
     /**
-     * @return when this friend was created (the request was sent/accepted?)
+     * @return the note set for this friend.
      */
-    public Instant created() {
-        return created;
+    public String note() {
+        return note;
     }
 
     /**
-     * @return {@code false} always, seems to be un-implemented.
+     * @return a set of groups.
+     */
+    public String[] groups() {
+        return groups;
+    }
+
+    /**
+     * @return map of connections
+     * ex: key=xbl value=xxx
+     */
+    public Map<String, JsonObject> connections() {
+        return connections;
+    }
+
+    /**
+     * @return number of mutual friends.
+     */
+    public int mutual() {
+        return mutual;
+    }
+
+    /**
+     * @return if this friend is a favorite.
      */
     public boolean favorite() {
         return favorite;
+    }
+
+    /**
+     * @return when the friend/profile was created.
+     */
+    public Instant created() {
+        return created;
     }
 
     /**
@@ -150,16 +191,6 @@ public final class Friend extends PostProcessable {
     public void removeNote() {
         final var call = friendsPublicService.removeNote(localAccountId, accountId);
         Requests.executeVoidCall(call);
-    }
-
-    /**
-     * Retrieve the profile for this friend, this method is blocking.
-     *
-     * @return the {@link Profile} for this friend
-     */
-    public Profile profile() {
-        final var call = friendsPublicService.profile(localAccountId, accountId, true);
-        return Requests.executeCall(call);
     }
 
 }

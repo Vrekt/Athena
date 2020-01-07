@@ -1,10 +1,10 @@
 package athena.shop;
 
-import athena.fortnite.FortnitePublicService;
+import athena.fortnite.service.FortnitePublicService;
 import athena.util.request.Requests;
 
 /**
- * Provides easy access to {@link athena.fortnite.FortnitePublicService} shop endpoint.
+ * Provides easy access to {@link FortnitePublicService} shop endpoint.
  */
 public final class Shop {
 
@@ -28,7 +28,7 @@ public final class Shop {
      */
     public StorefrontCatalog catalog() {
         final var call = fortnitePublicService.storefrontCatalog();
-        return Requests.executeCall("Failed to get daily storefront.", call);
+        return Requests.executeCall(call);
     }
 
     /**

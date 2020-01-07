@@ -3,12 +3,12 @@ package athena;
 import athena.account.Accounts;
 import athena.account.service.AccountPublicService;
 import athena.authentication.session.Session;
-import athena.eula.EulatrackingPublicService;
+import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
-import athena.events.EventsPublicService;
+import athena.events.service.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
 import athena.exception.UnsupportedBuildException;
-import athena.fortnite.FortnitePublicService;
+import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
@@ -137,12 +137,13 @@ public interface Athena {
          */
         private String email, password, code;
         /**
-         * Remember device is only applicable if 2FA is being used.
-         * Killing other sessions allows you to kill other tokens that are in use.
-         * Accept EULA will accept the eula if needed.
-         * Handle shutdown will create a hook that will automatically close athena on shutdown.
+         * {@code rememberDevice} is only applicable if 2FA is being used.
+         * {@code killOtherSessions} allows you to kill other tokens that are in use.
+         * {@code acceptEula} will accept the eula if needed.
+         * {@code handleShutdown} will create a hook that will automatically close athena on shutdown.
+         * {@code refreshAutomatically} handles refreshing the access token automatically.
          */
-        private boolean rememberDevice, killOtherSessions, acceptEula, handleShutdown;
+        private boolean rememberDevice, killOtherSessions, acceptEula, handleShutdown, refreshAutomatically;
 
         public Builder(String email, String password, String code) {
             this.email = email;
@@ -158,43 +159,48 @@ public interface Athena {
         public Builder() {
         }
 
-        public Builder setEpicGamesLauncherToken(String epicGamesLauncherToken) {
+        public Builder token(String epicGamesLauncherToken) {
             this.epicGamesLauncherToken = epicGamesLauncherToken;
             return this;
         }
 
-        public Builder setEmail(String email) {
+        public Builder email(String email) {
             this.email = email;
             return this;
         }
 
-        public Builder setPassword(String password) {
+        public Builder password(String password) {
             this.password = password;
             return this;
         }
 
-        public Builder setCode(String code) {
+        public Builder code(String code) {
             this.code = code;
             return this;
         }
 
-        public Builder setRememberDevice(boolean rememberDevice) {
-            this.rememberDevice = rememberDevice;
+        public Builder rememberDevice() {
+            rememberDevice = true;
             return this;
         }
 
-        public Builder setKillOtherSessions(boolean killOtherSessions) {
-            this.killOtherSessions = killOtherSessions;
+        public Builder killOtherSessions() {
+            killOtherSessions = true;
             return this;
         }
 
-        public Builder setAcceptEula(boolean acceptEula) {
-            this.acceptEula = acceptEula;
+        public Builder acceptEula() {
+            acceptEula = true;
             return this;
         }
 
-        public Builder setHandleShutdown(boolean handleShutdown) {
-            this.handleShutdown = handleShutdown;
+        public Builder handleShutdown() {
+            handleShutdown = true;
+            return this;
+        }
+
+        public Builder refreshAutomatically() {
+            refreshAutomatically = true;
             return this;
         }
 
@@ -214,20 +220,24 @@ public interface Athena {
             return code;
         }
 
-        boolean rememberDevice() {
+        boolean shouldRememberDevice() {
             return rememberDevice;
         }
 
-        boolean killOtherSessions() {
+        boolean shouldKillOtherSessions() {
             return killOtherSessions;
         }
 
-        boolean acceptEula() {
+        boolean shouldAcceptEula() {
             return acceptEula;
         }
 
-        boolean handleShutdown() {
+        boolean shouldHandleShutdown() {
             return handleShutdown;
+        }
+
+        boolean shouldRefreshAutomatically() {
+            return refreshAutomatically;
         }
 
         /**
