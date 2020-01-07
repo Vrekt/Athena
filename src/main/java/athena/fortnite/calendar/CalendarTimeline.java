@@ -1,4 +1,10 @@
 package athena.fortnite.calendar;
 
-public class CalendarTimeline {
+import java.time.Instant;
+
+public final class CalendarTimeline {
+
+    private int cacheIntervalMins;
+    private Instant currentTime;
+
 }

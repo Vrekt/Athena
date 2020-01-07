@@ -1,4 +1,10 @@
 package athena.fortnite.calendar.channel.states;
 
-public class ChannelState {
+/**
+ * Represents a singular state in a {@link athena.fortnite.calendar.channel.CalendarChannel}
+ */
+public final class ChannelState {
+
+
+
 }

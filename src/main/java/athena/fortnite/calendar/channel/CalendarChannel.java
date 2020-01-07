@@ -1,4 +1,7 @@
 package athena.fortnite.calendar.channel;
 
-public class CalendarChannel {
+public final class CalendarChannel {
+
+
+
 }
