@@ -2,6 +2,7 @@ package athena.account;
 
 import athena.account.resource.Account;
 import athena.account.service.AccountPublicService;
+import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
 import athena.util.request.Result;
@@ -20,8 +21,8 @@ public final class Accounts {
      */
     private final AccountPublicService service;
 
-    public Accounts(AccountPublicService accountPublicService) {
-        this.service = accountPublicService;
+    public Accounts(AthenaContext context) {
+        this.service = context.account();
     }
 
     /**

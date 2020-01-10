@@ -1,12 +1,15 @@
 package athena.account.resource;
 
 import athena.account.resource.external.ExternalAuth;
+import athena.friend.xmpp.event.events.FriendRequestEvent;
+import athena.friend.xmpp.listener.FriendEventListener;
 import athena.types.Platform;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Represents a Fortnite account.
@@ -96,28 +99,58 @@ public final class Account extends PostProcessable {
      * Add this account as a friend.
      */
     public void friend() {
-        Requests.executeVoidCall(friendsPublicService.add(localAccountId, accountId));
+        Requests.executeVoidCall(friendService().add(localAccountId(), accountId));
     }
 
     /**
      * Remove this account as a friend.
      */
     public void unfriend() {
-        Requests.executeVoidCall(friendsPublicService.remove(localAccountId, accountId));
+        Requests.executeVoidCall(friendService().remove(localAccountId(), accountId));
     }
 
     /**
      * Block this account.
      */
     public void block() {
-        Requests.executeVoidCall(friendsPublicService.block(localAccountId, accountId));
+        Requests.executeVoidCall(friendService().block(localAccountId(), accountId));
     }
 
     /**
      * Unblock this account.
      */
     public void unblock() {
-        Requests.executeVoidCall(friendsPublicService.unblock(localAccountId, accountId));
+        Requests.executeVoidCall(friendService().unblock(localAccountId(), accountId));
     }
 
+    /**
+     * Add an incoming friend request listener.
+     *
+     * @param consumer the consumer
+     */
+    public void addIncomingFriendRequestListener(Consumer<FriendRequestEvent> consumer) {
+        context.friends().registerEventListenerForAccount(accountId, new FriendEventListener() {
+            @Override
+            public void friendRequest(FriendRequestEvent event) {
+                consumer.accept(event);
+            }
+        });
+    }
+
+    /**
+     * Remove the incoming friend request listener.
+     */
+    public void removeIncomingFriendRequestListener() {
+        context.friends().unregisterEventListenerForAccount(accountId);
+    }
+
+    /**
+     * Add a friend listener just for this account.
+     * If you already have a listener via {@code addIncomingFriendRequestListener} then this listener will overwrite that one.
+     *
+     * @param friendEventListener the listener.
+     */
+    public void addFriendListener(FriendEventListener friendEventListener) {
+        context.friends().registerEventListenerForAccount(accountId, friendEventListener);
+    }
 }

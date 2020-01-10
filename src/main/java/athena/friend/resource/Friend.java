@@ -84,7 +84,7 @@ public final class Friend extends PostProcessable {
      * @return the account of this friend.
      */
     public Account account() {
-        final var call = accountPublicService.findOneByAccountId(accountId);
+        final var call = accountService().findOneByAccountId(accountId);
         final var result = Requests.executeCall(call);
         if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
         return result[0];
@@ -94,7 +94,7 @@ public final class Friend extends PostProcessable {
      * Remove this friend.
      */
     public void unfriend() {
-        final var call = friendsPublicService.remove(localAccountId, accountId);
+        final var call = friendService().remove(localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -102,7 +102,7 @@ public final class Friend extends PostProcessable {
      * Block this friend.
      */
     public void block() {
-        final var call = friendsPublicService.block(localAccountId, accountId);
+        final var call = friendService().block(localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -110,7 +110,7 @@ public final class Friend extends PostProcessable {
      * Unblock this friend, if you just blocked them on accident I guess?
      */
     public void unblock() {
-        final var call = friendsPublicService.unblock(localAccountId, accountId);
+        final var call = friendService().unblock(localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -121,7 +121,7 @@ public final class Friend extends PostProcessable {
      */
     public void setAlias(String alias) {
         if (alias.length() < 3 || alias.length() > 16) throw new IllegalArgumentException("Alias must be 3 characters minimum and 16 characters maximum.");
-        final var call = friendsPublicService.setAlias(localAccountId, accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
+        final var call = friendService().setAlias(localAccountId(), accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -129,7 +129,7 @@ public final class Friend extends PostProcessable {
      * Remove the alias set for this friend
      */
     public void removeAlias() {
-        final var call = friendsPublicService.removeAlias(localAccountId, accountId);
+        final var call = friendService().removeAlias(localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -140,7 +140,7 @@ public final class Friend extends PostProcessable {
      */
     public void setNote(String note) {
         if (note.length() < 3 || note.length() > 255) throw new IllegalArgumentException("Note must be 3 characters minimum and 255 characters maximum.");
-        final var call = friendsPublicService.setNote(localAccountId, accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
+        final var call = friendService().setNote(localAccountId(), accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -148,7 +148,7 @@ public final class Friend extends PostProcessable {
      * Remove the note set for this friend.
      */
     public void removeNote() {
-        final var call = friendsPublicService.removeNote(localAccountId, accountId);
+        final var call = friendService().removeNote(localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -158,7 +158,7 @@ public final class Friend extends PostProcessable {
      * @return the {@link Profile} for this friend
      */
     public Profile profile() {
-        final var call = friendsPublicService.profile(localAccountId, accountId, true);
+        final var call = friendService().profile(localAccountId(), accountId, true);
         return Requests.executeCall(call);
     }
 

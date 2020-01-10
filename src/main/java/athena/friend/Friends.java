@@ -1,5 +1,6 @@
 package athena.friend;
 
+import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.Friend;
 import athena.friend.resource.blocked.Blocked;
@@ -7,6 +8,8 @@ import athena.friend.resource.settings.FriendSettings;
 import athena.friend.resource.summary.Profile;
 import athena.friend.resource.summary.Summary;
 import athena.friend.service.FriendsPublicService;
+import athena.friend.xmpp.listener.FriendEventListener;
+import athena.util.cleanup.Closeable;
 import athena.util.request.Requests;
 import okhttp3.RequestBody;
 
@@ -17,16 +20,21 @@ import java.util.stream.Collectors;
 /**
  * Provides easy access to the {@link FriendsPublicService}
  */
-public final class Friends {
+public final class Friends implements Closeable {
 
     /**
-     * The service that handles the requests.
+     * The athena context.
      */
-    private final FriendsPublicService service;
+    private AthenaContext context;
     /**
-     * The account ID of the athena instance this came from.
+     * The service.
      */
-    private final String localAccountId;
+    private FriendsPublicService service;
+
+    /**
+     * The XMPP provider.
+     */
+    private XMPPProvider provider;
 
     /**
      * A list of all friends.
@@ -35,9 +43,10 @@ public final class Friends {
      */
     private Map<String, Friend> friends;
 
-    public Friends(FriendsPublicService friendsPublicService, String localAccountId) {
-        this.service = friendsPublicService;
-        this.localAccountId = localAccountId;
+    public Friends(AthenaContext context, boolean enableXMPP) {
+        this.context = context;
+        this.service = context.friendsService();
+        if (enableXMPP) provider = new XMPPProvider(context);
     }
 
     /**
@@ -54,7 +63,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void add(String accountId) throws EpicGamesErrorException {
-        final var call = service.add(localAccountId, accountId);
+        final var call = service.add(context.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -65,7 +74,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeOrDecline(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(localAccountId, accountId);
+        final var call = service.remove(context.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -76,7 +85,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void block(String accountId) throws EpicGamesErrorException {
-        final var call = service.block(localAccountId, accountId);
+        final var call = service.block(context.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -87,7 +96,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void unblock(String accountId) throws EpicGamesErrorException {
-        final var call = service.unblock(localAccountId, accountId);
+        final var call = service.unblock(context.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -99,7 +108,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<Friend> friends(boolean includePending) throws EpicGamesErrorException {
-        final var call = service.friends(localAccountId, includePending);
+        final var call = service.friends(context.accountId(), includePending);
         return Requests.executeCall(call);
     }
 
@@ -110,7 +119,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<String> blocked() throws EpicGamesErrorException {
-        final var call = service.blocked(localAccountId);
+        final var call = service.blocked(context.accountId());
         return Requests.executeCall(call).stream().map(Blocked::accountId).collect(Collectors.toList());
     }
 
@@ -123,7 +132,7 @@ public final class Friends {
      */
     public void setFriendAlias(String accountId, String alias) throws EpicGamesErrorException {
         if (alias.length() < 3 || alias.length() > 16) throw new IllegalArgumentException("Alias must be 3 characters minimum and 16 characters maximum.");
-        final var call = service.setAlias(localAccountId, accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
+        final var call = service.setAlias(context.accountId(), accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -145,7 +154,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendAlias(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(localAccountId, accountId);
+        final var call = service.remove(context.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -168,7 +177,7 @@ public final class Friends {
      */
     public void setFriendNote(String accountId, String note) throws EpicGamesErrorException {
         if (note.length() < 3 || note.length() > 255) throw new IllegalArgumentException("Note must be 3 characters minimum and 255 characters maximum.");
-        final var call = service.setNote(localAccountId, accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
+        final var call = service.setNote(context.accountId(), accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -190,7 +199,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendNote(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(localAccountId, accountId);
+        final var call = service.remove(context.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -212,7 +221,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public Profile friendProfile(String accountId) throws EpicGamesErrorException {
-        final var call = service.profile(localAccountId, accountId, true);
+        final var call = service.profile(context.accountId(), accountId, true);
         return Requests.executeCall(call);
     }
 
@@ -234,7 +243,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public Summary summary() throws EpicGamesErrorException {
-        final var call = service.summary(localAccountId, true);
+        final var call = service.summary(context.accountId(), true);
         return Requests.executeCall(call);
     }
 
@@ -245,7 +254,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public FriendSettings settings() throws EpicGamesErrorException {
-        final var call = service.settings(localAccountId);
+        final var call = service.settings(context.accountId());
         return Requests.executeCall(call);
     }
 
@@ -256,7 +265,7 @@ public final class Friends {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public FriendSettings setSettings(FriendSettings settings) throws EpicGamesErrorException {
-        final var call = service.setSettings(localAccountId, settings);
+        final var call = service.setSettings(context.accountId(), settings);
         return Requests.executeCall(call);
     }
 
@@ -268,4 +277,77 @@ public final class Friends {
         return friends != null && friends.containsKey(accountId);
     }
 
+    /**
+     * Register an event listener.
+     *
+     * @param listener the listener.
+     */
+    void registerEventListener(FriendEventListener listener) {
+        provider.registerEventListener(listener);
+    }
+
+    /**
+     * Unregister an event listener.
+     *
+     * @param listener the listener
+     */
+    void unregisterEventListener(FriendEventListener listener) {
+        provider.unregisterEventListener(listener);
+    }
+
+    /**
+     * Register an event listener.
+     *
+     * @param type the class/type to register.
+     */
+    public void registerEventListener(Object type) {
+        if (provider != null) provider.registerEventListener(type);
+    }
+
+    /**
+     * Unregister an event listener.
+     *
+     * @param type the class/type to register.
+     */
+    public void unregisterEventListener(Object type) {
+        if (provider != null) provider.unregisterEventListener(type);
+    }
+
+    /**
+     * Register an event listener for the specified {@code accountId}
+     *
+     * @param accountId the account ID.
+     * @param listener  the listener.
+     */
+    public void registerEventListenerForAccount(String accountId, FriendEventListener listener) {
+        provider.registerEventListenerForAccount(accountId, listener);
+    }
+
+    /**
+     * Unregister an event listener for the account {@code accountId}
+     *
+     * @param accountId the account ID.
+     */
+    public void unregisterEventListenerForAccount(String accountId) {
+        provider.unregisterEventListenerForAccount(accountId);
+    }
+
+    @Override
+    public void refresh(AthenaContext context) {
+        this.context = context;
+        this.service = context.friendsService();
+
+        provider.removeStanzaListener();
+        provider = new XMPPProvider(context, provider);
+    }
+
+    @Override
+    public void dispose() {
+        if (provider != null) provider.close();
+    }
+
+    @Override
+    public void clean() {
+        provider.clean();
+    }
 }

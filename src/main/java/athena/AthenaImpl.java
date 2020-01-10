@@ -6,9 +6,11 @@ import athena.account.resource.external.ExternalAuth;
 import athena.account.service.AccountPublicService;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
+import athena.context.AthenaContext;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
 import athena.events.service.EventsPublicService;
+import athena.exception.EpicGamesErrorException;
 import athena.exception.FortniteAuthenticationException;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
@@ -17,6 +19,7 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.resource.types.FriendDirection;
 import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
+import athena.friend.xmpp.notification.type.FNotificationType;
 import athena.interceptor.InterceptorAction;
 import athena.shop.Shop;
 import athena.stats.StatisticsV2;
@@ -27,6 +30,7 @@ import athena.types.Platform;
 import athena.types.Region;
 import athena.util.json.BasicJsonDeserializer;
 import athena.util.json.BasicPostProcessor;
+import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -40,14 +44,17 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 final class AthenaImpl implements Athena, Interceptor {
@@ -121,9 +128,19 @@ final class AthenaImpl implements Athena, Interceptor {
     private final Gson gson;
 
     /**
+     * This context.
+     */
+    private final AthenaContext context;
+
+    /**
      * This account.
      */
     private Account account;
+
+    /**
+     * XMPP connection manager
+     */
+    private XMPPConnectionManager connectionManager;
 
     AthenaImpl(Builder builder) throws FortniteAuthenticationException {
         // Create a new cookie manager for the cookie jar.
@@ -139,47 +156,57 @@ final class AthenaImpl implements Athena, Interceptor {
         final var session = fortniteAuthenticationManager.authenticate();
         this.session.set(session); // set the session
 
-        LOGGER.atInfo().log("Successfully authenticated.");
-
+        LOGGER.atInfo().log("Account " + session.accountId() + " successfully authenticated.");
+        // schedule the refresh and handle the shutdown hook.
+        if (builder.shouldHandleShutdown()) Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+        if (builder.shouldRefreshAutomatically()) scheduleRefresh();
         try {
-            // create shutdown hook if necessary
-            if (builder.shouldHandleShutdown()) Runtime.getRuntime().addShutdownHook(new Thread(this::close));
-            // kill other sessions if enabled.
+            // kill other sessions and accept the EULA.
             if (builder.shouldKillOtherSessions()) fortniteAuthenticationManager.killOtherSessions();
-            // accept EULA.
             if (builder.shouldAcceptEula()) fortniteAuthenticationManager.acceptEulaIfNeeded(session.accountId());
-            // refresh automatically.
-            if (builder.shouldRefreshAutomatically()) scheduleRefresh();
-
-            LOGGER.atInfo().log("Finished post-authentication actions.");
+            LOGGER.atInfo().log("Finished post-authentication requests.");
         } catch (final IOException exception) {
-            // TODO: Throw FortniteAuthenticationException? we are already authenticated at this point.
-            LOGGER.atWarning().withCause(exception).log("Failed to kill other sessions or accept the EULA because of an IO error.");
+            LOGGER.atWarning().withCause(exception).log("Failed to make additional authentication requests.");
         }
 
-        LOGGER.atInfo().log("Initializing Retrofit services.");
+        // handle connecting the XMPP service.
+        if (builder.shouldEnableXmpp()) {
+            LOGGER.atInfo().log("Connecting to the Fortnite XMPP service.");
+            connectionManager = new XMPPConnectionManager(builder.shouldLoadRoster(), builder.shouldReconnectOnError(), builder.debugXmpp(), builder.platform(), builder.appType());
+            connectionManager.connect(session.accountId(), session.accessToken());
+        }
 
-        // initialize retrofit services.
+        // initialize each retrofit service.
+        LOGGER.atInfo().log("Initializing Retrofit services.");
         final var factory = GsonConverterFactory.create(gson);
         accountPublicService = initializeRetrofitService(AccountPublicService.BASE_URL, factory, AccountPublicService.class);
-        friendsPublicService = initializeRetrofitService(FriendsPublicService.BASE_URL, GsonConverterFactory.create(gson), FriendsPublicService.class);
+        friendsPublicService = initializeRetrofitService(FriendsPublicService.BASE_URL, factory, FriendsPublicService.class);
         statsproxyPublicService = initializeRetrofitService(StatsproxyPublicService.BASE_URL, factory, StatsproxyPublicService.class);
         eulatrackingPublicService = initializeRetrofitService(EulatrackingPublicService.BASE_URL, factory, EulatrackingPublicService.class);
         eventsPublicService = initializeRetrofitService(EventsPublicService.BASE_URL, factory, EventsPublicService.class);
         fortnitePublicService = initializeRetrofitService(FortnitePublicService.BASE_URL, factory, FortnitePublicService.class);
 
-        LOGGER.atInfo().log("Initializing resources.");
-        // initialize each resource/provider.
-        accounts = new Accounts(accountPublicService);
-        friends = new Friends(friendsPublicService, session.accountId());
-        statisticsV2 = new StatisticsV2(statsproxyPublicService, accountPublicService);
-        events = new Events(eventsPublicService, session.accountId());
+        // initialize the context for this instance.
+        context = new AthenaContext();
+        context.accountId(session.accountId());
+        context.accountPublicService(accountPublicService);
+        context.friendsPublicService(friendsPublicService);
+        context.statsproxyPublicService(statsproxyPublicService);
+        context.eventsPublicService(eventsPublicService);
+        context.connectionManager(connectionManager);
+        context.gson(gson);
+
+        // initialize each wrapper class.
+        accounts = new Accounts(context);
+        friends = new Friends(context, builder.shouldEnableXmpp());
+        context.friends(friends);
+
+        statisticsV2 = new StatisticsV2(context);
+        events = new Events(context);
         shop = new Shop(fortnitePublicService);
 
-        // find our own account.
+        // find the account that belongs to this instance.
         account = accounts.findByAccountId(session.accountId());
-
-        // done!
         LOGGER.atInfo().log("Ready!");
     }
 
@@ -197,13 +224,11 @@ final class AthenaImpl implements Athena, Interceptor {
         // default enum values for friends.
         fireGson.enumDefaultValue(FriendStatus.class, FriendStatus.UNKNOWN);
         fireGson.enumDefaultValue(FriendDirection.class, FriendDirection.UNKNOWN);
+        fireGson.enumDefaultValue(FNotificationType.class, FNotificationType.UNKNOWN);
         // post processors for account and friend.
-        fireGson.registerPostProcessor(Account.class, (BasicPostProcessor<Account>) (result, src, gson) ->
-                result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
-        fireGson.registerPostProcessor(Friend.class, (BasicPostProcessor<Friend>) (result, src, gson) ->
-                result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
-        fireGson.registerPostProcessor(Profile.class, (BasicPostProcessor<Profile>) (result, src, gson) ->
-                result.postProcess(accountPublicService, friendsPublicService, session().accountId()));
+        fireGson.registerPostProcessor(Account.class, (BasicPostProcessor<Account>) (result, src, gson) -> result.postProcess(context));
+        fireGson.registerPostProcessor(Friend.class, (BasicPostProcessor<Friend>) (result, src, gson) -> result.postProcess(context));
+        fireGson.registerPostProcessor(Profile.class, (BasicPostProcessor<Profile>) (result, src, gson) -> result.postProcess(context));
 
         // register our type adapters.
         final var builder = fireGson.createGsonBuilder();
@@ -214,15 +239,16 @@ final class AthenaImpl implements Athena, Interceptor {
                 .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(new TypeToken<List<Profile>>() {
                 }.getType(), (BasicJsonDeserializer<List<Profile>>) (json) -> {
-                    // fixes Summary class
+                    // check if its an array for friends summary first
+                    // otherwise get the friends array.
                     final var array = json.isJsonArray() ? json.getAsJsonArray() : json.getAsJsonObject().getAsJsonArray("friends");
                     final var list = new ArrayList<Profile>();
-                    for (final var element : array) {
-                        list.add(gson.fromJson(element, Profile.class));
-                    }
+                    array.forEach(element -> list.add(gson.fromJson(element, Profile.class)));
                     return list;
                 });
 
+        // fixes an issue with superclasses/post processing.
+        builder.excludeFieldsWithModifiers(Modifier.PROTECTED);
         return builder.create();
     }
 
@@ -239,8 +265,77 @@ final class AthenaImpl implements Athena, Interceptor {
         return new Retrofit.Builder().baseUrl(baseUrl).addConverterFactory(factory).client(client).build().create(type);
     }
 
+    /**
+     * Schedule the refresh/authenticate process.
+     */
     private void scheduleRefresh() {
+        final var refreshWhen = Instant.now().plusSeconds(300).until(session.get().accessTokenExpiresAt(), ChronoUnit.SECONDS);
+        final var authenticateWhen = Instant.now().plusSeconds(300).until(session.get().refreshTokenExpiresAt(), ChronoUnit.SECONDS);
+        scheduledExecutorService.schedule(this::refresh, refreshWhen, TimeUnit.SECONDS);
+        scheduledExecutorService.schedule(this::authenticateNew, authenticateWhen, TimeUnit.SECONDS);
+    }
 
+    /**
+     * Grant the refresh session and replace/kill the old session.
+     */
+    private void refresh() {
+        try {
+            final var old = session();
+            // retrieve the refresh session.
+            session.set(fortniteAuthenticationManager.retrieveRefreshSession(old.refreshToken()));
+            // kill the old token.
+            fortniteAuthenticationManager.killToken(old.accessToken());
+            // set account ID again just in-case it changed?
+            context.accountId(session().accountId());
+            if (connectionManager != null) {
+                cleanXmppResources();
+
+                connectionManager.disconnect();
+                connectionManager.connect(session().accountId(), session().accessToken());
+                refreshXmppResources();
+            }
+        } catch (IOException | EpicGamesErrorException exception) {
+            LOGGER.atSevere().withCause(exception).log("Failed to refresh session.");
+            close();
+        }
+    }
+
+    /**
+     * Establish a new session, will not work with 2FA enabled of-course.
+     */
+    private void authenticateNew() {
+        try {
+            final var old = session();
+            // retrieve the refresh session.
+            session.set(fortniteAuthenticationManager.authenticate());
+            // kill the old token.
+            fortniteAuthenticationManager.killToken(old.accessToken());
+            // set account ID again just in-case it changed?
+            context.accountId(session().accountId());
+            if (connectionManager != null) {
+                cleanXmppResources();
+                connectionManager.disconnect();
+                connectionManager.connect(session().accountId(), session().accessToken());
+                refreshXmppResources();
+            }
+        } catch (IOException | FortniteAuthenticationException exception) {
+            LOGGER.atSevere().withCause(exception).log("Failed to refresh session.");
+            close();
+        }
+    }
+
+    /**
+     * Clean each XMPP resource.
+     */
+    private void cleanXmppResources() {
+        friends.clean();
+    }
+
+    /**
+     * Refresh each XMPP resource.
+     */
+    private void refreshXmppResources() {
+        friends.refresh(context);
     }
 
     @Override
@@ -336,8 +431,8 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public void close() {
         try {
+            if (connectionManager != null) connectionManager.close();
             fortniteAuthenticationManager.killToken(session().accessToken());
-
             client.dispatcher().executorService().shutdownNow();
             client.connectionPool().evictAll();
         } catch (final IOException exception) {

@@ -10,32 +10,21 @@ import java.time.Instant;
 public final class Session {
 
     @SerializedName("access_token")
-    private final String accessToken;
+    private String accessToken;
     @SerializedName("refresh_token")
-    private final String refreshToken;
+    private String refreshToken;
     @SerializedName("account_id")
-    private final String accountId;
+    private String accountId;
     @SerializedName("expires_at")
-    private final Instant accessTokenExpiresAt;
+    private Instant accessTokenExpiresAt;
     @SerializedName("refresh_expires_at")
-    private final Instant refreshTokenExpiresAt;
-
-    /**
-     * Initializes this session instance.
-     *
-     * @param accessToken           The access token
-     * @param refreshToken          The refresh token
-     * @param accessTokenExpiresAt  The time when the access token expires as string
-     * @param refreshTokenExpiresAt The time when the refresh token expires as string
-     * @param accountId             the ID of the account for this session
-     */
-    private Session(String accessToken, String refreshToken, String accessTokenExpiresAt, String refreshTokenExpiresAt, String accountId) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        this.accessTokenExpiresAt = Instant.parse(accessTokenExpiresAt);
-        this.refreshTokenExpiresAt = Instant.parse(refreshTokenExpiresAt);
-        this.accountId = accountId;
-    }
+    private Instant refreshTokenExpiresAt;
+    @SerializedName("client_id")
+    private String clientId;
+    @SerializedName("in_app_id")
+    private String inAppId;
+    @SerializedName("device_id")
+    private String deviceId;
 
     /**
      * @return the access token.
@@ -72,4 +61,24 @@ public final class Session {
         return refreshTokenExpiresAt;
     }
 
+    /**
+     * @return the client ID.
+     */
+    public String clientId() {
+        return clientId;
+    }
+
+    /**
+     * @return the in-app ID.
+     */
+    public String inAppId() {
+        return inAppId;
+    }
+
+    /**
+     * @return the device ID.
+     */
+    public String deviceId() {
+        return deviceId;
+    }
 }

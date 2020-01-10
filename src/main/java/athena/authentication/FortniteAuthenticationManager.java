@@ -77,7 +77,8 @@ public final class FortniteAuthenticationManager {
     public Session authenticate() throws FortniteAuthenticationException {
         try {
             var token = retrieveXSRFToken();
-            postLoginForm(token, false);
+            // if there is a conflict, retry.
+            if (postLoginForm(token, false) == 409) return authenticate();
 
             if (use2fa) {
                 // retrieve a new token since we are using 2FA.
@@ -118,20 +119,24 @@ public final class FortniteAuthenticationManager {
      * Posts the login form to the login endpoint.
      *
      * @param token the token
+     * @return the HTTP code of the response.
      * @throws IOException if an error occurred
      */
-    private void postLoginForm(String token, boolean use2faForm) throws IOException {
+    private int postLoginForm(String token, boolean use2faForm) throws IOException {
         final var body = createLoginForm(use2faForm);
         final var url = "https://www.epicgames.com/id/api/login" + (use2faForm ? "/mfa" : "");
 
         // execute the request.
-        client.newCall(new Request.Builder()
+        final var response = client.newCall(new Request.Builder()
                 .url(url)
                 .header("x-xsrf-token", token)
                 .post(body)
                 .build())
-                .execute()
-                .close();
+                .execute();
+
+        final var code = response.code();
+        response.close();
+        return code;
     }
 
     /**
@@ -241,6 +246,36 @@ public final class FortniteAuthenticationManager {
         final var response = client.newCall(new Request.Builder()
                 .url(url)
                 .header("x-xsrf-token", token)
+                .header("Authorization", "basic " + epicGamesLauncherToken)
+                .post(body)
+                .build())
+                .execute();
+
+        final var result = response.body().string();
+        response.close();
+
+        if (response.isSuccessful()) return gson.fromJson(result, Session.class);
+        throw EpicGamesErrorException.create(url, gson.fromJson(result, JsonObject.class));
+    }
+
+    /**
+     * Retrieve the refresh session.
+     *
+     * @param refreshToken the refresh token.
+     * @return a new session
+     * @throws IOException             if an error occurred
+     * @throws EpicGamesErrorException if the API response returned an error.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public Session retrieveRefreshSession(String refreshToken) throws IOException, EpicGamesErrorException {
+        final var url = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
+        final var body = new FormBody.Builder()
+                .add("grant_type", "refresh_token")
+                .add("refresh_token", refreshToken)
+                .build();
+
+        final var response = client.newCall(new Request.Builder()
+                .url(url)
                 .header("Authorization", "basic " + epicGamesLauncherToken)
                 .post(body)
                 .build())

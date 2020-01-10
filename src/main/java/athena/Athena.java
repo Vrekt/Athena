@@ -15,6 +15,7 @@ import athena.interceptor.InterceptorAction;
 import athena.shop.Shop;
 import athena.stats.StatisticsV2;
 import athena.stats.service.StatsproxyPublicService;
+import athena.types.Platform;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 
@@ -145,6 +146,22 @@ public interface Athena {
          */
         private boolean rememberDevice, killOtherSessions, acceptEula, handleShutdown, refreshAutomatically;
 
+        /**
+         * {@code enableXmpp} if true XMPP will be enabled and used.
+         * {@code loadRoster} if true the XMPP roster will be loaded, not recommended for large friend accounts.
+         * {@code reconnectOnError} if true the XMPP connection will be re-established in the event its closed.
+         * {@code debugXmpp} if true xmpp traffic will be logged.
+         */
+        private boolean enableXmpp, loadRoster, reconnectOnError, debugXmpp;
+
+        /**
+         * Platform and app types.
+         * Platform.WIN
+         * "Fortnite"
+         */
+        private Platform platform;
+        private String appType;
+
         public Builder(String email, String password, String code) {
             this.email = email;
             this.password = password;
@@ -204,6 +221,36 @@ public interface Athena {
             return this;
         }
 
+        public Builder enableXmpp() {
+            enableXmpp = true;
+            return this;
+        }
+
+        public Builder loadRoster() {
+            loadRoster = true;
+            return this;
+        }
+
+        public Builder reconnectOnError() {
+            reconnectOnError = true;
+            return this;
+        }
+
+        public Builder enableDebugXmpp() {
+            debugXmpp = true;
+            return this;
+        }
+
+        public Builder platform(Platform platform) {
+            this.platform = platform;
+            return this;
+        }
+
+        public Builder app(String app) {
+            this.appType = app;
+            return this;
+        }
+
         String epicGamesLauncherToken() {
             return epicGamesLauncherToken;
         }
@@ -240,6 +287,30 @@ public interface Athena {
             return refreshAutomatically;
         }
 
+        boolean shouldEnableXmpp() {
+            return enableXmpp;
+        }
+
+        boolean shouldLoadRoster() {
+            return loadRoster;
+        }
+
+        public boolean shouldReconnectOnError() {
+            return reconnectOnError;
+        }
+
+        public boolean debugXmpp() {
+            return debugXmpp;
+        }
+
+        public Platform platform() {
+            return platform;
+        }
+
+        public String appType() {
+            return appType;
+        }
+
         /**
          * Builds this instance into a new {@link Athena}
          *
@@ -265,5 +336,7 @@ public interface Athena {
             return instance;
         }
     }
+
+
 
 }
