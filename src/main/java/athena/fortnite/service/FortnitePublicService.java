@@ -2,7 +2,7 @@ package athena.fortnite.service;
 
 import athena.fortnite.creative.CreativeHistoryResponse;
 import athena.fortnite.receipt.Receipt;
-import athena.shop.StorefrontCatalog;
+import athena.fortnite.shop.StorefrontCatalog;
 import com.google.gson.JsonElement;
 import retrofit2.Call;
 import retrofit2.http.GET;

@@ -8,11 +8,12 @@ import athena.events.Events;
 import athena.events.service.EventsPublicService;
 import athena.exception.FortniteAuthenticationException;
 import athena.exception.UnsupportedBuildException;
+import athena.fortnite.Fortnite;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
-import athena.shop.Shop;
+import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
 import athena.stats.service.StatsproxyPublicService;
 import athena.types.Platform;
@@ -97,9 +98,14 @@ public interface Athena {
     FortnitePublicService fortnitePublicService();
 
     /**
-     * @return the shop class that handles the storefront catalog.
+     * @return the fortnite class that handles fortnite related services.
      */
-    Shop shop();
+    Fortnite fortnite();
+
+    /**
+     * @return the {@link PresencePublicService} instance.
+     */
+    PresencePublicService presencePublicService();
 
     /**
      * @return the HTTP client used within Athena.
@@ -321,6 +327,7 @@ public interface Athena {
         public Athena build() throws UnsupportedBuildException, FortniteAuthenticationException {
             if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");
             if (password == null || password.isEmpty()) throw new UnsupportedBuildException("Athena needs a password to login.");
+            if (enableXmpp && (platform == null || appType == null)) throw new UnsupportedBuildException("Platform and app must be set for XMPP.");
             return new AthenaImpl(this);
         }
 
@@ -336,7 +343,6 @@ public interface Athena {
             return instance;
         }
     }
-
 
 
 }

@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation used for friend events.
  * Put the annotation above a method and then register it with
- * {@code athena.friend().registerEventClass}
+ * {@code athena.friend().registerEventListener}
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

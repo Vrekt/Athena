@@ -12,6 +12,7 @@ import athena.events.Events;
 import athena.events.service.EventsPublicService;
 import athena.exception.EpicGamesErrorException;
 import athena.exception.FortniteAuthenticationException;
+import athena.fortnite.Fortnite;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.resource.Friend;
@@ -21,7 +22,8 @@ import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
 import athena.friend.xmpp.notification.type.FNotificationType;
 import athena.interceptor.InterceptorAction;
-import athena.shop.Shop;
+import athena.presence.resource.LastOnlineResponse;
+import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
 import athena.stats.resource.UnfilteredStatistic;
 import athena.stats.service.StatsproxyPublicService;
@@ -50,6 +52,7 @@ import java.net.CookiePolicy;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -108,9 +111,9 @@ final class AthenaImpl implements Athena, Interceptor {
     private final Events events;
 
     /**
-     * Manages the shop.
+     * Manages fortnite services
      */
-    private final Shop shop;
+    private final Fortnite fortnite;
 
     /**
      * Retrofit services
@@ -121,6 +124,7 @@ final class AthenaImpl implements Athena, Interceptor {
     private final EulatrackingPublicService eulatrackingPublicService;
     private final EventsPublicService eventsPublicService;
     private final FortnitePublicService fortnitePublicService;
+    private final PresencePublicService presencePublicService;
 
     /**
      * GSON instance.
@@ -185,6 +189,7 @@ final class AthenaImpl implements Athena, Interceptor {
         eulatrackingPublicService = initializeRetrofitService(EulatrackingPublicService.BASE_URL, factory, EulatrackingPublicService.class);
         eventsPublicService = initializeRetrofitService(EventsPublicService.BASE_URL, factory, EventsPublicService.class);
         fortnitePublicService = initializeRetrofitService(FortnitePublicService.BASE_URL, factory, FortnitePublicService.class);
+        presencePublicService = initializeRetrofitService(PresencePublicService.BASE_URL, factory, PresencePublicService.class);
 
         // initialize the context for this instance.
         context = new AthenaContext();
@@ -193,6 +198,7 @@ final class AthenaImpl implements Athena, Interceptor {
         context.friendsPublicService(friendsPublicService);
         context.statsproxyPublicService(statsproxyPublicService);
         context.eventsPublicService(eventsPublicService);
+        context.fortnitePublicService(fortnitePublicService);
         context.connectionManager(connectionManager);
         context.gson(gson);
 
@@ -203,7 +209,7 @@ final class AthenaImpl implements Athena, Interceptor {
 
         statisticsV2 = new StatisticsV2(context);
         events = new Events(context);
-        shop = new Shop(fortnitePublicService);
+        fortnite = new Fortnite(context);
 
         // find the account that belongs to this instance.
         account = accounts.findByAccountId(session.accountId());
@@ -245,6 +251,17 @@ final class AthenaImpl implements Athena, Interceptor {
                     final var list = new ArrayList<Profile>();
                     array.forEach(element -> list.add(gson.fromJson(element, Profile.class)));
                     return list;
+                })
+                .registerTypeAdapter(LastOnlineResponse.class, (BasicJsonDeserializer<LastOnlineResponse>) (json) -> {
+                    final var object = json.getAsJsonObject();
+                    final var map = new HashMap<String, Instant>();
+
+                    object.keySet().forEach(key -> {
+                        final var array = object.getAsJsonArray(key);
+                        final var time = Instant.parse(array.get(0).getAsJsonObject().get("last_online").getAsString());
+                        map.put(key, time);
+                    });
+                    return new LastOnlineResponse(map, context);
                 });
 
         // fixes an issue with superclasses/post processing.
@@ -285,8 +302,6 @@ final class AthenaImpl implements Athena, Interceptor {
             session.set(fortniteAuthenticationManager.retrieveRefreshSession(old.refreshToken()));
             // kill the old token.
             fortniteAuthenticationManager.killToken(old.accessToken());
-            // set account ID again just in-case it changed?
-            context.accountId(session().accountId());
             if (connectionManager != null) {
                 cleanXmppResources();
 
@@ -310,8 +325,6 @@ final class AthenaImpl implements Athena, Interceptor {
             session.set(fortniteAuthenticationManager.authenticate());
             // kill the old token.
             fortniteAuthenticationManager.killToken(old.accessToken());
-            // set account ID again just in-case it changed?
-            context.accountId(session().accountId());
             if (connectionManager != null) {
                 cleanXmppResources();
                 connectionManager.disconnect();
@@ -404,8 +417,13 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
-    public Shop shop() {
-        return shop;
+    public Fortnite fortnite() {
+        return fortnite;
+    }
+
+    @Override
+    public PresencePublicService presencePublicService() {
+        return presencePublicService;
     }
 
     @Override

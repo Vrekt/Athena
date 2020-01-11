@@ -2,6 +2,7 @@ package athena.context;
 
 import athena.account.service.AccountPublicService;
 import athena.events.service.EventsPublicService;
+import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
 import athena.stats.service.StatsproxyPublicService;
@@ -25,6 +26,8 @@ public final class AthenaContext {
     private FriendsPublicService friendsPublicService;
     private StatsproxyPublicService statsproxyPublicService;
     private EventsPublicService eventsPublicService;
+    private FortnitePublicService fortnitePublicService;
+
     /**
      * Athena GSON instance.
      */
@@ -72,6 +75,13 @@ public final class AthenaContext {
      */
     public void eventsPublicService(EventsPublicService eventsPublicService) {
         this.eventsPublicService = eventsPublicService;
+    }
+
+    /**
+     * @param fortnitePublicService the {@link FortnitePublicService}
+     */
+    public void fortnitePublicService(FortnitePublicService fortnitePublicService) {
+        this.fortnitePublicService = fortnitePublicService;
     }
 
     /**
@@ -125,6 +135,13 @@ public final class AthenaContext {
      */
     public EventsPublicService events() {
         return eventsPublicService;
+    }
+
+    /**
+     * @return the fortnite public service.
+     */
+    public FortnitePublicService fortnite() {
+        return fortnitePublicService;
     }
 
     /**

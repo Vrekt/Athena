@@ -65,7 +65,6 @@ public final class XMPPProvider implements StanzaListener {
         final var of = FNotificationType.typeOf(type);
         if (of == FNotificationType.UNKNOWN) return;
 
-
         if (of == FNotificationType.FRIEND || of == FNotificationType.FRIEND_REMOVAL) {
             final var notification = context.gson().fromJson(message.getBody(), FriendType.class);
             handleFriendType(notification);

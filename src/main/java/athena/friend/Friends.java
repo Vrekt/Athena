@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Provides easy access to the {@link FriendsPublicService}
+ * Provides easy access to the {@link FriendsPublicService} and XMPP.
  */
 public final class Friends implements Closeable {
 
@@ -282,8 +282,8 @@ public final class Friends implements Closeable {
      *
      * @param listener the listener.
      */
-    void registerEventListener(FriendEventListener listener) {
-        provider.registerEventListener(listener);
+    public void registerEventListener(FriendEventListener listener) {
+        if (provider != null) provider.registerEventListener(listener);
     }
 
     /**
@@ -291,8 +291,8 @@ public final class Friends implements Closeable {
      *
      * @param listener the listener
      */
-    void unregisterEventListener(FriendEventListener listener) {
-        provider.unregisterEventListener(listener);
+    public void unregisterEventListener(FriendEventListener listener) {
+        if (provider != null) provider.unregisterEventListener(listener);
     }
 
     /**

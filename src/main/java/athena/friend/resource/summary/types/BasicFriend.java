@@ -2,6 +2,7 @@ package athena.friend.resource.summary.types;
 
 /**
  * Represents outgoing/incoming friend object.
+ * TODO: Add method to accept?
  */
 public final class BasicFriend {
 
@@ -15,7 +16,8 @@ public final class BasicFriend {
      */
     private boolean favorite;
 
-    private BasicFriend() {}
+    private BasicFriend() {
+    }
 
     /**
      * @return the account ID.
@@ -37,4 +39,5 @@ public final class BasicFriend {
     public boolean favorite() {
         return favorite;
     }
+
 }

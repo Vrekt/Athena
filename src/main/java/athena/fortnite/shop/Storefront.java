@@ -1,6 +1,6 @@
-package athena.shop;
+package athena.fortnite.shop;
 
-import athena.shop.catalog.CatalogEntry;
+import athena.fortnite.shop.catalog.CatalogEntry;
 
 import java.util.List;
 import java.util.Optional;
