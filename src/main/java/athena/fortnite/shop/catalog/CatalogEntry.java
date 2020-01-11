@@ -1,15 +1,15 @@
-package athena.shop.catalog;
+package athena.fortnite.shop.catalog;
 
-import athena.shop.gift.CatalogGiftInfo;
-import athena.shop.grant.CatalogEntryItemGrant;
-import athena.shop.price.CatalogPrice;
-import athena.shop.requirement.CatalogEntryRequirement;
+import athena.fortnite.shop.gift.CatalogGiftInfo;
+import athena.fortnite.shop.grant.CatalogEntryItemGrant;
+import athena.fortnite.shop.price.CatalogPrice;
+import athena.fortnite.shop.requirement.CatalogEntryRequirement;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * An entry within the {@link athena.shop.Storefront}
+ * An entry within the {@link athena.fortnite.shop.Storefront}
  */
 public final class CatalogEntry {
 

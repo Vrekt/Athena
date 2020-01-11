@@ -1,4 +1,4 @@
-package athena.shop.price;
+package athena.fortnite.shop.price;
 
 import java.time.Instant;
 

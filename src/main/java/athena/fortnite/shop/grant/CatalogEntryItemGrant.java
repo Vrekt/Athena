@@ -1,4 +1,4 @@
-package athena.shop.grant;
+package athena.fortnite.shop.grant;
 
 /**
  * Represents an item grant for an entry.

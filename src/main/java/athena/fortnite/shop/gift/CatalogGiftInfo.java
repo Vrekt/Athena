@@ -1,4 +1,4 @@
-package athena.shop.gift;
+package athena.fortnite.shop.gift;
 
 import com.google.gson.annotations.SerializedName;
 

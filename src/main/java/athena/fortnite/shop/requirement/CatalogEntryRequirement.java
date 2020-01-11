@@ -1,4 +1,4 @@
-package athena.shop.requirement;
+package athena.fortnite.shop.requirement;
 
 /**
  * Represents requirements for the catalog entry.
