@@ -23,6 +23,7 @@ import athena.friend.service.FriendsPublicService;
 import athena.friend.xmpp.notification.type.FNotificationType;
 import athena.interceptor.InterceptorAction;
 import athena.presence.Presences;
+import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
 import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
@@ -232,20 +233,18 @@ final class AthenaImpl implements Athena, Interceptor {
     private Gson initializeGson() {
         final var fireGson = new GsonFireBuilder();
 
-        // enable post-deserialize hook for statistics/external auth.
         fireGson.enableHooks(UnfilteredStatistic.class);
         fireGson.enableHooks(ExternalAuth.class);
         fireGson.enableHooks(Account.class);
         fireGson.enableHooks(Profile.class);
         fireGson.enableHooks(Friend.class);
-        // default enum values for friends.
         fireGson.enumDefaultValue(FriendStatus.class, FriendStatus.UNKNOWN);
         fireGson.enumDefaultValue(FriendDirection.class, FriendDirection.UNKNOWN);
         fireGson.enumDefaultValue(FNotificationType.class, FNotificationType.UNKNOWN);
-        // post processors for account and friend.
         fireGson.registerPostProcessor(Account.class, (BasicPostProcessor<Account>) (result, src, gson) -> result.postProcess(context));
         fireGson.registerPostProcessor(Friend.class, (BasicPostProcessor<Friend>) (result, src, gson) -> result.postProcess(context));
         fireGson.registerPostProcessor(Profile.class, (BasicPostProcessor<Profile>) (result, src, gson) -> result.postProcess(context));
+        fireGson.registerPostProcessor(FortnitePresence.class, (BasicPostProcessor<FortnitePresence>) (result, src, gson) -> result.postProcess(context));
 
         // register our type adapters.
         final var builder = fireGson.createGsonBuilder();
