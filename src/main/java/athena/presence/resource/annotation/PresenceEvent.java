@@ -1,4 +1,14 @@
 package athena.presence.resource.annotation;
 
-public class PresenceEvent {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Annotation for receiving presences.
+ */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface PresenceEvent {
 }
