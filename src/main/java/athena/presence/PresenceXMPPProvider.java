@@ -57,9 +57,9 @@ public final class PresenceXMPPProvider implements StanzaListener {
     @Override
     public void processStanza(Stanza packet) {
         final var presence = (Presence) packet;
+        if (presence.getStatus() == null) return;
         final var accountId = presence.getFrom().getLocalpartOrNull().asUnescapedString();
         final var fortnitePresence = context.gson().fromJson(presence.getStatus(), FortnitePresence.class);
-        fortnitePresence.setFrom(presence.getFrom());
 
         factory.invoke(fortnitePresence);
         listeners.forEach(listener -> listener.presenceReceived(fortnitePresence));
