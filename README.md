@@ -46,7 +46,9 @@ When building new instances of `Athena` there are many configuration options ava
 - Retrieve last-online times for friends.
 - Settings
 - Broadcast the account is playing Fortnite
-- TODO....
+- Listen for incoming presences
+- Filter presences
+- Annotation event system for receiving presences.
 
 ### Stats V2
 - Look up stats for an account
