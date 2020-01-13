@@ -20,12 +20,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Provides XMPP access to {@link athena.friend.Friends}
  */
-public final class XMPPProvider implements StanzaListener {
+public final class FriendsXMPPProvider implements StanzaListener {
 
     /**
      * Provides event handling and registering/unregistering.
      */
-    private final EventFactory factory = EventFactory.create(FriendEvents.class, 1);
+    private final EventFactory factory;
     /**
      * A list of all listeners registered.
      */
@@ -39,8 +39,9 @@ public final class XMPPProvider implements StanzaListener {
      */
     private final AthenaContext context;
 
-    XMPPProvider(AthenaContext context) {
+    FriendsXMPPProvider(AthenaContext context) {
         this.context = context;
+        this.factory = EventFactory.create(FriendEvents.class, 1);
         context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.NORMAL);
     }
 
@@ -49,10 +50,11 @@ public final class XMPPProvider implements StanzaListener {
      *
      * @param other the other
      */
-    XMPPProvider(AthenaContext context, XMPPProvider other) {
+    FriendsXMPPProvider(AthenaContext context, FriendsXMPPProvider other) {
         this.context = context;
         this.listeners.addAll(other.listeners);
         this.accountListeners.putAll(other.accountListeners);
+        this.factory = EventFactory.create(other.factory);
 
         context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.NORMAL);
     }

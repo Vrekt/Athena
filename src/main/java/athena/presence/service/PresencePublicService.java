@@ -50,7 +50,7 @@ public interface PresencePublicService {
      * @param accountId      the account ID.
      */
     @POST("presence/api/v1/_/{localAccountId}/subscriptions/{accountId}")
-    Call<Void> subscribeTo(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
+    Call<Void> subscribe(@Path("localAccountId") String localAccountId, @Path("accountId") String accountId);
 
     /**
      * Unsubscribe from an account.

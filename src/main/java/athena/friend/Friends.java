@@ -34,7 +34,7 @@ public final class Friends implements Closeable {
     /**
      * The XMPP provider.
      */
-    private XMPPProvider provider;
+    private FriendsXMPPProvider provider;
 
     /**
      * A list of all friends.
@@ -46,7 +46,7 @@ public final class Friends implements Closeable {
     public Friends(AthenaContext context, boolean enableXMPP) {
         this.context = context;
         this.service = context.friendsService();
-        if (enableXMPP) provider = new XMPPProvider(context);
+        if (enableXMPP) provider = new FriendsXMPPProvider(context);
     }
 
     /**
@@ -320,7 +320,7 @@ public final class Friends implements Closeable {
      * @param listener  the listener.
      */
     public void registerEventListenerForAccount(String accountId, FriendEventListener listener) {
-        provider.registerEventListenerForAccount(accountId, listener);
+        if (provider != null) provider.registerEventListenerForAccount(accountId, listener);
     }
 
     /**
@@ -329,16 +329,18 @@ public final class Friends implements Closeable {
      * @param accountId the account ID.
      */
     public void unregisterEventListenerForAccount(String accountId) {
-        provider.unregisterEventListenerForAccount(accountId);
+        if (provider != null) provider.unregisterEventListenerForAccount(accountId);
     }
 
     @Override
     public void refresh(AthenaContext context) {
         this.context = context;
-        this.service = context.friendsService();
-
-        provider.removeStanzaListener();
-        provider = new XMPPProvider(context, provider);
+        if (provider != null) {
+            final var old = provider;
+            provider.removeStanzaListener();
+            provider = new FriendsXMPPProvider(context, old);
+            old.close();
+        }
     }
 
     @Override
@@ -348,6 +350,6 @@ public final class Friends implements Closeable {
 
     @Override
     public void clean() {
-        provider.clean();
+        if (provider != null) provider.clean();
     }
 }

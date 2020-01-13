@@ -13,6 +13,7 @@ import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
 import athena.interceptor.InterceptorAction;
+import athena.presence.Presences;
 import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
 import athena.stats.service.StatsproxyPublicService;
@@ -27,6 +28,11 @@ public interface Athena {
      */
     String EPIC_GAMES_LAUNCHER_TOKEN = "MzQ0NmNkNzI2OTRjNGE0NDg1ZDgxYjc3YWRiYjIxNDE6OTIwOWQ0YTVlMjVhNDU3ZmI5YjA3NDg5ZDMxM2I0MWE=";
     String FORTNITE_TOKEN = "ZWM2ODRiOGM2ODdmNDc5ZmFkZWEzY2IyYWQ4M2Y1YzY6ZTFmMzFjMjExZjI4NDEzMTg2MjYyZDM3YTEzZmM4NGQ=";
+
+    /**
+     * Global GSON instance.
+     */
+    Gson GSON = new Gson();
 
     /**
      * Adds a new {@link InterceptorAction} that will be called upon when a new request is being executed.
@@ -106,6 +112,11 @@ public interface Athena {
      * @return the {@link PresencePublicService} instance.
      */
     PresencePublicService presencePublicService();
+
+    /**
+     * @return the presences class that handles presence.
+     */
+    Presences presence();
 
     /**
      * @return the HTTP client used within Athena.

@@ -7,6 +7,9 @@ import athena.types.Platform;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
+import io.gsonfire.annotations.PostDeserialize;
+import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.impl.JidCreate;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -30,7 +33,17 @@ public final class Account extends PostProcessable {
      */
     private Map<String, ExternalAuth> externalAuths;
 
+    /**
+     * Bare JID of this account.
+     */
+    private BareJid jid;
+
     private Account() {
+    }
+
+    @PostDeserialize
+    private void post() {
+        jid = JidCreate.bareFromOrThrowUnchecked(accountId + "@prod.ol.epicgames.com");
     }
 
     /**
@@ -52,6 +65,13 @@ public final class Account extends PostProcessable {
      */
     public Map<String, ExternalAuth> externalAuths() {
         return externalAuths;
+    }
+
+    /**
+     * @return the JID of this account.
+     */
+    public BareJid jid() {
+        return jid;
     }
 
     /**

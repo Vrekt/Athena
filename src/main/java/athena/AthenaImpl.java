@@ -22,6 +22,7 @@ import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
 import athena.friend.xmpp.notification.type.FNotificationType;
 import athena.interceptor.InterceptorAction;
+import athena.presence.Presences;
 import athena.presence.resource.LastOnlineResponse;
 import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
@@ -116,6 +117,11 @@ final class AthenaImpl implements Athena, Interceptor {
     private final Fortnite fortnite;
 
     /**
+     * Manages presence.
+     */
+    private final Presences presences;
+
+    /**
      * Retrofit services
      */
     private final AccountPublicService accountPublicService;
@@ -199,6 +205,7 @@ final class AthenaImpl implements Athena, Interceptor {
         context.statsproxyPublicService(statsproxyPublicService);
         context.eventsPublicService(eventsPublicService);
         context.fortnitePublicService(fortnitePublicService);
+        context.presencePublicService(presencePublicService);
         context.connectionManager(connectionManager);
         context.gson(gson);
 
@@ -210,6 +217,7 @@ final class AthenaImpl implements Athena, Interceptor {
         statisticsV2 = new StatisticsV2(context);
         events = new Events(context);
         fortnite = new Fortnite(context);
+        presences = new Presences(context, builder.shouldEnableXmpp());
 
         // find the account that belongs to this instance.
         account = accounts.findByAccountId(session.accountId());
@@ -227,6 +235,9 @@ final class AthenaImpl implements Athena, Interceptor {
         // enable post-deserialize hook for statistics/external auth.
         fireGson.enableHooks(UnfilteredStatistic.class);
         fireGson.enableHooks(ExternalAuth.class);
+        fireGson.enableHooks(Account.class);
+        fireGson.enableHooks(Profile.class);
+        fireGson.enableHooks(Friend.class);
         // default enum values for friends.
         fireGson.enumDefaultValue(FriendStatus.class, FriendStatus.UNKNOWN);
         fireGson.enumDefaultValue(FriendDirection.class, FriendDirection.UNKNOWN);
@@ -342,6 +353,7 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private void cleanXmppResources() {
         friends.clean();
+        presences.clean();
     }
 
     /**
@@ -349,6 +361,7 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private void refreshXmppResources() {
         friends.refresh(context);
+        presences.refresh(context);
     }
 
     @Override
@@ -427,6 +440,11 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
+    public Presences presence() {
+        return presences;
+    }
+
+    @Override
     public OkHttpClient httpClient() {
         return client;
     }
@@ -449,6 +467,9 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public void close() {
         try {
+            friends.dispose();
+            presences.dispose();
+
             if (connectionManager != null) connectionManager.close();
             fortniteAuthenticationManager.killToken(session().accessToken());
             client.dispatcher().executorService().shutdownNow();

@@ -5,6 +5,7 @@ import athena.events.service.EventsPublicService;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
+import athena.presence.service.PresencePublicService;
 import athena.stats.service.StatsproxyPublicService;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
@@ -27,6 +28,7 @@ public final class AthenaContext {
     private StatsproxyPublicService statsproxyPublicService;
     private EventsPublicService eventsPublicService;
     private FortnitePublicService fortnitePublicService;
+    private PresencePublicService presencePublicService;
 
     /**
      * Athena GSON instance.
@@ -82,6 +84,13 @@ public final class AthenaContext {
      */
     public void fortnitePublicService(FortnitePublicService fortnitePublicService) {
         this.fortnitePublicService = fortnitePublicService;
+    }
+
+    /**
+     * @param presencePublicService the {@link PresencePublicService}
+     */
+    public void presencePublicService(PresencePublicService presencePublicService) {
+        this.presencePublicService = presencePublicService;
     }
 
     /**
@@ -142,6 +151,13 @@ public final class AthenaContext {
      */
     public FortnitePublicService fortnite() {
         return fortnitePublicService;
+    }
+
+    /**
+     * @return the presence public service.
+     */
+    public PresencePublicService presence() {
+        return presencePublicService;
     }
 
     /**

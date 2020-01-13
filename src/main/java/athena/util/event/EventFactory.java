@@ -16,6 +16,16 @@ public interface EventFactory {
     }
 
     /**
+     * Create a new event factory from another.
+     *
+     * @param other the other
+     * @return a new {@link EventFactory}
+     */
+    static EventFactory create(EventFactory other) {
+        return new EventFactoryImpl((EventFactoryImpl) other);
+    }
+
+    /**
      * Register an event listener.
      *
      * @param eventListener the class/type to register.

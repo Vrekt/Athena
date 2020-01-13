@@ -24,6 +24,12 @@ public final class EventFactoryImpl implements EventFactory {
         this.parameterLimit = parameterLimit;
     }
 
+    EventFactoryImpl(EventFactoryImpl other) {
+        subscribers.putAll(other.subscribers);
+        primaryAnnotation = other.primaryAnnotation;
+        parameterLimit = other.parameterLimit;
+    }
+
     @Override
     public void registerEventListener(Object eventListener) {
         final var clazz = eventListener.getClass();
@@ -39,7 +45,7 @@ public final class EventFactoryImpl implements EventFactory {
                 final var index = access.getIndex(method.getName());
                 final var parameterTypes = access.getParameterTypes()[index];
                 // make sure only one param.
-                if (parameterTypes.length == 1) {
+                if (parameterTypes.length == parameterLimit) {
                     method.setAccessible(true);
                     hasValidMethod = true;
 

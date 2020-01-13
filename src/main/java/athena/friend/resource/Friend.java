@@ -8,7 +8,10 @@ import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
 import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
+import io.gsonfire.annotations.PostDeserialize;
 import okhttp3.RequestBody;
+import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.impl.JidCreate;
 
 import java.time.Instant;
 
@@ -38,8 +41,23 @@ public final class Friend extends PostProcessable {
      */
     private boolean favorite;
 
+    /**
+     * The account
+     */
+    private Account account;
+
+    /**
+     * Bare JID of this friend.
+     */
+    private BareJid jid;
+
     private Friend() {
 
+    }
+
+    @PostDeserialize
+    private void post() {
+        jid = JidCreate.bareFromOrThrowUnchecked(accountId + "@prod.ol.epicgames.com");
     }
 
     /**
@@ -84,10 +102,14 @@ public final class Friend extends PostProcessable {
      * @return the account of this friend.
      */
     public Account account() {
-        final var call = accountService().findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
-        return result[0];
+        if (account == null) {
+            final var call = accountService().findOneByAccountId(accountId);
+            final var result = Requests.executeCall(call);
+            if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
+            account = result[0];
+            return account;
+        }
+        return account;
     }
 
     /**
@@ -162,4 +184,10 @@ public final class Friend extends PostProcessable {
         return Requests.executeCall(call);
     }
 
+    /**
+     * @return the jid of this friend.
+     */
+    public BareJid jid() {
+        return jid;
+    }
 }

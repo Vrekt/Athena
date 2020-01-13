@@ -7,7 +7,10 @@ import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.Expose;
+import io.gsonfire.annotations.PostDeserialize;
 import okhttp3.RequestBody;
+import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.impl.JidCreate;
 
 import java.time.Instant;
 import java.util.Map;
@@ -51,7 +54,17 @@ public final class Profile extends PostProcessable {
      */
     private Instant created;
 
+    /**
+     * Bare JID of this profile.
+     */
+    private BareJid jid;
+
     private Profile() {
+    }
+
+    @PostDeserialize
+    private void post() {
+        jid = JidCreate.bareFromOrThrowUnchecked(accountId + "@prod.ol.epicgames.com");
     }
 
     /**
