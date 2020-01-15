@@ -59,7 +59,7 @@ public final class EpicGamesErrorException extends RuntimeException {
      * @return a new {@link EpicGamesErrorException}
      */
     public static EpicGamesErrorException createFromOther(Throwable error) {
-        return new EpicGamesErrorException(error.getCause().getMessage(), error);
+        return new EpicGamesErrorException(error.getMessage(), error);
     }
 
     /**

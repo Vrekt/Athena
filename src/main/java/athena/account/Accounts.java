@@ -1,6 +1,7 @@
 package athena.account;
 
 import athena.account.resource.Account;
+import athena.account.resource.EpicGamesProfile;
 import athena.account.service.AccountPublicService;
 import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
@@ -20,9 +21,11 @@ public final class Accounts {
      * The service that handles the requests.
      */
     private final AccountPublicService service;
+    private final String accountId;
 
     public Accounts(AthenaContext context) {
         this.service = context.account();
+        this.accountId = context.accountId();
     }
 
     /**
@@ -130,6 +133,17 @@ public final class Accounts {
      */
     public void findManyByAccountId(Collection<String> accounts, Result<List<Account>> callback) {
         findManyByAccountId(callback, accounts.toArray(String[]::new));
+    }
+
+    /**
+     * Retrieve the profile of current authenticated account
+     *
+     * @return the {@link EpicGamesProfile}
+     * @throws EpicGamesErrorException if the API returned an error response.
+     */
+    public EpicGamesProfile profile() throws EpicGamesErrorException {
+        final var call = service.profile(accountId);
+        return Requests.executeCall(call);
     }
 
 }

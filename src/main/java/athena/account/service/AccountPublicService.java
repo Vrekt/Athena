@@ -2,6 +2,7 @@ package athena.account.service;
 
 import athena.Athena;
 import athena.account.resource.Account;
+import athena.account.resource.EpicGamesProfile;
 import athena.authentication.session.Session;
 import okhttp3.FormBody;
 import retrofit2.Call;
@@ -11,13 +12,14 @@ import java.util.List;
 
 /**
  * Provides access to the account public service.
+ * Credit: https://gist.github.com/Amrsatrio/20d2174583354ae4f0a24cf63764049f for some endpoints.
  */
 public interface AccountPublicService {
 
     /**
      * The base url for the AccountPublicService
      */
-    String BASE_URL = "https://account-public-service-prod03.ol.epicgames.com";
+    String BASE_URL = "https://account-public-service-prod03.ol.epicgames.com/";
 
     /**
      * Finds an account by display name.
@@ -84,5 +86,14 @@ public interface AccountPublicService {
     @Headers("Authorization: basic " + Athena.EPIC_GAMES_LAUNCHER_TOKEN)
     @POST("account/api/oauth/token")
     Call<Session> retrieveSession(@Header("x-xsrf-token") String xsrfToken, @Body FormBody body);
+
+    /**
+     * Get the profile of the current authenticated account.
+     *
+     * @param accountId the current authenticated account ID.
+     * @return a {@link Call} returned by retrofit containing the {@link EpicGamesProfile} if the call was successful.
+     */
+    @GET("account/api/public/account/{accountId}")
+    Call<EpicGamesProfile> profile(@Path("accountId") String accountId);
 
 }

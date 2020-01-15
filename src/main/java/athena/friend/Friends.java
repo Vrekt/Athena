@@ -47,6 +47,8 @@ public final class Friends implements Closeable {
         this.context = context;
         this.service = context.friendsService();
         if (enableXMPP) provider = new FriendsXMPPProvider(context);
+
+        context.friends(this);
     }
 
     /**

@@ -6,6 +6,7 @@ import athena.account.resource.external.ExternalAuth;
 import athena.account.service.AccountPublicService;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
+import athena.channels.service.ChannelsPublicService;
 import athena.context.AthenaContext;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
@@ -56,6 +57,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -132,7 +134,7 @@ final class AthenaImpl implements Athena, Interceptor {
     private final EventsPublicService eventsPublicService;
     private final FortnitePublicService fortnitePublicService;
     private final PresencePublicService presencePublicService;
-
+    private final ChannelsPublicService channelsPublicService;
     /**
      * GSON instance.
      */
@@ -158,7 +160,9 @@ final class AthenaImpl implements Athena, Interceptor {
         final var manager = new CookieManager();
         manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
         // build the client.
-        client = new OkHttpClient.Builder().cookieJar(new JavaNetCookieJar(manager)).addInterceptor(this).build();
+        client = new OkHttpClient.Builder()
+                .cookieJar(new JavaNetCookieJar(manager))
+                .addInterceptor(this).build();
 
         // initialize our gson instance
         gson = initializeGson();
@@ -197,6 +201,7 @@ final class AthenaImpl implements Athena, Interceptor {
         eventsPublicService = initializeRetrofitService(EventsPublicService.BASE_URL, factory, EventsPublicService.class);
         fortnitePublicService = initializeRetrofitService(FortnitePublicService.BASE_URL, factory, FortnitePublicService.class);
         presencePublicService = initializeRetrofitService(PresencePublicService.BASE_URL, factory, PresencePublicService.class);
+        channelsPublicService = initializeRetrofitService(ChannelsPublicService.BASE_URL, factory, ChannelsPublicService.class);
 
         // initialize the context for this instance.
         context = new AthenaContext();
@@ -213,8 +218,6 @@ final class AthenaImpl implements Athena, Interceptor {
         // initialize each wrapper class.
         accounts = new Accounts(context);
         friends = new Friends(context, builder.shouldEnableXmpp());
-        context.friends(friends);
-
         statisticsV2 = new StatisticsV2(context);
         events = new Events(context);
         fortnite = new Fortnite(context);
@@ -444,6 +447,11 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
+    public ChannelsPublicService channelsPublicService() {
+        return channelsPublicService;
+    }
+
+    @Override
     public OkHttpClient httpClient() {
         return client;
     }
@@ -466,8 +474,8 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public void close() {
         try {
-            friends.dispose();
-            presences.dispose();
+            if (friends != null) friends.dispose();
+            if (presences != null) presences.dispose();
 
             if (connectionManager != null) connectionManager.close();
             fortniteAuthenticationManager.killToken(session().accessToken());
@@ -494,10 +502,13 @@ final class AthenaImpl implements Athena, Interceptor {
         if (nextRequestChain.headers().names().contains("Authorization") || session.get() == null)
             return chain.proceed(request);
 
-
         // add in the authorization header for the final request.
+        // Credits: armisto for user-agent, X-Epic-Correlation-ID info
+        // TODO: diff random uuid gen for fn requests
         final var finalRequest = nextRequestChain.newBuilder()
                 .addHeader("Authorization", "bearer " + session.get().accessToken())
+                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-11.31-CL-10795579 {0}")
+                .addHeader("X-Epic-Correlation-ID", UUID.randomUUID().toString())
                 .build();
         return chain.proceed(finalRequest);
     }

@@ -6,6 +6,8 @@ import athena.xmpp.listener.XMPPConnectionListener;
 import com.google.common.flogger.FluentLogger;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jivesoftware.smack.*;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
@@ -60,7 +62,6 @@ public final class XMPPConnectionManager implements ConnectionListener {
      */
     private XMPPTCPConnection connection;
     private PingManager pingManager;
-
     /**
      * account ID and access token
      */
@@ -100,25 +101,22 @@ public final class XMPPConnectionManager implements ConnectionListener {
      * @throws EpicGamesErrorException if any of these exceptions occurred, {@link IOException}, {@link SmackException}, {@link XMPPException}, {@link InterruptedException}
      */
     public void connect(String accountId, String accessToken) throws EpicGamesErrorException {
-        // store for later use if needed.
         this.accountId = accountId;
         this.accessToken = accessToken;
-        final var resource = "V2:" + application + ":" + platform.primaryName() + "::" + RandomStringUtils.random(32, 0, 0, true, true, HEX_UUID);
+        final var resource = "V2:" + application + ":" + platform.primaryName() + "::" + RandomStringUtils.random(32, HEX_UUID);
 
         if (!loadRoster) {
             Roster.setRosterLoadedAtLoginDefault(false);
             Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
         }
-
         if (debug) SmackConfiguration.DEBUG = true;
 
         try {
             connection = new XMPPTCPConnection(
                     XMPPTCPConnectionConfiguration.builder()
                             .setXmppDomain(XMPP_DOMAIN)
-                            .setHost(XMPP_HOST)
                             .setPort(XMPP_PORT)
-                            .setUsernameAndPassword(accountId, accessToken)
+                            .setHost(XMPP_HOST)
                             .setConnectTimeout(60000)
                             .setResource(resource)
                             .build());
@@ -128,7 +126,12 @@ public final class XMPPConnectionManager implements ConnectionListener {
 
             connection.addConnectionListener(this);
             connection.setReplyTimeout(60000);
-            connection.connect().login();
+            connection.connect().login(accountId, accessToken);
+
+            connection.addAsyncStanzaListener(stanza -> {
+                final var msg = (Message) stanza;
+                System.err.println(msg.getBody());
+            }, new StanzaTypeFilter(Message.class));
 
         } catch (final IOException | SmackException | XMPPException | InterruptedException exception) {
             throw EpicGamesErrorException.createFromOther(exception);
