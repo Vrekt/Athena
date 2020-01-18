@@ -2,7 +2,7 @@ package athena.stats.resource;
 
 import athena.stats.resource.type.StatisticType;
 import athena.types.Input;
-import io.gsonfire.annotations.PostDeserialize;
+import athena.util.json.post.annotation.PostDeserialize;
 
 import java.util.ArrayList;
 import java.util.HashMap;

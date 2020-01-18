@@ -20,23 +20,23 @@ import java.io.IOException;
  * 4. Retiring the token
  * 5. EULA
  * 6. ... etc
+ * <p>
+ * Built with help from: iXyles, Loukios#6383
+ * https://gist.github.com/iXyles/ec40cb40a2a186425ec6bfb9dcc2ddda
  */
 public final class FortniteAuthenticationManager {
     /**
      * The LOGGER.
      */
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-
     /**
      * The authentication method to use and our GSON instance for this authentication manager.
      */
     private final Gson gson;
-
     /**
      * The HTTP client.
      */
     private final OkHttpClient client;
-
     /**
      * Credentials.
      */
@@ -53,6 +53,7 @@ public final class FortniteAuthenticationManager {
      * @param epicGamesLauncherToken the current epic games launcher token.
      * @param rememberDevice         should be {@code true} if 2FA devices should be remembered.
      * @param client                 the HTTP client.
+     * @param gson                   the {@link athena.Athena} internal GSON instance.
      */
     public FortniteAuthenticationManager(String emailAddress, String password, String code,
                                          String epicGamesLauncherToken, boolean rememberDevice, OkHttpClient client, Gson gson) {
@@ -77,11 +78,11 @@ public final class FortniteAuthenticationManager {
     public Session authenticate() throws FortniteAuthenticationException {
         try {
             var token = retrieveXSRFToken();
-            // if there is a conflict, retry.
-            if (postLoginForm(token, false) == 409) return authenticate();
+            retrieveReputation();
+            postLoginForm(token, false);
 
+            // If using 2FA is enabled we must retrieve all new stuff.
             if (use2fa) {
-                // retrieve a new token since we are using 2FA.
                 token = retrieveXSRFToken();
                 postLoginForm(token, true);
             }
@@ -99,6 +100,8 @@ public final class FortniteAuthenticationManager {
 
     /**
      * The first step in authenticating, the XSRF-TOKEN must be retrieved for future requests.
+     *
+     * @throws IOException if an IO error occurred.
      */
     private String retrieveXSRFToken() throws IOException {
         final var url = "https://www.epicgames.com/id/api/csrf";
@@ -116,13 +119,32 @@ public final class FortniteAuthenticationManager {
     }
 
     /**
+     * Retrieve the verdict if we are allowed to authenticate.
+     * Don't parse the response or do anything as of now.
+     * {"verdict":"allow"}
+     * <p>
+     * Thanks to Loukios#6383
+     *
+     * @throws IOException if an IO error occurred.
+     */
+    private void retrieveReputation() throws IOException {
+        final var url = "https://www.epicgames.com/id/api/reputation";
+        final var response = client.newCall(new Request.Builder()
+                .url(url)
+                .get()
+                .build())
+                .execute();
+
+        response.close();
+    }
+
+    /**
      * Posts the login form to the login endpoint.
      *
      * @param token the token
-     * @return the HTTP code of the response.
-     * @throws IOException if an error occurred
+     * @throws IOException if an IO error occurred.
      */
-    private int postLoginForm(String token, boolean use2faForm) throws IOException {
+    private void postLoginForm(String token, boolean use2faForm) throws IOException {
         final var body = createLoginForm(use2faForm);
         final var url = "https://www.epicgames.com/id/api/login" + (use2faForm ? "/mfa" : "");
 
@@ -133,15 +155,11 @@ public final class FortniteAuthenticationManager {
                 .post(body)
                 .build())
                 .execute();
-
-        final var code = response.code();
         response.close();
-        return code;
     }
 
     /**
      * Creates a form body based on 2FA preferences.
-     * https://gist.github.com/iXyles/ec40cb40a2a186425ec6bfb9dcc2ddda
      *
      * @return the form body.
      */
@@ -157,42 +175,6 @@ public final class FortniteAuthenticationManager {
             body.add("rememberMe", "false");
         }
         return body.build();
-    }
-
-    /**
-     * Sends a GET request to the redirect endpoint.
-     * TODO: Currently not required for authentication flow.
-     *
-     * @param token the token
-     * @throws IOException if an error occurred
-     */
-    private void notifyRedirect(String token) throws IOException {
-        final var url = "https://www.epicgames.com/id/api/redirect";
-        client.newCall(new Request.Builder()
-                .url(url)
-                .header("x-xsrf-token", token)
-                .header("Referer", "https://www.epicgames.com/id/login")
-                .get()
-                .build())
-                .execute()
-                .close();
-    }
-
-    /**
-     * Sends a GET request to the authentication endpoint.
-     * TODO: Currently not required for authentication flow.
-     *
-     * @throws IOException if an error occurred
-     */
-    private void notifyAuthentication(String token) throws IOException {
-        final var url = "https://www.epicgames.com/id/api/authenticate";
-        client.newCall(new Request.Builder()
-                .url(url)
-                .header("x-xsrf-token", token)
-                .get()
-                .build())
-                .execute()
-                .close();
     }
 
     /**
@@ -392,7 +374,6 @@ public final class FortniteAuthenticationManager {
             final var object = gson.fromJson(result, JsonObject.class);
             if (!response.isSuccessful()) throw EpicGamesErrorException.create(response.request().url().toString(), object);
         } catch (final EpicGamesErrorException exception) {
-            System.err.println(exception.errorCode());
             // we want to re-throw the exception if its not equal to the error below.
             // the error below indicates the EULA is already accepted.
             if (!exception.errorCode().equalsIgnoreCase("errors.com.epicgames.fortnite.free_grant_access_unnecessary")) {

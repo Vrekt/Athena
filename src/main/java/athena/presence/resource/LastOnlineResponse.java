@@ -2,7 +2,7 @@ package athena.presence.resource;
 
 import athena.account.resource.Account;
 import athena.account.service.AccountPublicService;
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
 import com.google.common.collect.Lists;
@@ -24,7 +24,7 @@ public final class LastOnlineResponse {
     private Map<String, Instant> lastOnline;
     private final AccountPublicService accountPublicService;
 
-    public LastOnlineResponse(Map<String, Instant> lastOnline, AthenaContext context) {
+    public LastOnlineResponse(Map<String, Instant> lastOnline, DefaultAthenaContext context) {
         this.lastOnline = lastOnline;
         this.accountPublicService = context.account();
     }

@@ -4,10 +4,10 @@ import athena.account.resource.external.ExternalAuth;
 import athena.friend.xmpp.event.events.FriendRequestEvent;
 import athena.friend.xmpp.listener.FriendEventListener;
 import athena.types.Platform;
-import athena.util.json.PostProcessable;
+import athena.util.json.post.annotation.PostDeserialize;
 import athena.util.request.Requests;
+import athena.context.AthenaContext;
 import com.google.gson.annotations.SerializedName;
-import io.gsonfire.annotations.PostDeserialize;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.impl.JidCreate;
 
@@ -17,8 +17,7 @@ import java.util.function.Consumer;
 /**
  * Represents a Fortnite account.
  */
-public final class Account extends PostProcessable {
-
+public final class Account extends AthenaContext {
     /**
      * The account ID for this account.
      */
@@ -32,7 +31,6 @@ public final class Account extends PostProcessable {
      * A list of external auths.
      */
     private Map<String, ExternalAuth> externalAuths;
-
     /**
      * Bare JID of this account.
      */
@@ -119,28 +117,28 @@ public final class Account extends PostProcessable {
      * Add this account as a friend.
      */
     public void friend() {
-        Requests.executeVoidCall(friendService().add(localAccountId(), accountId));
+        Requests.executeVoidCall(friendsPublicService.add(localAccountId, accountId));
     }
 
     /**
      * Remove this account as a friend.
      */
     public void unfriend() {
-        Requests.executeVoidCall(friendService().remove(localAccountId(), accountId));
+        Requests.executeVoidCall(friendsPublicService.remove(localAccountId, accountId));
     }
 
     /**
      * Block this account.
      */
     public void block() {
-        Requests.executeVoidCall(friendService().block(localAccountId(), accountId));
+        Requests.executeVoidCall(friendsPublicService.block(localAccountId, accountId));
     }
 
     /**
      * Unblock this account.
      */
     public void unblock() {
-        Requests.executeVoidCall(friendService().unblock(localAccountId(), accountId));
+        Requests.executeVoidCall(friendsPublicService.unblock(localAccountId, accountId));
     }
 
     /**
@@ -149,7 +147,7 @@ public final class Account extends PostProcessable {
      * @param consumer the consumer
      */
     public void addIncomingFriendRequestListener(Consumer<FriendRequestEvent> consumer) {
-        context.friends().registerEventListenerForAccount(accountId, new FriendEventListener() {
+        friends.registerEventListenerForAccount(accountId, new FriendEventListener() {
             @Override
             public void friendRequest(FriendRequestEvent event) {
                 consumer.accept(event);
@@ -161,7 +159,7 @@ public final class Account extends PostProcessable {
      * Remove the incoming friend request listener.
      */
     public void removeIncomingFriendRequestListener() {
-        context.friends().unregisterEventListenerForAccount(accountId);
+        friends.unregisterEventListenerForAccount(accountId);
     }
 
     /**
@@ -171,6 +169,6 @@ public final class Account extends PostProcessable {
      * @param friendEventListener the listener.
      */
     public void addFriendListener(FriendEventListener friendEventListener) {
-        context.friends().registerEventListenerForAccount(accountId, friendEventListener);
+        friends.registerEventListenerForAccount(accountId, friendEventListener);
     }
 }

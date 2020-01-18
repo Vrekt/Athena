@@ -2,10 +2,11 @@ package athena.friend.xmpp.event;
 
 import athena.account.resource.Account;
 import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
-import athena.friend.xmpp.notification.FriendType;
-import athena.friend.xmpp.notification.Friendship;
-import athena.friend.xmpp.notification.type.FNotificationType;
+import athena.friend.xmpp.types.friend.FriendApiObject;
+import athena.friend.xmpp.types.friend.Friendship;
+import athena.friend.xmpp.type.FriendType;
 import athena.util.request.Requests;
 
 import java.time.Instant;
@@ -16,33 +17,33 @@ import java.time.Instant;
 public abstract class FriendEvent {
 
     protected final Friendship friendship;
-    protected final FriendType friendType;
-    protected final AthenaContext context;
+    protected final FriendApiObject friendApiObject;
+    protected final DefaultAthenaContext context;
 
     protected final String accountId, localAccountId;
     protected final Instant timestamp;
-    protected final FNotificationType type;
+    protected final FriendType type;
 
-    public FriendEvent(FriendType notification, AthenaContext context) {
-        this.friendType = notification;
+    public FriendEvent(FriendApiObject notification, DefaultAthenaContext context) {
+        this.friendApiObject = notification;
         this.friendship = null;
         this.context = context;
 
         this.accountId = notification.accountId();
-        this.localAccountId = context.accountId();
+        this.localAccountId = context.localAccountId();
         this.timestamp = notification.timestamp();
-        this.type = FNotificationType.typeOf(notification.type());
+        this.type = FriendType.typeOf(notification.type());
     }
 
-    public FriendEvent(Friendship notification, AthenaContext context) {
+    public FriendEvent(Friendship notification, DefaultAthenaContext context) {
         this.friendship = notification;
-        this.friendType = null;
+        this.friendApiObject = null;
         this.context = context;
 
         this.accountId = notification.from();
-        this.localAccountId = context.accountId();
+        this.localAccountId = context.localAccountId();
         this.timestamp = notification.timestamp();
-        this.type = FNotificationType.typeOf(notification.type());
+        this.type = FriendType.typeOf(notification.type());
     }
 
     /**
@@ -58,7 +59,7 @@ public abstract class FriendEvent {
     }
 
     /**
-     * @return the friendship object, or {@code null} if this event was initialized with {@link FriendType}
+     * @return the friendship object, or {@code null} if this event was initialized with {@link FriendApiObject}
      */
     public Friendship friendship() {
         return friendship;
@@ -67,8 +68,8 @@ public abstract class FriendEvent {
     /**
      * @return the friend-type object, or {@code null} if this event was initialized with {@link Friendship}
      */
-    public FriendType friendType() {
-        return friendType;
+    public FriendApiObject friendType() {
+        return friendApiObject;
     }
 
     /**
@@ -93,9 +94,9 @@ public abstract class FriendEvent {
     }
 
     /**
-     * @return the notification type
+     * @return the types type
      */
-    public FNotificationType type() {
+    public FriendType type() {
         return type;
     }
 }

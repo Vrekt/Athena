@@ -1,6 +1,6 @@
 package athena.fortnite;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.fortnite.service.FortnitePublicService;
 import athena.fortnite.shop.Storefront;
 import athena.fortnite.shop.StorefrontCatalog;
@@ -16,7 +16,7 @@ public final class Fortnite {
      */
     private final FortnitePublicService service;
 
-    public Fortnite(AthenaContext context) {
+    public Fortnite(DefaultAthenaContext context) {
         this.service = context.fortnite();
     }
 

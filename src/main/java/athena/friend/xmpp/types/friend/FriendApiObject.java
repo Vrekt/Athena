@@ -1,4 +1,4 @@
-package athena.friend.xmpp.notification;
+package athena.friend.xmpp.types.friend;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -7,7 +7,7 @@ import java.time.Instant;
 /**
  * Provides support for the "com.epicgames.friends.core.apiobjects.Friend" type.
  */
-public final class FriendType {
+public final class FriendApiObject {
 
     /**
      * The type "com.epicgames.friends.core.apiobjects.Friend"

@@ -24,7 +24,7 @@ public enum Platform {
     }
 
     /**
-     * Attempt to get the platform notification the {@code platform} is referencing.
+     * Attempt to get the platform types the {@code platform} is referencing.
      *
      * @param platform the platform
      * @return {@link Platform} or {@code null} if its an invalid platform.

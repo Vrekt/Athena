@@ -1,10 +1,10 @@
 package athena.friend.xmpp.event.events;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
 import athena.friend.xmpp.event.FriendEvent;
-import athena.friend.xmpp.notification.FriendType;
+import athena.friend.xmpp.types.friend.FriendApiObject;
 import athena.util.request.Requests;
 
 /**
@@ -12,7 +12,7 @@ import athena.util.request.Requests;
  */
 public final class FriendRequestEvent extends FriendEvent {
 
-    public FriendRequestEvent(FriendType notification, AthenaContext context) {
+    public FriendRequestEvent(FriendApiObject notification, DefaultAthenaContext context) {
         super(notification, context);
     }
 

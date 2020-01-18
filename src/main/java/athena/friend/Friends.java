@@ -1,6 +1,6 @@
 package athena.friend;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.Friend;
 import athena.friend.resource.blocked.Blocked;
@@ -14,7 +14,6 @@ import athena.util.request.Requests;
 import okhttp3.RequestBody;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -25,7 +24,7 @@ public final class Friends implements Closeable {
     /**
      * The athena context.
      */
-    private AthenaContext context;
+    private DefaultAthenaContext context;
     /**
      * The service.
      */
@@ -36,14 +35,7 @@ public final class Friends implements Closeable {
      */
     private FriendsXMPPProvider provider;
 
-    /**
-     * A list of all friends.
-     * TODO: Get all friends on login and add them to this list?
-     * TODO: Add friends to this list as they come in.
-     */
-    private Map<String, Friend> friends;
-
-    public Friends(AthenaContext context, boolean enableXMPP) {
+    public Friends(DefaultAthenaContext context, boolean enableXMPP) {
         this.context = context;
         this.service = context.friendsService();
         if (enableXMPP) provider = new FriendsXMPPProvider(context);
@@ -65,7 +57,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void add(String accountId) throws EpicGamesErrorException {
-        final var call = service.add(context.accountId(), accountId);
+        final var call = service.add(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -76,7 +68,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeOrDecline(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(context.accountId(), accountId);
+        final var call = service.remove(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -87,7 +79,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void block(String accountId) throws EpicGamesErrorException {
-        final var call = service.block(context.accountId(), accountId);
+        final var call = service.block(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -98,7 +90,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void unblock(String accountId) throws EpicGamesErrorException {
-        final var call = service.unblock(context.accountId(), accountId);
+        final var call = service.unblock(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -110,7 +102,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<Friend> friends(boolean includePending) throws EpicGamesErrorException {
-        final var call = service.friends(context.accountId(), includePending);
+        final var call = service.friends(context.localAccountId(), includePending);
         return Requests.executeCall(call);
     }
 
@@ -121,7 +113,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<String> blocked() throws EpicGamesErrorException {
-        final var call = service.blocked(context.accountId());
+        final var call = service.blocked(context.localAccountId());
         return Requests.executeCall(call).stream().map(Blocked::accountId).collect(Collectors.toList());
     }
 
@@ -134,7 +126,7 @@ public final class Friends implements Closeable {
      */
     public void setFriendAlias(String accountId, String alias) throws EpicGamesErrorException {
         if (alias.length() < 3 || alias.length() > 16) throw new IllegalArgumentException("Alias must be 3 characters minimum and 16 characters maximum.");
-        final var call = service.setAlias(context.accountId(), accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
+        final var call = service.setAlias(context.localAccountId(), accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -156,7 +148,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendAlias(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(context.accountId(), accountId);
+        final var call = service.remove(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -179,7 +171,7 @@ public final class Friends implements Closeable {
      */
     public void setFriendNote(String accountId, String note) throws EpicGamesErrorException {
         if (note.length() < 3 || note.length() > 255) throw new IllegalArgumentException("Note must be 3 characters minimum and 255 characters maximum.");
-        final var call = service.setNote(context.accountId(), accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
+        final var call = service.setNote(context.localAccountId(), accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -201,7 +193,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendNote(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(context.accountId(), accountId);
+        final var call = service.remove(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -223,7 +215,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public Profile friendProfile(String accountId) throws EpicGamesErrorException {
-        final var call = service.profile(context.accountId(), accountId, true);
+        final var call = service.profile(context.localAccountId(), accountId, true);
         return Requests.executeCall(call);
     }
 
@@ -245,7 +237,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public Summary summary() throws EpicGamesErrorException {
-        final var call = service.summary(context.accountId(), true);
+        final var call = service.summary(context.localAccountId(), true);
         return Requests.executeCall(call);
     }
 
@@ -256,7 +248,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public FriendSettings settings() throws EpicGamesErrorException {
-        final var call = service.settings(context.accountId());
+        final var call = service.settings(context.localAccountId());
         return Requests.executeCall(call);
     }
 
@@ -267,16 +259,8 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public FriendSettings setSettings(FriendSettings settings) throws EpicGamesErrorException {
-        final var call = service.setSettings(context.accountId(), settings);
+        final var call = service.setSettings(context.localAccountId(), settings);
         return Requests.executeCall(call);
-    }
-
-    /**
-     * @param accountId the account ID to check
-     * @return {@code true} if the provided {@code accountId} is a friend.
-     */
-    public boolean isFriend(String accountId) {
-        return friends != null && friends.containsKey(accountId);
     }
 
     /**
@@ -335,7 +319,7 @@ public final class Friends implements Closeable {
     }
 
     @Override
-    public void refresh(AthenaContext context) {
+    public void refresh(DefaultAthenaContext context) {
         this.context = context;
         if (provider != null) {
             final var old = provider;

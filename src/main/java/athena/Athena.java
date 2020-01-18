@@ -19,6 +19,7 @@ import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
 import athena.stats.service.StatsproxyPublicService;
 import athena.types.Platform;
+import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 
@@ -124,6 +125,11 @@ public interface Athena {
      * @return the {@link ChannelsPublicService} instance.
      */
     ChannelsPublicService channelsPublicService();
+
+    /**
+     * @return the {@link XMPPConnectionManager} instance.
+     */
+    XMPPConnectionManager xmppConnectionManager();
 
     /**
      * @return the HTTP client used within Athena.

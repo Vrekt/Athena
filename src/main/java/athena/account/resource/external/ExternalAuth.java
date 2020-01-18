@@ -1,7 +1,7 @@
 package athena.account.resource.external;
 
 import athena.types.Platform;
-import io.gsonfire.annotations.PostDeserialize;
+import athena.util.json.post.annotation.PostDeserialize;
 
 import java.util.List;
 import java.util.Optional;
@@ -86,6 +86,7 @@ public final class ExternalAuth {
      * @return the ID of this external auth
      */
     public String externalAuthId() {
+        if (externalAuthId != null) return externalAuthId;
         final var authId = getByType(type);
         if (authId.isEmpty()) return null;
         return authId.get().id();

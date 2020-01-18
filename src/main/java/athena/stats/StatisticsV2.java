@@ -2,7 +2,7 @@ package athena.stats;
 
 import athena.account.resource.Account;
 import athena.account.service.AccountPublicService;
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.stats.resource.UnfilteredStatistic;
 import athena.stats.resource.leaderboard.LeaderboardResponse;
 import athena.stats.resource.query.IndividualQueryResponse;
@@ -32,7 +32,7 @@ public final class StatisticsV2 {
      */
     private final AccountPublicService accountPublicService;
 
-    public StatisticsV2(AthenaContext context) {
+    public StatisticsV2(DefaultAthenaContext context) {
         this.service = context.statsProxy();
         this.accountPublicService = context.account();
     }

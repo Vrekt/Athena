@@ -3,7 +3,7 @@ package athena.account;
 import athena.account.resource.Account;
 import athena.account.resource.EpicGamesProfile;
 import athena.account.service.AccountPublicService;
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
 import athena.util.request.Result;
@@ -23,9 +23,9 @@ public final class Accounts {
     private final AccountPublicService service;
     private final String accountId;
 
-    public Accounts(AthenaContext context) {
+    public Accounts(DefaultAthenaContext context) {
         this.service = context.account();
-        this.accountId = context.accountId();
+        this.accountId = context.localAccountId();
     }
 
     /**
@@ -45,7 +45,7 @@ public final class Accounts {
     public Account findByDisplayName(String displayName) throws EpicGamesErrorException {
         if (displayName == null) throw new NullPointerException("displayName is null.");
         final var call = service.findByDisplayName(displayName);
-        return Requests.executeCallOptional(call).orElseThrow(() -> EpicGamesErrorException.create("Failed to find account" + displayName));
+        return Requests.executeCall(call);
     }
 
     /**

@@ -7,7 +7,7 @@ import athena.account.service.AccountPublicService;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
 import athena.channels.service.ChannelsPublicService;
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
 import athena.events.service.EventsPublicService;
@@ -18,10 +18,7 @@ import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.resource.Friend;
 import athena.friend.resource.summary.Profile;
-import athena.friend.resource.types.FriendDirection;
-import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
-import athena.friend.xmpp.notification.type.FNotificationType;
 import athena.interceptor.InterceptorAction;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
@@ -34,12 +31,13 @@ import athena.types.Input;
 import athena.types.Platform;
 import athena.types.Region;
 import athena.util.json.BasicJsonDeserializer;
-import athena.util.json.BasicPostProcessor;
+import athena.util.json.context.AthenaContextAdapterFactory;
+import athena.util.json.post.PostDeserializeAdapterFactory;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import io.gsonfire.GsonFireBuilder;
 import okhttp3.Interceptor;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
@@ -143,7 +141,7 @@ final class AthenaImpl implements Athena, Interceptor {
     /**
      * This context.
      */
-    private final AthenaContext context;
+    private final DefaultAthenaContext context;
 
     /**
      * This account.
@@ -203,17 +201,7 @@ final class AthenaImpl implements Athena, Interceptor {
         presencePublicService = initializeRetrofitService(PresencePublicService.BASE_URL, factory, PresencePublicService.class);
         channelsPublicService = initializeRetrofitService(ChannelsPublicService.BASE_URL, factory, ChannelsPublicService.class);
 
-        // initialize the context for this instance.
-        context = new AthenaContext();
-        context.accountId(session.accountId());
-        context.accountPublicService(accountPublicService);
-        context.friendsPublicService(friendsPublicService);
-        context.statsproxyPublicService(statsproxyPublicService);
-        context.eventsPublicService(eventsPublicService);
-        context.fortnitePublicService(fortnitePublicService);
-        context.presencePublicService(presencePublicService);
-        context.connectionManager(connectionManager);
-        context.gson(gson);
+        context = new DefaultAthenaContext(this);
 
         // initialize each wrapper class.
         accounts = new Accounts(context);
@@ -234,24 +222,19 @@ final class AthenaImpl implements Athena, Interceptor {
      * @return the GSON instance.
      */
     private Gson initializeGson() {
-        final var fireGson = new GsonFireBuilder();
+        final var gsonBuilder = new GsonBuilder();
 
-        fireGson.enableHooks(UnfilteredStatistic.class);
-        fireGson.enableHooks(ExternalAuth.class);
-        fireGson.enableHooks(Account.class);
-        fireGson.enableHooks(Profile.class);
-        fireGson.enableHooks(Friend.class);
-        fireGson.enumDefaultValue(FriendStatus.class, FriendStatus.UNKNOWN);
-        fireGson.enumDefaultValue(FriendDirection.class, FriendDirection.UNKNOWN);
-        fireGson.enumDefaultValue(FNotificationType.class, FNotificationType.UNKNOWN);
-        fireGson.registerPostProcessor(Account.class, (BasicPostProcessor<Account>) (result, src, gson) -> result.postProcess(context));
-        fireGson.registerPostProcessor(Friend.class, (BasicPostProcessor<Friend>) (result, src, gson) -> result.postProcess(context));
-        fireGson.registerPostProcessor(Profile.class, (BasicPostProcessor<Profile>) (result, src, gson) -> result.postProcess(context));
-        fireGson.registerPostProcessor(FortnitePresence.class, (BasicPostProcessor<FortnitePresence>) (result, src, gson) -> result.postProcess(context));
+        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(UnfilteredStatistic.class));
+        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(ExternalAuth.class));
+        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Account.class));
+        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Profile.class));
+        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Friend.class));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Account.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Profile.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Friend.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(FortnitePresence.class, this));
 
-        // register our type adapters.
-        final var builder = fireGson.createGsonBuilder();
-        builder
+        gsonBuilder
                 .registerTypeAdapter(Instant.class, (BasicJsonDeserializer<Instant>) (json) -> Instant.parse(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(Input.class, (BasicJsonDeserializer<Input>) (json) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()))
                 .registerTypeAdapter(Platform.class, (BasicJsonDeserializer<Platform>) (json) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()))
@@ -277,9 +260,8 @@ final class AthenaImpl implements Athena, Interceptor {
                     return new LastOnlineResponse(map, context);
                 });
 
-        // fixes an issue with superclasses/post processing.
-        builder.excludeFieldsWithModifiers(Modifier.PROTECTED);
-        return builder.create();
+        gsonBuilder.excludeFieldsWithModifiers(Modifier.PROTECTED);
+        return gsonBuilder.create();
     }
 
     /**
@@ -452,6 +434,11 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
+    public XMPPConnectionManager xmppConnectionManager() {
+        return connectionManager;
+    }
+
+    @Override
     public OkHttpClient httpClient() {
         return client;
     }
@@ -507,7 +494,7 @@ final class AthenaImpl implements Athena, Interceptor {
         // TODO: diff random uuid gen for fn requests
         final var finalRequest = nextRequestChain.newBuilder()
                 .addHeader("Authorization", "bearer " + session.get().accessToken())
-                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-11.31-CL-10795579 {0}")
+                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-11.40-CL-10951104 {0}")
                 .addHeader("X-Epic-Correlation-ID", UUID.randomUUID().toString())
                 .build();
         return chain.proceed(finalRequest);

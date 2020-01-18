@@ -1,6 +1,6 @@
 package athena.presence;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.presence.resource.LastOnlineResponse;
 import athena.presence.resource.filter.PresenceFilter;
@@ -22,9 +22,9 @@ public final class Presences implements Closeable {
     private PresenceXMPPProvider provider;
     private final String localAccountId;
 
-    public Presences(AthenaContext context, boolean enableXmpp) {
+    public Presences(DefaultAthenaContext context, boolean enableXmpp) {
         this.service = context.presence();
-        this.localAccountId = context.accountId();
+        this.localAccountId = context.localAccountId();
         provider = enableXmpp ? new PresenceXMPPProvider(context) : null;
     }
 
@@ -160,7 +160,7 @@ public final class Presences implements Closeable {
     }
 
     @Override
-    public void refresh(AthenaContext context) {
+    public void refresh(DefaultAthenaContext context) {
         if (provider != null) {
             provider.removeStanzaListener();
             final var old = provider;

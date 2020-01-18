@@ -1,12 +1,12 @@
 package athena.friend;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.friend.xmpp.annotation.FriendEvents;
 import athena.friend.xmpp.event.events.*;
 import athena.friend.xmpp.listener.FriendEventListener;
-import athena.friend.xmpp.notification.FriendType;
-import athena.friend.xmpp.notification.Friendship;
-import athena.friend.xmpp.notification.type.FNotificationType;
+import athena.friend.xmpp.types.friend.FriendApiObject;
+import athena.friend.xmpp.types.friend.Friendship;
+import athena.friend.xmpp.type.FriendType;
 import athena.util.event.EventFactory;
 import com.google.gson.JsonObject;
 import org.jivesoftware.smack.StanzaListener;
@@ -37,9 +37,9 @@ public final class FriendsXMPPProvider implements StanzaListener {
     /**
      * The athena context.
      */
-    private final AthenaContext context;
+    private final DefaultAthenaContext context;
 
-    FriendsXMPPProvider(AthenaContext context) {
+    FriendsXMPPProvider(DefaultAthenaContext context) {
         this.context = context;
         this.factory = EventFactory.create(FriendEvents.class, 1);
         context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.NORMAL);
@@ -50,12 +50,11 @@ public final class FriendsXMPPProvider implements StanzaListener {
      *
      * @param other the other
      */
-    FriendsXMPPProvider(AthenaContext context, FriendsXMPPProvider other) {
+    FriendsXMPPProvider(DefaultAthenaContext context, FriendsXMPPProvider other) {
         this.context = context;
         this.listeners.addAll(other.listeners);
         this.accountListeners.putAll(other.accountListeners);
         this.factory = EventFactory.create(other.factory);
-
         context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.NORMAL);
     }
 
@@ -64,11 +63,11 @@ public final class FriendsXMPPProvider implements StanzaListener {
         final var message = (Message) packet;
         final var object = context.gson().fromJson(message.getBody(), JsonObject.class);
         final var type = object.getAsJsonPrimitive("type").getAsString();
-        final var of = FNotificationType.typeOf(type);
-        if (of == FNotificationType.UNKNOWN) return;
+        final var of = FriendType.typeOf(type);
+        if (of == FriendType.UNKNOWN) return;
 
-        if (of == FNotificationType.FRIEND || of == FNotificationType.FRIEND_REMOVAL) {
-            final var notification = context.gson().fromJson(message.getBody(), FriendType.class);
+        if (of == FriendType.FRIEND || of == FriendType.FRIEND_REMOVAL) {
+            final var notification = context.gson().fromJson(message.getBody(), FriendApiObject.class);
             handleFriendType(notification);
         } else {
             final var notification = context.gson().fromJson(message.getBody(), Friendship.class);
@@ -76,12 +75,21 @@ public final class FriendsXMPPProvider implements StanzaListener {
         }
     }
 
+    private void friendApiObject(FriendApiObject friendApiObject) {
+
+    }
+
+    private void friendship(Friendship friendship) {
+
+    }
+
+
     /**
-     * Handle the friend type notification.
+     * Handle the friend type types.
      *
-     * @param notification the notification.
+     * @param notification the types.
      */
-    private void handleFriendType(FriendType notification) {
+    private void handleFriendType(FriendApiObject notification) {
         final var status = notification.status();
         final var direction = notification.direction();
         if (direction == null || direction.equals("OUTBOUND")) return;
@@ -107,11 +115,11 @@ public final class FriendsXMPPProvider implements StanzaListener {
     }
 
     /**
-     * Handle the friendship notification
+     * Handle the friendship types
      * TODO: Possibly change behaviour, right now if you accept a friend request it will fire events.
      * TODO: Maybe its only desirable to fire events if its from someone else (they accepted, they rejected, etc).
      *
-     * @param notification the notification.
+     * @param notification the types.
      */
     private void handleFriendship(Friendship notification) {
         final var status = notification.status();

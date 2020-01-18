@@ -1,6 +1,6 @@
 package athena.util.cleanup;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 
 /**
  * Interface providing methods for disposing and refreshing.
@@ -10,7 +10,7 @@ public interface Closeable {
     /**
      * Invoked after a refresh/re-authentication has occurred.
      */
-    void refresh(AthenaContext context);
+    void refresh(DefaultAthenaContext context);
 
     /**
      * Closes the provider and clears all maps/lists/listeners, etc..

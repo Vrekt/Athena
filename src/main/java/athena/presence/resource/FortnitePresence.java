@@ -4,8 +4,8 @@ import athena.Athena;
 import athena.account.resource.Account;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
-import athena.util.json.PostProcessable;
 import athena.util.request.Requests;
+import athena.context.AthenaContext;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import org.jxmpp.jid.Jid;
@@ -13,7 +13,7 @@ import org.jxmpp.jid.Jid;
 /**
  * Represents a Fortnite presence.
  */
-public final class FortnitePresence extends PostProcessable {
+public final class FortnitePresence extends AthenaContext {
 
     /**
      * The JSON status.
@@ -253,7 +253,7 @@ public final class FortnitePresence extends PostProcessable {
      */
     public Account account() {
         if (account == null) {
-            final var call = accountService().findOneByAccountId(from.getLocalpartOrNull().asUnescapedString());
+            final var call = accountPublicService.findOneByAccountId(from.getLocalpartOrNull().asUnescapedString());
             final var result = Requests.executeCall(call);
             if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + from.getLocalpartOrNull().asUnescapedString());
             account = result[0];
@@ -266,7 +266,7 @@ public final class FortnitePresence extends PostProcessable {
      * @return the profile for this presence sender.
      */
     public Profile profile() {
-        final var call = friendService().profile(localAccountId(), from.getLocalpartOrNull().asUnescapedString(), true);
+        final var call = friendsPublicService.profile(localAccountId, from.getLocalpartOrNull().asUnescapedString(), true);
         return Requests.executeCall(call);
     }
 

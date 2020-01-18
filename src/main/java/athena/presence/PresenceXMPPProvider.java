@@ -1,6 +1,6 @@
 package athena.presence;
 
-import athena.context.AthenaContext;
+import athena.context.DefaultAthenaContext;
 import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.annotation.PresenceEvent;
 import athena.presence.resource.filter.PresenceFilter;
@@ -30,12 +30,13 @@ public final class PresenceXMPPProvider implements StanzaListener {
      * COW list of filters.
      */
     private final CopyOnWriteArrayList<PresenceFilter> filters = new CopyOnWriteArrayList<>();
-    /**
-     * Context
-     */
-    private final AthenaContext context;
 
-    PresenceXMPPProvider(AthenaContext context) {
+    /**
+     * The context
+     */
+    private DefaultAthenaContext context;
+
+    PresenceXMPPProvider(DefaultAthenaContext context) {
         this.context = context;
         this.factory = EventFactory.create(PresenceEvent.class, 1);
         context.connectionManager().connection().addAsyncStanzaListener(this, PresenceTypeFilter.AVAILABLE);
@@ -46,7 +47,7 @@ public final class PresenceXMPPProvider implements StanzaListener {
      *
      * @param other the other
      */
-    PresenceXMPPProvider(AthenaContext context, PresenceXMPPProvider other) {
+    PresenceXMPPProvider(DefaultAthenaContext context, PresenceXMPPProvider other) {
         this.context = context;
         this.listeners.addAll(other.listeners);
         this.filters.addAll(other.filters);

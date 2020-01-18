@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+}
+
+group 'me.vrekt'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'com.google.flogger', name: 'flogger', version: '0.4'
+    runtime group: 'com.google.flogger', name: 'flogger-system-backend', version: '0.4'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
+    
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation("com.squareup.okhttp3:okhttp:4.2.1")
+    compile group: 'com.squareup.okhttp3', name: 'okhttp-urlconnection', version: '4.2.2'
+    implementation 'com.squareup.retrofit2:retrofit:2.6.2'
+    compile group: 'com.squareup.retrofit2', name: 'converter-gson', version: '2.6.2'
+    compile group: 'com.google.guava', name: 'guava', version: '28.1-jre'
+
+    compile group: 'org.igniterealtime.smack', name: 'smack-tcp', version: '4.3.3'
+    compile group: 'org.igniterealtime.smack', name: 'smack-extensions', version: '4.3.3'
+    compile group: 'org.igniterealtime.smack', name: 'smack-java7', version: '4.3.3'
+    compile group: 'com.esotericsoftware', name: 'reflectasm', version: '1.11.9'
+
+}

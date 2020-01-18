@@ -1,4 +1,4 @@
-package athena.friend.xmpp.notification;
+package athena.friend.xmpp.types.friend;
 
 import com.google.gson.annotations.SerializedName;
 
