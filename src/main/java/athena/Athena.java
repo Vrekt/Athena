@@ -29,6 +29,7 @@ public interface Athena {
 
     /**
      * Various tokens for authorization.
+     * TODO: Use {@link athena.authentication.AuthClient}
      */
     String EPIC_GAMES_LAUNCHER_TOKEN = "MzQ0NmNkNzI2OTRjNGE0NDg1ZDgxYjc3YWRiYjIxNDE6OTIwOWQ0YTVlMjVhNDU3ZmI5YjA3NDg5ZDMxM2I0MWE=";
     String FORTNITE_TOKEN = "ZWM2ODRiOGM2ODdmNDc5ZmFkZWEzY2IyYWQ4M2Y1YzY6ZTFmMzFjMjExZjI4NDEzMTg2MjYyZDM3YTEzZmM4NGQ=";

@@ -14,6 +14,8 @@ import java.util.Optional;
 
 /**
  * Provides easy access to {@link AccountPublicService}
+ *
+ * @author Vrekt
  */
 public final class Accounts {
 

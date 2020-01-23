@@ -14,6 +14,8 @@ import retrofit2.http.*;
 
 /**
  * Provides access to the channels public service.
+ *
+ * @author Vrekt, Armisto
  */
 public interface ChannelsPublicService {
 

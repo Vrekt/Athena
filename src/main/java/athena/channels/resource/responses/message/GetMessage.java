@@ -7,6 +7,8 @@ import java.util.List;
 
 /**
  * A response for getting a singular message in a {@link athena.channels.resource.channel.Channel}
+ *
+ * @author Vrekt, Armisto
  */
 public final class GetMessage {
 

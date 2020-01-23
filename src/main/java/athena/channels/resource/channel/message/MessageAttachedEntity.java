@@ -6,6 +6,8 @@ import java.util.Map;
 
 /**
  * An entity meant to be attached to a message.
+ *
+ * @author Vrekt, Armisto
  */
 public final class MessageAttachedEntity {
 

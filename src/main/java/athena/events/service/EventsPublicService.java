@@ -13,6 +13,8 @@ import retrofit2.http.Query;
  * <p>
  * // TODO: api/v1/events/Fortnite/data/{accountId}, api/v1/players/Fortnite/{accountId}
  * // TODO: api/v1/events/Fortnite/{eventId}/{eventWindowId}/history/{accountId}, api/v1/events/Fortnite/{eventId}/history/{accountId}
+ *
+ * @author Vrekt, Armisto
  */
 public interface EventsPublicService {
 

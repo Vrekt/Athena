@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 
 /**
  * A response of all channels and DMs a user is in.
+ *
+ * @author Vrekt, Armisto
  */
 public final class UserChannels {
 

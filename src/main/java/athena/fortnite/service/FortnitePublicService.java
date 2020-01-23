@@ -13,6 +13,8 @@ import java.util.List;
 
 /**
  * Provides access to the fortnite-public-service
+ *
+ * @author Vrekt, Armisto
  */
 public interface FortnitePublicService {
 

@@ -14,6 +14,8 @@ import java.util.List;
 
 /**
  * Provides access to the friend public service
+ *
+ * @author Vrekt, Armisto, RobertoGraham
  */
 public interface FriendsPublicService {
 

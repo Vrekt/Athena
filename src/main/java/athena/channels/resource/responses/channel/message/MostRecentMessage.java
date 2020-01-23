@@ -4,6 +4,8 @@ import athena.channels.resource.channel.message.ChannelMessage;
 
 /**
  * Represents the most recent message.
+ *
+ * @author Vrekt, Armisto
  */
 public final class MostRecentMessage {
 

@@ -6,6 +6,8 @@ import java.util.List;
 
 /**
  * A request used to edit a channel.
+ *
+ * @author Vrekt, Armisto
  */
 public final class EditChannel {
 

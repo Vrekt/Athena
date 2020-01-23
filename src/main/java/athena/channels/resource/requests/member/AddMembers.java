@@ -4,6 +4,8 @@ import java.util.List;
 
 /**
  * A request used to add members to a channel.
+ *
+ * @author Vrekt, Armisto
  */
 public final class AddMembers {
 

@@ -2,6 +2,8 @@ package athena.groups.requests.updating;
 
 /**
  * A request used to update a group.
+ *
+ * @author Vrekt, Armisto
  */
 public final class UpdateGroupRequest {
 

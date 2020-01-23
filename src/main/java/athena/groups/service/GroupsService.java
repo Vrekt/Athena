@@ -12,6 +12,8 @@ import retrofit2.http.*;
 
 /**
  * Provides access to the groups-service.
+ *
+ * @author Vrekt, Armisto
  */
 public interface GroupsService {
 

@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 /**
  * A response of all messages.
  * TODO: metadata (probably a map right?)
+ *
+ * @author Vrekt, Armisto
  */
 public final class Messages {
 

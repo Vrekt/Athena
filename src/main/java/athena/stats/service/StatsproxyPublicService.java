@@ -12,6 +12,9 @@ import retrofit2.http.Path;
 
 import java.util.List;
 
+/**
+ * Provides access to the stats service.
+ */
 public interface StatsproxyPublicService {
 
     /**

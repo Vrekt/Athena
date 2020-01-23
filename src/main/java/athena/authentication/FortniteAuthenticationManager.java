@@ -24,6 +24,8 @@ import java.io.IOException;
  * <p>
  * Built with help from: iXyles, Loukios#6383, and Joe for whole Kairos auth-flow.
  * https://gist.github.com/iXyles/ec40cb40a2a186425ec6bfb9dcc2ddda
+ *
+ * @author Vrekt, iXyles, Loukios, Mix
  */
 public final class FortniteAuthenticationManager {
     /**
@@ -110,9 +112,8 @@ public final class FortniteAuthenticationManager {
         try {
             var token = retrieveXSRFToken();
             retrieveReputation(token);
-            postKairosLogin("5b685653b9904c1d92495ee8859dcb00", token);
-            final var code = redirectKairos("5b685653b9904c1d92495ee8859dcb00", token);
-
+            postKairosLogin(token);
+            final var code = redirectKairos(token);
             return retrieveKairosSession(token, code);
         } catch (final EpicGamesErrorException | IOException exception) {
             throw new FortniteAuthenticationException("Failed to authenticate.", exception);
@@ -183,13 +184,12 @@ public final class FortniteAuthenticationManager {
     /**
      * Posts the login form for kairos.
      *
-     * @param clientId the client ID.
-     * @param token    the token
+     * @param token the token
      * @throws IOException if an IO error occurred.
      */
-    private void postKairosLogin(String clientId, String token) throws IOException {
+    private void postKairosLogin(String token) throws IOException {
         final var body = createLoginForm(false);
-        final var url = "https://www.epicgames.com/id/api/login?client_id=" + clientId + "&response_type=code";
+        final var url = "https://www.epicgames.com/id/api/login?client_id=" + AuthClient.KAIROS_PC_CLIENT.clientId() + "&response_type=code";
 
         // execute the request.
         final var response = client.newCall(new Request.Builder()
@@ -204,13 +204,13 @@ public final class FortniteAuthenticationManager {
     /**
      * Gets the kairos redirect URL and then extracts the authorization code.
      *
-     * @param clientId the client ID.
-     * @param token    the token.
+     * @param token the token.
      * @return the authorization code.
      * @throws IOException if an IO error occurred.
      */
-    private String redirectKairos(String clientId, String token) throws IOException {
-        final var url = "https://www.epicgames.com/id/api/redirect?responseType=code&clientId=" + clientId;
+    @SuppressWarnings("ConstantConditions")
+    private String redirectKairos(String token) throws IOException {
+        final var url = "https://www.epicgames.com/id/api/redirect?responseType=code&clientId=" + AuthClient.KAIROS_PC_CLIENT.clientId();
         final var response = client.newCall(new Request.Builder()
                 .url(url)
                 .header("x-xsrf-token", token)
@@ -220,7 +220,6 @@ public final class FortniteAuthenticationManager {
 
         final var body = response.body().string();
         response.close();
-
 
         final var json = gson.fromJson(body, JsonObject.class);
         return StringUtils.substringAfter(json.get("redirectUrl").getAsString(), "code=");

@@ -6,6 +6,8 @@ import java.util.List;
 
 /**
  * A request used to create channels.
+ *
+ * @author Vrekt, Armisto
  */
 public final class CreateChannel {
 

@@ -2,6 +2,8 @@ package athena.channels.resource.channel.badge;
 
 /**
  * Badges for channels.
+ *
+ * @author Armisto
  */
 public enum Badge {
     ace,

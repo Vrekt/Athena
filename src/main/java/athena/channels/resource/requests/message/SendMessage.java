@@ -6,6 +6,8 @@ import java.util.List;
 
 /**
  * A request used to send messages to a {@link athena.channels.resource.channel.Channel}
+ *
+ * @author Vrekt, Armisto
  */
 public final class SendMessage {
 

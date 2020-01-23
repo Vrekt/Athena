@@ -11,6 +11,8 @@ import java.util.List;
 
 /**
  * Provides access to the presence public service.
+ *
+ * @author Vrekt, Armisto, Terbau
  */
 public interface PresencePublicService {
 

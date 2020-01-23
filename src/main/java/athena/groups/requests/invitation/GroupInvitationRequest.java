@@ -3,6 +3,8 @@ package athena.groups.requests.invitation;
 /**
  * A request used to invite another member.
  * TODO: Might need more to work
+ *
+ * @author Vrekt, Armisto
  */
 public final class GroupInvitationRequest {
 

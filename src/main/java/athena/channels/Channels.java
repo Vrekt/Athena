@@ -1,7 +1,7 @@
 package athena.channels;
 
 /**
- * Provides easy access to
+ * TODO: {@link athena.channels.service.ChannelsPublicService}
  */
 public final class Channels {
 }

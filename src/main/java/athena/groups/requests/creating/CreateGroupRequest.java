@@ -4,6 +4,8 @@ import athena.groups.privacy.GroupPrivacy;
 
 /**
  * A request used to create a group.
+ *
+ * @author Vrekt, Armisto
  */
 public final class CreateGroupRequest {
 

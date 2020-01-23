@@ -21,6 +21,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Provides XMPP access to {@link athena.friend.Friends}
+ *
+ * @author Vrekt, Terbau
  */
 public final class FriendsXMPPProvider implements StanzaListener {
 

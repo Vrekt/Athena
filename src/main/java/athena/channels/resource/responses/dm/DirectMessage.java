@@ -4,6 +4,8 @@ import java.util.List;
 
 /**
  * Represents a direct message channel.
+ *
+ * @author Vrekt, Armisto
  */
 public final class DirectMessage {
 

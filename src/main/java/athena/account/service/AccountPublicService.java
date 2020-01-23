@@ -13,6 +13,8 @@ import java.util.List;
 /**
  * Provides access to the account public service.
  * Credit: https://gist.github.com/Amrsatrio/20d2174583354ae4f0a24cf63764049f for some endpoints.
+ *
+ * @author Vrekt, Armisto
  */
 public interface AccountPublicService {
 

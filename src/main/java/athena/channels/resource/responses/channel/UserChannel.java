@@ -6,6 +6,11 @@ import athena.channels.resource.responses.channel.message.MostRecentMessage;
 
 import java.util.List;
 
+/**
+ * Represents a channel a user is in.
+ *
+ * @author Vrekt, Armisto
+ */
 public final class UserChannel {
 
     /**

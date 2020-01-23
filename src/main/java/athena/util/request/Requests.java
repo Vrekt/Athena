@@ -1,5 +1,6 @@
 package athena.util.request;
 
+import athena.Athena;
 import athena.exception.EpicGamesErrorException;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
@@ -25,7 +26,7 @@ public final class Requests {
     /**
      * The main GSON object.
      */
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = Athena.GSON;
 
     /**
      * Execute a call.

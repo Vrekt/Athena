@@ -9,6 +9,8 @@ import retrofit2.http.Query;
 
 /**
  * Used for accepting/getting versions of the EULA.
+ *
+ * @author Vrekt, RobertoGraham
  */
 public interface EulatrackingPublicService {
 

@@ -6,6 +6,8 @@ import java.util.List;
 
 /**
  * The response of a sent message.
+ *
+ * @author Vrekt, Armisto
  */
 public final class SentMessage {
 
