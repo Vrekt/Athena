@@ -23,6 +23,7 @@ import athena.types.Platform;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 
 public interface Athena {
 
@@ -135,7 +136,12 @@ public interface Athena {
     /**
      * @return the {@link XMPPConnectionManager} instance.
      */
-    XMPPConnectionManager xmppConnectionManager();
+    XMPPConnectionManager xmpp();
+
+    /**
+     * @return the {@link XMPPTCPConnection} instance inside {@link XMPPConnectionManager}
+     */
+    XMPPTCPConnection connection();
 
     /**
      * @return the HTTP client used within Athena.

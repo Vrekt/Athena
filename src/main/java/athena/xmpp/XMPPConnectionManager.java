@@ -2,7 +2,6 @@ package athena.xmpp;
 
 import athena.exception.EpicGamesErrorException;
 import athena.types.Platform;
-import athena.xmpp.listener.XMPPConnectionListener;
 import com.google.common.flogger.FluentLogger;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jivesoftware.smack.*;
@@ -14,10 +13,16 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.ping.PingManager;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * Manages the XMPP connection.
+ *
+ * @author Vrekt, RobertoGraham
  */
 public final class XMPPConnectionManager implements ConnectionListener {
 
@@ -53,19 +58,18 @@ public final class XMPPConnectionManager implements ConnectionListener {
     private final boolean loadRoster, reconnectOnError, debug;
 
     /**
-     * COW list for listeners.
+     * Maps and lists for various different listeners.
+     * Mainly just provides convenience but is ugly.
      */
-    private final CopyOnWriteArrayList<XMPPConnectionListener> listeners = new CopyOnWriteArrayList<>();
+    private final ConcurrentHashMap<Boolean, List<Consumer<XMPPTCPConnection>>> connectionListeners = new ConcurrentHashMap<>();
+    private final CopyOnWriteArrayList<Runnable> connectionClosedListeners = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<Exception>> connectionErrorListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Connection and ping manager.
      */
     private XMPPTCPConnection connection;
     private PingManager pingManager;
-    /**
-     * account ID and access token
-     */
-    private String accountId, accessToken;
 
     public XMPPConnectionManager(boolean loadRoster, boolean reconnectOnError, boolean debug, Platform platform, String application) {
         this.loadRoster = loadRoster;
@@ -76,24 +80,6 @@ public final class XMPPConnectionManager implements ConnectionListener {
     }
 
     /**
-     * Add a connection listener.
-     *
-     * @param xmppConnectionListener the connection listener.
-     */
-    public void addConnectionListener(XMPPConnectionListener xmppConnectionListener) {
-        listeners.add(xmppConnectionListener);
-    }
-
-    /**
-     * Remove a connection listener.
-     *
-     * @param xmppConnectionListener the connection listener.
-     */
-    public void removeConnectionListener(XMPPConnectionListener xmppConnectionListener) {
-        listeners.remove(xmppConnectionListener);
-    }
-
-    /**
      * Connect to the XMPP service.
      *
      * @param accountId   the account ID.
@@ -101,8 +87,6 @@ public final class XMPPConnectionManager implements ConnectionListener {
      * @throws EpicGamesErrorException if any of these exceptions occurred, {@link IOException}, {@link SmackException}, {@link XMPPException}, {@link InterruptedException}
      */
     public void connect(String accountId, String accessToken) throws EpicGamesErrorException {
-        this.accountId = accountId;
-        this.accessToken = accessToken;
         final var resource = "V2:" + application + ":" + platform.primaryName() + "::" + RandomStringUtils.random(32, HEX_UUID);
 
         if (!loadRoster) {
@@ -128,6 +112,13 @@ public final class XMPPConnectionManager implements ConnectionListener {
             connection.setReplyTimeout(60000);
             connection.connect().login(accountId, accessToken);
 
+            if (reconnectOnError) {
+                final var reconnection = ReconnectionManager.getInstanceFor(connection);
+                reconnection.setFixedDelay(5);
+                reconnection.enableAutomaticReconnection();
+            }
+
+            // TODO: Debug purposes.
             connection.addAsyncStanzaListener(stanza -> {
                 final var msg = (Message) stanza;
                 System.err.println(msg.getBody());
@@ -142,7 +133,7 @@ public final class XMPPConnectionManager implements ConnectionListener {
      * Disconnect from the XMPP service.
      */
     public void disconnect() {
-        pingManager.setPingInterval(-1);
+        if (pingManager != null) pingManager.setPingInterval(-1);
         if (connection != null) connection.disconnect();
     }
 
@@ -151,10 +142,51 @@ public final class XMPPConnectionManager implements ConnectionListener {
      */
     public void close() {
         disconnect();
-        listeners.clear();
 
-        accountId = null;
-        accessToken = null;
+        connectionListeners.clear();
+        connectionClosedListeners.clear();
+        connectionErrorListeners.clear();
+    }
+
+    /**
+     * Adds a simple connection listener.
+     * Key: {@code Boolean.FALSE}
+     *
+     * @param connectionConsumer the consumer
+     */
+    public void onConnected(Consumer<XMPPTCPConnection> connectionConsumer) {
+        connectionListeners.putIfAbsent(Boolean.FALSE, new ArrayList<>());
+        connectionListeners.get(Boolean.FALSE).add(connectionConsumer);
+    }
+
+    /**
+     * Adds a simple authenticated listener.
+     * This method will not include the value {@code resumed} (which indicates if the XMPP connection was resumed)
+     * Key: {@code Boolean.TRUE}
+     *
+     * @param connectionConsumer the consumer
+     */
+    public void onAuthenticated(Consumer<XMPPTCPConnection> connectionConsumer) {
+        connectionListeners.putIfAbsent(Boolean.TRUE, new ArrayList<>());
+        connectionListeners.get(Boolean.TRUE).add(connectionConsumer);
+    }
+
+    /**
+     * Adds a simple listener for when the connection is closed.
+     *
+     * @param runnable the action
+     */
+    public void onClosed(Runnable runnable) {
+        connectionClosedListeners.add(runnable);
+    }
+
+    /**
+     * Adds a simple listener for when the connection is closed due to an error.
+     *
+     * @param exceptionConsumer the consumer
+     */
+    public void onError(Consumer<Exception> exceptionConsumer) {
+        connectionErrorListeners.add(exceptionConsumer);
     }
 
     /**
@@ -166,27 +198,22 @@ public final class XMPPConnectionManager implements ConnectionListener {
 
     @Override
     public void authenticated(XMPPConnection connection, boolean resumed) {
-        // TODO: Not needed.
+        if (connectionListeners.containsKey(Boolean.TRUE)) connectionListeners.get(Boolean.TRUE).forEach(connectionConsumer -> connectionConsumer.accept((XMPPTCPConnection) connection));
     }
 
     @Override
     public void connectionClosed() {
-        // TODO: Not needed.
+        connectionClosedListeners.forEach(Runnable::run);
     }
 
     @Override
     public void connected(XMPPConnection connection) {
-        listeners.forEach(XMPPConnectionListener::connected);
+        if (connectionListeners.containsKey(Boolean.FALSE)) connectionListeners.get(Boolean.TRUE).forEach(connectionConsumer -> connectionConsumer.accept((XMPPTCPConnection) connection));
     }
 
     @Override
     public void connectionClosedOnError(Exception exception) {
         LOGGER.atSevere().withCause(exception).log("Connection closed on error!");
-        if (!reconnectOnError) {
-            LOGGER.atInfo().log("Connection will not be re-established because reconnectOnError is not enabled.");
-        } else {
-            disconnect();
-            connect(accountId, accessToken);
-        }
+        connectionErrorListeners.forEach(exceptionConsumer -> exceptionConsumer.accept(exception));
     }
 }

@@ -31,19 +31,19 @@ import athena.stats.service.StatsproxyPublicService;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.types.Region;
-import athena.util.json.BasicJsonDeserializer;
 import athena.util.json.context.AthenaContextAdapterFactory;
 import athena.util.json.post.PostDeserializeAdapterFactory;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonDeserializer;
 import okhttp3.Interceptor;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -53,9 +53,7 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -228,6 +226,7 @@ final class AthenaImpl implements Athena, Interceptor {
     private Gson initializeGson() {
         final var gsonBuilder = new GsonBuilder();
 
+        // TODO: Create separate type adapter factory that combines both post/context?
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(UnfilteredStatistic.class));
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(ExternalAuth.class));
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Account.class));
@@ -237,32 +236,21 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Profile.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Friend.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(FortnitePresence.class, this));
+        gsonBuilder.registerTypeAdapter(Instant.class, (JsonDeserializer<Instant>) (json, typeOfT, context) -> Instant.parse(json.getAsJsonPrimitive().getAsString()));
+        gsonBuilder.registerTypeAdapter(Input.class, (JsonDeserializer<Input>) (json, typeOfT, context) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()));
+        gsonBuilder.registerTypeAdapter(Platform.class, (JsonDeserializer<Platform>) (json, typeOfT, context) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()));
+        gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
+        gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, (JsonDeserializer<LastOnlineResponse>) (json, typeOfT, context) -> {
+            final var object = json.getAsJsonObject();
+            final var map = new HashMap<String, Instant>();
 
-        gsonBuilder
-                .registerTypeAdapter(Instant.class, (BasicJsonDeserializer<Instant>) (json) -> Instant.parse(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(Input.class, (BasicJsonDeserializer<Input>) (json) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(Platform.class, (BasicJsonDeserializer<Platform>) (json) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(Region.class, (BasicJsonDeserializer<Region>) (json) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()))
-                .registerTypeAdapter(new TypeToken<List<Profile>>() {
-                }.getType(), (BasicJsonDeserializer<List<Profile>>) (json) -> {
-                    // check if its an array for friends summary first
-                    // otherwise get the friends array.
-                    final var array = json.isJsonArray() ? json.getAsJsonArray() : json.getAsJsonObject().getAsJsonArray("friends");
-                    final var list = new ArrayList<Profile>();
-                    array.forEach(element -> list.add(gson.fromJson(element, Profile.class)));
-                    return list;
-                })
-                .registerTypeAdapter(LastOnlineResponse.class, (BasicJsonDeserializer<LastOnlineResponse>) (json) -> {
-                    final var object = json.getAsJsonObject();
-                    final var map = new HashMap<String, Instant>();
-
-                    object.keySet().forEach(key -> {
-                        final var array = object.getAsJsonArray(key);
-                        final var time = Instant.parse(array.get(0).getAsJsonObject().get("last_online").getAsString());
-                        map.put(key, time);
-                    });
-                    return new LastOnlineResponse(map, context);
-                });
+            object.keySet().forEach(key -> {
+                final var array = object.getAsJsonArray(key);
+                final var time = Instant.parse(array.get(0).getAsJsonObject().get("last_online").getAsString());
+                map.put(key, time);
+            });
+            return new LastOnlineResponse(map, this.context);
+        });
 
         gsonBuilder.excludeFieldsWithModifiers(Modifier.PROTECTED);
         return gsonBuilder.create();
@@ -443,8 +431,13 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
-    public XMPPConnectionManager xmppConnectionManager() {
+    public XMPPConnectionManager xmpp() {
         return connectionManager;
+    }
+
+    @Override
+    public XMPPTCPConnection connection() {
+        return connectionManager.connection();
     }
 
     @Override

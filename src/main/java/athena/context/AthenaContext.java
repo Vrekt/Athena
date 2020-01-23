@@ -59,7 +59,7 @@ public abstract class AthenaContext {
         this.eventsPublicService = athena.eventsPublicService();
         this.fortnitePublicService = athena.fortnitePublicService();
         this.presencePublicService = athena.presencePublicService();
-        this.connectionManager = athena.xmppConnectionManager();
+        this.connectionManager = athena.xmpp();
         this.friends = athena.friend();
         this.gson = athena.gson();
     }
