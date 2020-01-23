@@ -6,7 +6,6 @@ import athena.events.resource.download.window.FortniteEventWindow;
 import athena.events.service.EventsPublicService;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Represents a response from the {@link EventsPublicService} download endpoint.
@@ -53,42 +52,67 @@ public final class FortniteEventDownload {
      * Get an event by ID.
      *
      * @param eventId the event ID.
-     * @return a {@link Optional} containing the event if found.
+     * @return the {@link FortniteEvent} if found or {@code null}
      */
-    public Optional<FortniteEvent> getByEventId(String eventId) {
-        return events.stream().filter(event -> event.eventId().equals(eventId)).findAny();
+    public FortniteEvent getByEventId(String eventId) {
+        return events
+                .stream()
+                .filter(event -> event.eventId().equals(eventId))
+                .findAny()
+                .orElse(null);
     }
 
     /**
      * Get an event by window ID.
      *
      * @param windowId the window ID.
-     * @return a {@link Optional} containing the event if found.
+     * @return the {@link FortniteEvent} if found or {@code null}
      */
-    public Optional<FortniteEvent> getEventByWindowId(String windowId) {
-        return events.stream().filter(event -> event.eventWindows().stream().anyMatch(fortniteEventWindow -> fortniteEventWindow.eventWindowId().equals(windowId))).findAny();
+    public FortniteEvent getEventByWindowId(String windowId) {
+        return events
+                .stream()
+                .filter(event -> event.eventWindows().stream().anyMatch(fortniteEventWindow -> fortniteEventWindow.eventWindowId().equals(windowId)))
+                .findAny()
+                .orElse(null);
+    }
+
+    public FortniteEvent getByDisplayDataId(String displayDataId) {
+        return events
+                .stream()
+                .filter(event -> event.displayDataId().equalsIgnoreCase(displayDataId))
+                .findAny()
+                .orElse(null);
     }
 
     /**
-     * Get an {@link FortniteEventWindow} by window ID>
+     * Get an {@link FortniteEventWindow} by window ID.
      *
      * @param windowId the window ID.
-     * @return a {@link Optional} containing the {@link FortniteEventWindow} if found.
+     * @return the {@link FortniteEventWindow} if found or {@code null}
      */
-    public Optional<FortniteEventWindow> getEventWindow(String windowId) {
+    public FortniteEventWindow getEventWindow(String windowId) {
         final var matching = getEventByWindowId(windowId);
-        if (matching.isEmpty()) return Optional.empty();
-        return matching.get().eventWindows().stream().filter(event -> event.eventWindowId().equals(windowId)).findAny();
+        if (matching == null) return null;
+        return matching
+                .eventWindows()
+                .stream()
+                .filter(event -> event.eventWindowId().equals(windowId))
+                .findAny()
+                .orElse(null);
     }
 
     /**
      * Get a {@link EventTemplate} by the ID.
      *
      * @param eventTemplateId the event template ID.
-     * @return a {@link Optional} containing the {@link EventTemplate} if found.
+     * @return the {@link EventTemplate} if found or {@code null}
      */
-    public Optional<EventTemplate> getTemplateById(String eventTemplateId) {
-        return templates.stream().filter(eventTemplate -> eventTemplate.eventTemplateId().equalsIgnoreCase(eventTemplateId)).findAny();
+    public EventTemplate getTemplateById(String eventTemplateId) {
+        return templates
+                .stream()
+                .filter(eventTemplate -> eventTemplate.eventTemplateId().equalsIgnoreCase(eventTemplateId))
+                .findAny()
+                .orElse(null);
     }
 
 }

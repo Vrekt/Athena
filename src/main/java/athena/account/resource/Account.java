@@ -106,11 +106,10 @@ public final class Account extends AthenaContext {
      * Get the external auth.
      *
      * @param platform the platform
-     * @return the external auth.
-     * @throws java.util.NoSuchElementException if the external auth was not found.
+     * @return the {@link ExternalAuth} or {@code null} if not found.
      */
     public ExternalAuth getExternalAuth(Platform platform) {
-        return externalAuths.values().stream().filter(externalAuth -> externalAuth.platform() == platform).findAny().orElseThrow();
+        return externalAuths.values().stream().filter(externalAuth -> externalAuth.platform() == platform).findAny().orElse(null);
     }
 
     /**

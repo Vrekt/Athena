@@ -13,6 +13,7 @@ import athena.fortnite.Fortnite;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
+import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
 import athena.presence.Presences;
 import athena.presence.service.PresencePublicService;
@@ -26,11 +27,11 @@ import okhttp3.OkHttpClient;
 public interface Athena {
 
     /**
-     * General public-static resources like tokens.
+     * Various tokens for authorization.
      */
-    //  String EPIC_GAMES_LAUNCHER_TOKEN = "NWI2ODU2NTNiOTkwNGMxZDkyNDk1ZWU4ODU5ZGNiMDA6N1EybWNtbmV5dXZQbW9SWWZ3TTdnZkVyQTZpVWpoWHI=";
     String EPIC_GAMES_LAUNCHER_TOKEN = "MzQ0NmNkNzI2OTRjNGE0NDg1ZDgxYjc3YWRiYjIxNDE6OTIwOWQ0YTVlMjVhNDU3ZmI5YjA3NDg5ZDMxM2I0MWE=";
     String FORTNITE_TOKEN = "ZWM2ODRiOGM2ODdmNDc5ZmFkZWEzY2IyYWQ4M2Y1YzY6ZTFmMzFjMjExZjI4NDEzMTg2MjYyZDM3YTEzZmM4NGQ=";
+    String KAIROS_TOKEN = "NWI2ODU2NTNiOTkwNGMxZDkyNDk1ZWU4ODU5ZGNiMDA6N1EybWNtbmV5dXZQbW9SWWZ3TTdnZkVyQTZpVWpoWHI=";
 
     /**
      * Global GSON instance.
@@ -127,6 +128,11 @@ public interface Athena {
     ChannelsPublicService channelsPublicService();
 
     /**
+     * @return the {@link GroupsService} instance.
+     */
+    GroupsService groupsService();
+
+    /**
      * @return the {@link XMPPConnectionManager} instance.
      */
     XMPPConnectionManager xmppConnectionManager();
@@ -161,20 +167,21 @@ public interface Athena {
      */
     final class Builder implements Cloneable {
 
-        private String epicGamesLauncherToken = EPIC_GAMES_LAUNCHER_TOKEN;
+        private String authorizationToken = EPIC_GAMES_LAUNCHER_TOKEN;
 
         /**
          * Email address, password, and if 2FA is enabled the 2FA code.
          */
         private String email, password, code;
         /**
-         * {@code rememberDevice} is only applicable if 2FA is being used.
+         * {@code rememberDevice} if user/device should be remembered.
          * {@code killOtherSessions} allows you to kill other tokens that are in use.
          * {@code acceptEula} will accept the eula if needed.
          * {@code handleShutdown} will create a hook that will automatically close athena on shutdown.
          * {@code refreshAutomatically} handles refreshing the access token automatically.
+         * {@code kairos} will grant a kairos token if true.
          */
-        private boolean rememberDevice, killOtherSessions, acceptEula, handleShutdown, refreshAutomatically;
+        private boolean rememberMe, killOtherSessions, acceptEula, handleShutdown, refreshAutomatically, kairos;
 
         /**
          * {@code enableXmpp} if true XMPP will be enabled and used.
@@ -206,8 +213,8 @@ public interface Athena {
         public Builder() {
         }
 
-        public Builder token(String epicGamesLauncherToken) {
-            this.epicGamesLauncherToken = epicGamesLauncherToken;
+        public Builder token(String authorizationToken) {
+            this.authorizationToken = authorizationToken;
             return this;
         }
 
@@ -226,8 +233,8 @@ public interface Athena {
             return this;
         }
 
-        public Builder rememberDevice() {
-            rememberDevice = true;
+        public Builder rememberMe() {
+            rememberMe = true;
             return this;
         }
 
@@ -248,6 +255,11 @@ public interface Athena {
 
         public Builder refreshAutomatically() {
             refreshAutomatically = true;
+            return this;
+        }
+
+        public Builder kairos() {
+            kairos = true;
             return this;
         }
 
@@ -281,8 +293,8 @@ public interface Athena {
             return this;
         }
 
-        String epicGamesLauncherToken() {
-            return epicGamesLauncherToken;
+        String authorizationToken() {
+            return authorizationToken;
         }
 
         String email() {
@@ -297,8 +309,8 @@ public interface Athena {
             return code;
         }
 
-        boolean shouldRememberDevice() {
-            return rememberDevice;
+        boolean shouldRememberMe() {
+            return rememberMe;
         }
 
         boolean shouldKillOtherSessions() {
@@ -325,12 +337,16 @@ public interface Athena {
             return loadRoster;
         }
 
-        public boolean shouldReconnectOnError() {
+        boolean shouldReconnectOnError() {
             return reconnectOnError;
         }
 
-        public boolean debugXmpp() {
+        boolean debugXmpp() {
             return debugXmpp;
+        }
+
+        boolean authenticateKairos() {
+            return kairos;
         }
 
         public Platform platform() {
@@ -352,6 +368,7 @@ public interface Athena {
             if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");
             if (password == null || password.isEmpty()) throw new UnsupportedBuildException("Athena needs a password to login.");
             if (enableXmpp && (platform == null || appType == null)) throw new UnsupportedBuildException("Platform and app must be set for XMPP.");
+            if (kairos && authorizationToken.equals(EPIC_GAMES_LAUNCHER_TOKEN)) authorizationToken = KAIROS_TOKEN;
             return new AthenaImpl(this);
         }
 

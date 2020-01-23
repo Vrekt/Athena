@@ -49,10 +49,10 @@ public final class Messages {
      * Get a channel message by ID.
      *
      * @param messageId the message ID.
-     * @return the {@link ChannelMessage}
+     * @return the {@link ChannelMessage} or {@code null} if not found.
      */
     public ChannelMessage getById(String messageId) {
-        return messages.stream().filter(channelMessage -> channelMessage.id().equals(messageId)).findAny().orElseThrow();
+        return messages.stream().filter(channelMessage -> channelMessage.id().equals(messageId)).findAny().orElse(null);
     }
 
 }

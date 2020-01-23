@@ -8,6 +8,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import okhttp3.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.io.IOException;
  * 5. EULA
  * 6. ... etc
  * <p>
- * Built with help from: iXyles, Loukios#6383
+ * Built with help from: iXyles, Loukios#6383, and Joe for whole Kairos auth-flow.
  * https://gist.github.com/iXyles/ec40cb40a2a186425ec6bfb9dcc2ddda
  */
 public final class FortniteAuthenticationManager {
@@ -40,29 +41,29 @@ public final class FortniteAuthenticationManager {
     /**
      * Credentials.
      */
-    private final String epicGamesLauncherToken;
+    private final String authorizationToken;
     private final String emailAddress, password, code;
-    private final boolean rememberDevice, use2fa;
+    private final boolean rememberMe, use2fa;
 
     /**
      * The constructor to initialize a new authentication manager.
      *
-     * @param emailAddress           The email address of the account
-     * @param password               the password of the account.
-     * @param code                   the 2FA code if 2FA is enabled.
-     * @param epicGamesLauncherToken the current epic games launcher token.
-     * @param rememberDevice         should be {@code true} if 2FA devices should be remembered.
-     * @param client                 the HTTP client.
-     * @param gson                   the {@link athena.Athena} internal GSON instance.
+     * @param emailAddress       The email address of the account
+     * @param password           the password of the account.
+     * @param code               the 2FA code if 2FA is enabled.
+     * @param authorizationToken the authorization token.
+     * @param rememberMe         if user/device should be remembered.
+     * @param client             the HTTP client.
+     * @param gson               the {@link athena.Athena} internal GSON instance.
      */
     public FortniteAuthenticationManager(String emailAddress, String password, String code,
-                                         String epicGamesLauncherToken, boolean rememberDevice, OkHttpClient client, Gson gson) {
+                                         String authorizationToken, boolean rememberMe, OkHttpClient client, Gson gson) {
         this.emailAddress = emailAddress;
         this.password = password;
         this.code = code;
 
-        this.epicGamesLauncherToken = epicGamesLauncherToken;
-        this.rememberDevice = rememberDevice;
+        this.authorizationToken = authorizationToken;
+        this.rememberMe = rememberMe;
         this.client = client;
 
         use2fa = code != null && !code.isEmpty();
@@ -78,7 +79,7 @@ public final class FortniteAuthenticationManager {
     public Session authenticate() throws FortniteAuthenticationException {
         try {
             var token = retrieveXSRFToken();
-            retrieveReputation();
+            retrieveReputation(token);
             postLoginForm(token, false);
 
             // If using 2FA is enabled we must retrieve all new stuff.
@@ -93,6 +94,26 @@ public final class FortniteAuthenticationManager {
                 throw new FortniteAuthenticationException("Failed to exchange code. [Exchange code was not given]");
             }
             return retrieveSession(token, code);
+        } catch (final EpicGamesErrorException | IOException exception) {
+            throw new FortniteAuthenticationException("Failed to authenticate.", exception);
+        }
+    }
+
+    /**
+     * Attempts to authenticate with Fortnite.
+     * TODO: Don't think it currently works with 2FA?
+     *
+     * @return a new {@link Session} if authentication was successful.
+     * @throws FortniteAuthenticationException if an error occurred while authenticating.
+     */
+    public Session authenticateKairos() throws FortniteAuthenticationException {
+        try {
+            var token = retrieveXSRFToken();
+            retrieveReputation(token);
+            postKairosLogin("5b685653b9904c1d92495ee8859dcb00", token);
+            final var code = redirectKairos("5b685653b9904c1d92495ee8859dcb00", token);
+
+            return retrieveKairosSession(token, code);
         } catch (final EpicGamesErrorException | IOException exception) {
             throw new FortniteAuthenticationException("Failed to authenticate.", exception);
         }
@@ -127,10 +148,11 @@ public final class FortniteAuthenticationManager {
      *
      * @throws IOException if an IO error occurred.
      */
-    private void retrieveReputation() throws IOException {
+    private void retrieveReputation(String token) throws IOException {
         final var url = "https://www.epicgames.com/id/api/reputation";
         final var response = client.newCall(new Request.Builder()
                 .url(url)
+                .header("x-xsrf-token", token)
                 .get()
                 .build())
                 .execute();
@@ -159,6 +181,52 @@ public final class FortniteAuthenticationManager {
     }
 
     /**
+     * Posts the login form for kairos.
+     *
+     * @param clientId the client ID.
+     * @param token    the token
+     * @throws IOException if an IO error occurred.
+     */
+    private void postKairosLogin(String clientId, String token) throws IOException {
+        final var body = createLoginForm(false);
+        final var url = "https://www.epicgames.com/id/api/login?client_id=" + clientId + "&response_type=code";
+
+        // execute the request.
+        final var response = client.newCall(new Request.Builder()
+                .url(url)
+                .header("x-xsrf-token", token)
+                .post(body)
+                .build())
+                .execute();
+        response.close();
+    }
+
+    /**
+     * Gets the kairos redirect URL and then extracts the authorization code.
+     *
+     * @param clientId the client ID.
+     * @param token    the token.
+     * @return the authorization code.
+     * @throws IOException if an IO error occurred.
+     */
+    private String redirectKairos(String clientId, String token) throws IOException {
+        final var url = "https://www.epicgames.com/id/api/redirect?responseType=code&clientId=" + clientId;
+        final var response = client.newCall(new Request.Builder()
+                .url(url)
+                .header("x-xsrf-token", token)
+                .get()
+                .build())
+                .execute();
+
+        final var body = response.body().string();
+        response.close();
+
+
+        final var json = gson.fromJson(body, JsonObject.class);
+        return StringUtils.substringAfter(json.get("redirectUrl").getAsString(), "code=");
+    }
+
+    /**
      * Creates a form body based on 2FA preferences.
      *
      * @return the form body.
@@ -168,11 +236,11 @@ public final class FortniteAuthenticationManager {
         if (use2faForm) {
             body.add("code", code);
             body.add("method", "authenticator");
-            body.add("rememberDevice", rememberDevice + "");
+            body.add("rememberDevice", rememberMe + "");
         } else {
             body.add("email", emailAddress);
             body.add("password", password);
-            body.add("rememberMe", "false");
+            body.add("rememberMe", rememberMe + "");
         }
         return body.build();
     }
@@ -228,7 +296,40 @@ public final class FortniteAuthenticationManager {
         final var response = client.newCall(new Request.Builder()
                 .url(url)
                 .header("x-xsrf-token", token)
-                .header("Authorization", "basic " + epicGamesLauncherToken)
+                .header("Authorization", "basic " + authorizationToken)
+                .post(body)
+                .build())
+                .execute();
+
+        final var result = response.body().string();
+        response.close();
+
+        if (response.isSuccessful()) return gson.fromJson(result, Session.class);
+        throw EpicGamesErrorException.create(url, gson.fromJson(result, JsonObject.class));
+    }
+
+    /**
+     * Finally, exchange the authorization code for kairos and retrieve the new session.
+     *
+     * @param token the token
+     * @param code  the authorization code
+     * @return a new session
+     * @throws IOException             if an error occurred
+     * @throws EpicGamesErrorException if the API response returned an error.
+     */
+    @SuppressWarnings("ConstantConditions")
+    private Session retrieveKairosSession(String token, String code) throws IOException, EpicGamesErrorException {
+        final var url = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
+        final var body = new FormBody.Builder()
+                .add("grant_type", "authorization_code")
+                .add("code", code)
+                .add("includePerms", "false")
+                .build();
+
+        final var response = client.newCall(new Request.Builder()
+                .url(url)
+                .header("x-xsrf-token", token)
+                .header("Authorization", "basic " + authorizationToken)
                 .post(body)
                 .build())
                 .execute();
@@ -258,7 +359,7 @@ public final class FortniteAuthenticationManager {
 
         final var response = client.newCall(new Request.Builder()
                 .url(url)
-                .header("Authorization", "basic " + epicGamesLauncherToken)
+                .header("Authorization", "basic " + authorizationToken)
                 .post(body)
                 .build())
                 .execute();

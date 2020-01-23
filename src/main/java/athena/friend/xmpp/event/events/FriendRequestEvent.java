@@ -1,30 +1,29 @@
 package athena.friend.xmpp.event.events;
 
 import athena.context.DefaultAthenaContext;
-import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
-import athena.friend.xmpp.event.FriendEvent;
+import athena.friend.xmpp.event.AbstractFriendEvent;
+import athena.friend.xmpp.type.FriendType;
 import athena.friend.xmpp.types.friend.FriendApiObject;
 import athena.util.request.Requests;
 
 /**
  * An event that is invoked when a friend request is received.
  */
-public final class FriendRequestEvent extends FriendEvent {
+public final class FriendRequestEvent extends AbstractFriendEvent {
 
-    public FriendRequestEvent(FriendApiObject notification, DefaultAthenaContext context) {
-        super(notification, context);
+    public FriendRequestEvent(FriendApiObject friendApiObject, FriendType friendType, DefaultAthenaContext context) {
+        super(friendApiObject, friendType, context);
     }
 
     /**
      * Accept the friend request.
      *
-     * @return their profile.
+     * @return their profile, or {@code null} if none was found.
      */
     public Profile accept() {
-        Requests.executeVoidCall(context.friendsService().add(localAccountId, accountId));
-        return Requests.executeCallOptional(context.friendsService().profile(localAccountId, accountId, true))
-                .orElseThrow(() -> EpicGamesErrorException.create("Cannot retrieve profile for " + accountId));
+        Requests.executeVoidCall(context.friendsService().add(context.localAccountId(), accountId));
+        return Requests.executeCallOptional(context.friendsService().profile(context.localAccountId(), accountId, true)).orElse(null);
     }
 
 
@@ -32,7 +31,7 @@ public final class FriendRequestEvent extends FriendEvent {
      * Decline the friend request.
      */
     public void decline() {
-        Requests.executeVoidCall(context.friendsService().remove(localAccountId, accountId));
+        Requests.executeVoidCall(context.friendsService().remove(context.localAccountId(), accountId));
     }
 
 }

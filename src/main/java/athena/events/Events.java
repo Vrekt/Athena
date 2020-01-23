@@ -72,7 +72,8 @@ public final class Events {
      * @return a {@link EventLeaderboard} representing the response.
      */
     public EventLeaderboard leaderboards(String eventId, String eventWindowId, int page, int rank, boolean showLiveSessions) {
-        return leaderboards(eventId, eventWindowId, localAccountId, page, rank, showLiveSessions);
+        final var call = service.leaderboards(eventId, eventWindowId, localAccountId, page, rank, showLiveSessions);
+        return Requests.executeCall(call);
     }
 
     /**

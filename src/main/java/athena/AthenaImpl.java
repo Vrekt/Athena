@@ -19,6 +19,7 @@ import athena.friend.Friends;
 import athena.friend.resource.Friend;
 import athena.friend.resource.summary.Profile;
 import athena.friend.service.FriendsPublicService;
+import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
@@ -133,6 +134,7 @@ final class AthenaImpl implements Athena, Interceptor {
     private final FortnitePublicService fortnitePublicService;
     private final PresencePublicService presencePublicService;
     private final ChannelsPublicService channelsPublicService;
+    private final GroupsService groupsService;
     /**
      * GSON instance.
      */
@@ -159,14 +161,15 @@ final class AthenaImpl implements Athena, Interceptor {
         manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
         // build the client.
         client = new OkHttpClient.Builder()
+                .followRedirects(false)
                 .cookieJar(new JavaNetCookieJar(manager))
                 .addInterceptor(this).build();
 
         // initialize our gson instance
         gson = initializeGson();
-        fortniteAuthenticationManager = new FortniteAuthenticationManager(builder.email(), builder.password(), builder.code(), builder.epicGamesLauncherToken(), builder.shouldRememberDevice(), client, gson);
+        fortniteAuthenticationManager = new FortniteAuthenticationManager(builder.email(), builder.password(), builder.code(), builder.authorizationToken(), builder.shouldRememberMe(), client, gson);
         // authenticate!
-        final var session = fortniteAuthenticationManager.authenticate();
+        final var session = builder.authenticateKairos() ? fortniteAuthenticationManager.authenticateKairos() : fortniteAuthenticationManager.authenticate();
         this.session.set(session); // set the session
 
         LOGGER.atInfo().log("Account " + session.accountId() + " successfully authenticated.");
@@ -200,6 +203,7 @@ final class AthenaImpl implements Athena, Interceptor {
         fortnitePublicService = initializeRetrofitService(FortnitePublicService.BASE_URL, factory, FortnitePublicService.class);
         presencePublicService = initializeRetrofitService(PresencePublicService.BASE_URL, factory, PresencePublicService.class);
         channelsPublicService = initializeRetrofitService(ChannelsPublicService.BASE_URL, factory, ChannelsPublicService.class);
+        groupsService = initializeRetrofitService(GroupsService.BASE_URL, factory, GroupsService.class);
 
         context = new DefaultAthenaContext(this);
 
@@ -431,6 +435,11 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public ChannelsPublicService channelsPublicService() {
         return channelsPublicService;
+    }
+
+    @Override
+    public GroupsService groupsService() {
+        return groupsService;
     }
 
     @Override

@@ -1,9 +1,9 @@
 package athena.util.event;
 
-import com.esotericsoftware.reflectasm.MethodAccess;
-import org.apache.commons.lang3.ArrayUtils;
+import athena.util.reflection.MethodInspector;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class EventFactoryImpl implements EventFactory {
@@ -33,36 +33,9 @@ public final class EventFactoryImpl implements EventFactory {
     @Override
     public void registerEventListener(Object eventListener) {
         final var clazz = eventListener.getClass();
-        final var methods = clazz.getDeclaredMethods();
-        final var access = MethodAccess.get(clazz);
-
-        SubscriberMethod[] subscriberMethods = new SubscriberMethod[0];
-
-        var hasValidMethod = false;
-        for (final var method : methods) {
-            // make sure our annotation is present.
-            if (method.isAnnotationPresent(primaryAnnotation)) {
-                final var index = access.getIndex(method.getName());
-                final var parameterTypes = access.getParameterTypes()[index];
-                // make sure only one param.
-                if (parameterTypes.length == parameterLimit) {
-                    method.setAccessible(true);
-                    hasValidMethod = true;
-
-                    // add the event method to the subscriber.
-                    final var eventMethod = new SubscriberMethod(index, parameterTypes);
-                    subscriberMethods = ArrayUtils.add(subscriberMethods, eventMethod);
-                }
-            }
-        }
-
-        // no valid method, throw.
-        if (!hasValidMethod)
-            throw new IllegalArgumentException("Class must include one method with the " + primaryAnnotation.getName() + " annotation and no more than " + parameterLimit + " method parameters.");
-
-        // add subscriber
-        final var subscriber = new Subscriber(subscriberMethods, access);
-        subscribers.put(eventListener, subscriber);
+        final var inspector = new MethodInspector();
+        inspector.cacheAnnotatedMethods(clazz, primaryAnnotation);
+        subscribers.put(eventListener, new Subscriber(clazz, inspector));
     }
 
     @Override
@@ -77,7 +50,10 @@ public final class EventFactoryImpl implements EventFactory {
      */
     @Override
     public void invoke(Object... arguments) {
-        for (final var entry : subscribers.entrySet()) entry.getValue().invoke(entry.getKey(), arguments);
+        for (final var entry : subscribers.entrySet()) {
+            final var subscriber = entry.getValue();
+            invoke(subscriber.clazz, subscriber.inspector, entry.getKey(), arguments);
+        }
     }
 
     @Override
@@ -85,63 +61,34 @@ public final class EventFactoryImpl implements EventFactory {
         subscribers.clear();
     }
 
-    /**
-     * A event subscriber.
-     * Holds methods/access and the invoke function.
-     */
-    private static final class Subscriber {
-        private final SubscriberMethod[] methods;
-        private final MethodAccess access;
-
-        private Subscriber(SubscriberMethod[] methods, MethodAccess access) {
-            this.methods = methods;
-            this.access = access;
-        }
-
-        /**
-         * Invoke if a method matches the provided {@code arguments}
-         *
-         * @param type      the type
-         * @param arguments the arguments.
-         */
-        private void invoke(Object type, Object... arguments) {
-            for (final var method : methods) {
-                for (final var arg : arguments) {
-                    if (method.assignable(arg.getClass())) access.invoke(type, method.index, arguments);
-                }
+    private void invoke(Class<?> clazz, MethodInspector inspector, Object type, Object... arguments) {
+        final var methods = inspector.getAnnotatedMethodsWith(clazz, primaryAnnotation, arguments[0].getClass());
+        for (final var method : methods) {
+            try {
+                method.invoke(type, arguments);
+            } catch (IllegalAccessException | InvocationTargetException exception) {
+                exception.printStackTrace();
+                // TODO: Logger?
             }
         }
     }
 
     /**
-     * A class that stores the methodIndex, parameters and the object register.
+     * Represents an event subscriber.
      */
-    private static final class SubscriberMethod {
-
-        private final Class<?>[] parameterTypes;
-        private final int index;
-
-        private SubscriberMethod(int index, Class<?>[] parameterTypes) {
-            this.index = index;
-            this.parameterTypes = parameterTypes;
-        }
-
+    private static final class Subscriber {
         /**
-         * Check if the provided {@code type} is {@code isAssignableFrom} to the method parameter types.
-         *
-         * @param type the type
-         * @return {@code true} if its assignable from.
+         * The inspector
          */
-        private boolean assignable(Class<?> type) {
-            for (final var parameter : parameterTypes) if (parameter.isAssignableFrom(type)) return true;
-            return false;
-        }
-
+        private final MethodInspector inspector;
         /**
-         * @return the method index.
+         * Base class
          */
-        private int index() {
-            return index;
+        private final Class<?> clazz;
+
+        private Subscriber(Class<?> clazz, MethodInspector inspector) {
+            this.clazz = clazz;
+            this.inspector = inspector;
         }
     }
 

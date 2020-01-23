@@ -6,7 +6,7 @@ import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
 import com.google.common.collect.Lists;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public final class LastOnlineResponse {
         final var call = accountPublicService.findOneByAccountId(accountId);
         final var result = Requests.executeCall(call);
         if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
-        return new Pair<>(result[0], get(accountId));
+        return Pair.of(result[0], get(accountId));
     }
 
     /**

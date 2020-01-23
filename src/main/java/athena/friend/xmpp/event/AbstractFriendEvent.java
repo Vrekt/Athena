@@ -14,36 +14,53 @@ import java.time.Instant;
 /**
  * Used as a base for all friend events.
  */
-public abstract class FriendEvent {
+public abstract class AbstractFriendEvent {
 
+
+    /**
+     * The {@link Friendship} object.
+     */
     protected final Friendship friendship;
+    /**
+     * The {@link FriendApiObject} object.
+     */
     protected final FriendApiObject friendApiObject;
+    /**
+     * The athena context.
+     */
     protected final DefaultAthenaContext context;
 
-    protected final String accountId, localAccountId;
+    /**
+     * Account ID of this event.
+     */
+    protected final String accountId;
+    /**
+     * Timestamp of the event.
+     */
     protected final Instant timestamp;
-    protected final FriendType type;
+    /**
+     * The friend-type.
+     */
+    protected final FriendType friendType;
 
-    public FriendEvent(FriendApiObject notification, DefaultAthenaContext context) {
-        this.friendApiObject = notification;
-        this.friendship = null;
+    public AbstractFriendEvent(Friendship friendship, FriendType friendType, DefaultAthenaContext context) {
+        this.friendship = friendship;
+        this.friendApiObject = null;
+        this.friendType = friendType;
         this.context = context;
 
-        this.accountId = notification.accountId();
-        this.localAccountId = context.localAccountId();
-        this.timestamp = notification.timestamp();
-        this.type = FriendType.typeOf(notification.type());
+        this.accountId = friendship.from();
+        this.timestamp = friendship.timestamp();
     }
 
-    public FriendEvent(Friendship notification, DefaultAthenaContext context) {
-        this.friendship = notification;
-        this.friendApiObject = null;
+    public AbstractFriendEvent(FriendApiObject friendApiObject, FriendType friendType, DefaultAthenaContext context) {
+        this.friendApiObject = friendApiObject;
+        this.friendship = null;
+        this.friendType = friendType;
         this.context = context;
 
-        this.accountId = notification.from();
-        this.localAccountId = context.localAccountId();
-        this.timestamp = notification.timestamp();
-        this.type = FriendType.typeOf(notification.type());
+        this.accountId = friendApiObject.accountId();
+        this.timestamp = friendApiObject.timestamp();
     }
 
     /**
@@ -97,6 +114,6 @@ public abstract class FriendEvent {
      * @return the types type
      */
     public FriendType type() {
-        return type;
+        return friendType;
     }
 }

@@ -1,12 +1,16 @@
 package athena.friend.xmpp.event.events;
 
 import athena.context.DefaultAthenaContext;
-import athena.friend.xmpp.event.FriendEvent;
+import athena.friend.xmpp.event.AbstractFriendEvent;
+import athena.friend.xmpp.type.FriendType;
 import athena.friend.xmpp.types.friend.Friendship;
 
-public final class FriendAcceptedEvent extends FriendEvent {
+/**
+ * An event for when a friend request is accepted.
+ */
+public final class FriendAcceptedEvent extends AbstractFriendEvent {
 
-    public FriendAcceptedEvent(Friendship notification, DefaultAthenaContext context) {
-        super(notification, context);
+    public FriendAcceptedEvent(Friendship friendship, FriendType friendType, DefaultAthenaContext context) {
+        super(friendship, friendType, context);
     }
 }
