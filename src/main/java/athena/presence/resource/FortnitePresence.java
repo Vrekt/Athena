@@ -57,7 +57,8 @@ public final class FortnitePresence extends AthenaContext {
      */
     private Jid from;
 
-    private FortnitePresence() {}
+    private FortnitePresence() {
+    }
 
     /**
      * @return the JSON status
@@ -175,6 +176,7 @@ public final class FortnitePresence extends AthenaContext {
      * @return the display name of who owns the party, or {@code ""} if the party is private.
      */
     public String sourceDisplayName() {
+        if (properties == null || properties.partyJoinInfo == null) return "";
         return properties.partyJoinInfo.isPrivate ? "" : properties.partyJoinInfo.sourceDisplayName;
     }
 

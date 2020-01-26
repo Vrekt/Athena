@@ -8,7 +8,9 @@ import athena.presence.resource.listener.FortnitePresenceListener;
 import athena.presence.resource.subscription.PresenceSubscription;
 import athena.presence.resource.subscription.SubscriptionSettings;
 import athena.presence.service.PresencePublicService;
-import athena.util.cleanup.Closeable;
+import athena.util.cleanup.AfterRefresh;
+import athena.util.cleanup.BeforeRefresh;
+import athena.util.cleanup.Shutdown;
 import athena.util.request.Requests;
 
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.List;
 /**
  * Provides easy access to the {@link athena.presence.service.PresencePublicService} and XMPP.
  */
-public final class Presences implements Closeable {
+public final class Presences {
 
     private final PresencePublicService service;
     private PresenceXMPPProvider provider;
@@ -159,23 +161,18 @@ public final class Presences implements Closeable {
         if (provider != null) provider.unregisterEventListener(type);
     }
 
-    @Override
-    public void refresh(DefaultAthenaContext context) {
-        if (provider != null) {
-            provider.removeStanzaListener();
-            final var old = provider;
-            provider = new PresenceXMPPProvider(context, old);
-            old.close();
-        }
+    @AfterRefresh
+    private void after(DefaultAthenaContext context) {
+        if (provider != null) provider.afterRefresh(context);
     }
 
-    @Override
-    public void dispose() {
-        if (provider != null) provider.close();
+    @BeforeRefresh
+    private void before() {
+        if (provider != null) provider.beforeRefresh();
     }
 
-    @Override
-    public void clean() {
-        if (provider != null) provider.clean();
+    @Shutdown
+    private void shutdown() {
+        if (provider != null) provider.shutdown();
     }
 }

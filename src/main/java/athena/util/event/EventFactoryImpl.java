@@ -6,89 +6,92 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class EventFactoryImpl implements EventFactory {
+final class EventFactoryImpl implements EventFactory {
 
-    /**
-     * A map of subscribers.
-     */
-    private final ConcurrentHashMap<Object, Subscriber> subscribers = new ConcurrentHashMap<>();
+    private final Class<? extends Annotation>[] annotations;
 
-    /**
-     * Primary annotation for methods and the method parameter limit.
-     */
-    private final Class<? extends Annotation> primaryAnnotation;
-    private final int parameterLimit;
+    private final ConcurrentHashMap<Object, EventSubscriber> subscribers = new ConcurrentHashMap<>();
 
-    EventFactoryImpl(Class<? extends Annotation> primaryAnnotation, int parameterLimit) {
-        this.primaryAnnotation = primaryAnnotation;
-        this.parameterLimit = parameterLimit;
-    }
-
-    EventFactoryImpl(EventFactoryImpl other) {
-        subscribers.putAll(other.subscribers);
-        primaryAnnotation = other.primaryAnnotation;
-        parameterLimit = other.parameterLimit;
+    @SafeVarargs
+    EventFactoryImpl(Class<? extends Annotation>... annotations) {
+        this.annotations = annotations;
     }
 
     @Override
     public void registerEventListener(Object eventListener) {
         final var clazz = eventListener.getClass();
-        final var inspector = new MethodInspector();
-        inspector.cacheAnnotatedMethods(clazz, primaryAnnotation);
-        subscribers.put(eventListener, new Subscriber(clazz, inspector));
+        subscribers.put(eventListener, new EventSubscriber(clazz, annotations));
     }
 
     @Override
     public void unregisterEventListener(Object eventListener) {
-        subscribers.remove(eventListener);
-    }
-
-    /**
-     * TODO: Store key by parameter types so we don't have to iterate through whole map?
-     *
-     * @param arguments the arguments.
-     */
-    @Override
-    public void invoke(Object... arguments) {
-        for (final var entry : subscribers.entrySet()) {
-            final var subscriber = entry.getValue();
-            invoke(subscriber.clazz, subscriber.inspector, entry.getKey(), arguments);
-        }
+        final var subscriber = subscribers.get(eventListener);
+        subscriber.inspector.removeClass(subscriber.clazz);
+        subscribers.remove(eventListener, subscriber);
     }
 
     @Override
-    public void dispose() {
+    public void unregisterAll() {
+        subscribers.values().forEach(eventSubscriber -> eventSubscriber.inspector.removeClass(eventSubscriber.clazz));
         subscribers.clear();
     }
 
-    private void invoke(Class<?> clazz, MethodInspector inspector, Object type, Object... arguments) {
-        final var methods = inspector.getAnnotatedMethodsWith(clazz, primaryAnnotation, arguments[0].getClass());
+    @Override
+    public void invoke(Class<? extends Annotation> annotation, Object... arguments) {
+        for (final var entry : subscribers.entrySet()) {
+            final var subscriber = entry.getValue();
+            invoke(subscriber.clazz, annotation, subscriber.inspector, entry.getKey(), arguments);
+        }
+    }
+
+    /**
+     * Invoke a method.
+     *
+     * @param clazz      the class
+     * @param annotation the annotation
+     * @param inspector  the inspector
+     * @param type       the original object
+     * @param arguments  arguments
+     */
+    private void invoke(Class<?> clazz, Class<? extends Annotation> annotation, MethodInspector inspector, Object type, Object... arguments) {
+        final var classes = new Class<?>[arguments.length];
+        for (int i = 0; i < arguments.length; i++) {
+            classes[i] = arguments[i].getClass();
+        }
+
+        final var methods = arguments.length == 0 ? inspector.getMethods(clazz, annotation) : inspector.getMethodsWithParameters(clazz, annotation, classes);
         for (final var method : methods) {
             try {
                 method.invoke(type, arguments);
             } catch (IllegalAccessException | InvocationTargetException exception) {
                 exception.printStackTrace();
-                // TODO: Logger?
             }
         }
     }
 
+    @Override
+    public void dispose() {
+        unregisterAll();
+    }
+
     /**
-     * Represents an event subscriber.
+     * Represents an event subscriber from {@code registerEventListener}
      */
-    private static final class Subscriber {
+    private static final class EventSubscriber {
+
         /**
-         * The inspector
+         * The method inspector.
          */
-        private final MethodInspector inspector;
+        private final MethodInspector inspector = new MethodInspector();
         /**
-         * Base class
+         * The class that belongs to this subscriber.
          */
         private final Class<?> clazz;
 
-        private Subscriber(Class<?> clazz, MethodInspector inspector) {
+        private EventSubscriber(Class<?> clazz, Class<? extends Annotation>[] annotations) {
             this.clazz = clazz;
-            this.inspector = inspector;
+
+            inspector.cacheAnnotatedMethodsOnce(clazz, annotations);
         }
     }
 

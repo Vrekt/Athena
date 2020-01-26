@@ -3,6 +3,8 @@ package athena;
 import athena.account.Accounts;
 import athena.account.service.AccountPublicService;
 import athena.authentication.session.Session;
+import athena.authentication.type.AuthClient;
+import athena.authentication.type.GrantType;
 import athena.channels.service.ChannelsPublicService;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
@@ -29,7 +31,7 @@ public interface Athena {
 
     /**
      * Various tokens for authorization.
-     * TODO: Use {@link athena.authentication.AuthClient}
+     * TODO: Use {@link AuthClient}
      */
     String EPIC_GAMES_LAUNCHER_TOKEN = "MzQ0NmNkNzI2OTRjNGE0NDg1ZDgxYjc3YWRiYjIxNDE6OTIwOWQ0YTVlMjVhNDU3ZmI5YjA3NDg5ZDMxM2I0MWE=";
     String FORTNITE_TOKEN = "ZWM2ODRiOGM2ODdmNDc5ZmFkZWEzY2IyYWQ4M2Y1YzY6ZTFmMzFjMjExZjI4NDEzMTg2MjYyZDM3YTEzZmM4NGQ=";
@@ -178,8 +180,11 @@ public interface Athena {
 
         /**
          * Email address, password, and if 2FA is enabled the 2FA code.
+         * {@code accountId} the account ID for device_auth
+         * {@code deviceId} the device ID for device_auth
+         * {@code secret} the secret for device_auth
          */
-        private String email, password, code;
+        private String email, password, code, accountId, deviceId, secret;
         /**
          * {@code rememberDevice} if user/device should be remembered.
          * {@code killOtherSessions} allows you to kill other tokens that are in use.
@@ -205,6 +210,12 @@ public interface Athena {
          */
         private Platform platform;
         private String appType;
+
+        /**
+         * The grant type to use.
+         * Default: EXCHANGE_CODE
+         */
+        private GrantType grantType = GrantType.EXCHANGE_CODE;
 
         public Builder(String email, String password, String code) {
             this.email = email;
@@ -240,6 +251,29 @@ public interface Athena {
             return this;
         }
 
+        public Builder accountId(String accountId) {
+            this.accountId = accountId;
+            return this;
+        }
+
+        public Builder deviceId(String deviceId) {
+            this.deviceId = deviceId;
+            return this;
+        }
+
+        public Builder secret(String secret) {
+            this.secret = secret;
+            return this;
+        }
+
+        public Builder useDeviceAuth(String accountId, String deviceId, String secret) {
+            this.accountId = accountId;
+            this.deviceId = deviceId;
+            this.secret = secret;
+            this.grantType = GrantType.DEVICE_AUTH;
+            return this;
+        }
+
         public Builder rememberMe() {
             rememberMe = true;
             return this;
@@ -267,6 +301,7 @@ public interface Athena {
 
         public Builder kairos() {
             kairos = true;
+            grantType = GrantType.AUTHORIZATION_CODE;
             return this;
         }
 
@@ -300,6 +335,11 @@ public interface Athena {
             return this;
         }
 
+        public Builder grantType(GrantType grantType) {
+            this.grantType = grantType;
+            return this;
+        }
+
         String authorizationToken() {
             return authorizationToken;
         }
@@ -314,6 +354,18 @@ public interface Athena {
 
         String code() {
             return code;
+        }
+
+        String accountId() {
+            return accountId;
+        }
+
+        String deviceId() {
+            return deviceId;
+        }
+
+        String secret() {
+            return secret;
         }
 
         boolean shouldRememberMe() {
@@ -356,12 +408,16 @@ public interface Athena {
             return kairos;
         }
 
-        public Platform platform() {
+        Platform platform() {
             return platform;
         }
 
-        public String appType() {
+        String appType() {
             return appType;
+        }
+
+        GrantType grantType() {
+            return grantType;
         }
 
         /**

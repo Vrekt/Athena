@@ -2,113 +2,188 @@ package athena.util.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * Used to cache annotated methods.
- * TODO: Currently class only supports 1 parameter type.
+ * A utility class used to inspect and cache methods.
  */
 public final class MethodInspector {
 
     /**
-     * The cache.
+     * TODO: Watch for concurrency issues.
      */
-    private final ConcurrentMap<Class<?>, ConcurrentMap<Class<? extends Annotation>, CacheObject>> cache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<Class<? extends Annotation>, MethodData>> cache = new HashMap<>();
 
     /**
-     * Cache annotated methods.
+     * Cache annotated methods annotated with the provided {@code annotations} once.
      *
-     * @param clazz      the class
-     * @param annotation the annotation.
+     * @param clazz       the class
+     * @param annotations the annotations
      */
-    public void cacheAnnotatedMethods(Class<?> clazz, Class<? extends Annotation> annotation) {
-        if (clazz == null || annotation == null) return;
-        final var collect = collect(clazz, annotation);
-        if (collect == null) return;
+    public void cacheAnnotatedMethodsOnce(Class<?> clazz, Class<? extends Annotation>[] annotations) {
+        if (clazz == null || annotations == null) throw new NullPointerException("Clazz or annotation is null.");
+        if (cache.containsKey(clazz)) throw new UnsupportedOperationException("Class is already cached.");
 
-        final var map = new ConcurrentHashMap<Class<? extends Annotation>, CacheObject>();
-        map.put(annotation, new CacheObject(collect));
-        cache.put(clazz, map);
+        final var cache = new HashMap<Class<? extends Annotation>, MethodData>();
+        for (var annotation : annotations) {
+            if (annotation == null) throw new NullPointerException("one of the annotations is null.");
+            final var methods = collectAnnotatedMethods(new Class[]{clazz}, annotation);
+            if (methods.isEmpty()) continue;
+            cache.put(annotation, new MethodData(methods));
+        }
+        this.cache.put(clazz, cache);
     }
 
     /**
-     * Collect methods that are annotated with the provided {@code annotation}
+     * Get a list of methods annotated with the provided {@code annotation}
      *
      * @param clazz      the class
      * @param annotation the annotation
-     * @return the collection of methods or {@code null}
+     * @return a list of methods
      */
-    private Collection<Method> collect(Class<?> clazz, Class<? extends Annotation> annotation) {
-        if (clazz == null || annotation == null) return null;
-        final var methods = new LinkedHashSet<Method>();
+    public Collection<Method> getMethods(Class<?> clazz, Class<? extends Annotation> annotation) {
+        if (!cache.containsKey(clazz)) throw new IllegalArgumentException("That class is not cached yet.");
+        final var cache = this.cache.get(clazz);
+        final var data = cache.get(annotation);
+        return data.getMethods();
+    }
 
-        // first collect all declared methods.
-        for (var method : clazz.getDeclaredMethods()) {
-            if (method.isAnnotationPresent(annotation)) {
-                method.setAccessible(true);
-                methods.add(method);
+    /**
+     * Get a list of methods annotated with the provided {@code annotation} that have the matching parameter types.
+     *
+     * @param clazz      the class
+     * @param annotation the annotation
+     * @param parameters the parameter types
+     * @return a list of methods
+     */
+    public Collection<Method> getMethodsWithParameters(Class<?> clazz, Class<? extends Annotation> annotation, Class<?>... parameters) {
+        if (!cache.containsKey(clazz)) throw new IllegalArgumentException("That class is not cached yet.");
+        final var cache = this.cache.get(clazz);
+        final var data = cache.get(annotation);
+        return data.getMatchingParameterType(parameters);
+    }
+
+    /**
+     * Remove a class from the cache.
+     *
+     * @param clazz the class.
+     */
+    public void removeClass(Class<?> clazz) {
+        cache.remove(clazz);
+    }
+
+    /**
+     * Collects methods annotated with the provided {@code annotation} to the {@code methods} collection
+     *
+     * @param annotation the annotation
+     * @param methods    the collection
+     * @param classes    the classes
+     * @return a list of methods
+     */
+    private Collection<Method> collectAnnotatedMethodsTo(Class<? extends Annotation> annotation, Collection<Method> methods, Class<?>... classes) {
+        for (var clazz : classes) {
+            for (var method : clazz.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(annotation)) {
+                    method.setAccessible(true);
+                    methods.add(method);
+                }
             }
         }
 
-        // next, collect super-class methods.
-        final var superClassMethods = collect(clazz.getSuperclass(), annotation);
-        if (superClassMethods != null) methods.addAll(superClassMethods);
-        // TODO: Interface methods?
         return methods;
     }
 
     /**
-     * Get the annotated methods from cache.
+     * Collect annotated methods
      *
-     * @param clazz      the class
+     * @param classes    the classes
      * @param annotation the annotation
-     * @return the collection of methods
+     * @return a list of methods
      */
-    public Collection<Method> getAnnotatedMethods(Class<?> clazz, Class<? extends Annotation> annotation) {
-        final var map = cache.get(clazz);
-        if (map == null) return Collections.emptyList();
-        final var cache = map.get(annotation);
-        return cache.methods.keySet();
-    }
-
-    /**
-     * Get the annotated methods with the parameter type from cache.
-     *
-     * @param clazz         the class
-     * @param annotation    the annotation
-     * @param parameterType the parameter type class
-     * @return the collection of methods
-     */
-    public Collection<Method> getAnnotatedMethodsWith(Class<?> clazz, Class<? extends Annotation> annotation, Class<?> parameterType) {
-        final var map = cache.get(clazz);
-        if (map == null) return Collections.emptyList();
-        final var cache = map.get(annotation);
-        final var methods = new LinkedHashSet<Method>();
-        for (final var entry : cache.methods.entrySet()) {
-            if (entry.getValue().isAssignableFrom(parameterType)) methods.add(entry.getKey());
+    private Collection<Method> collectAnnotatedMethods(Class<?>[] classes, Class<? extends Annotation> annotation) {
+        final var methods = collectAnnotatedMethodsTo(annotation, new LinkedHashSet<>(), classes);
+        for (var clazz : classes) {
+            methods.addAll(collectAnnotatedMethodsTo(annotation, methods, clazz.getSuperclass()));
+            methods.addAll(collectAnnotatedMethodsTo(annotation, methods, clazz.getInterfaces()));
         }
         return methods;
     }
 
     /**
-     * A cache object/subscriber.
-     * Holds method and parameter data.
-     * TODO: Improve in the future!
+     * Used to store data about a method.
      */
-    private static final class CacheObject {
+    private static final class MethodData {
 
         /**
-         * List of methods and their parameter types.
-         * TODO: Only supports 1 type.
+         * Collection of method parameter types in a map.
          */
-        private final Map<Method, Class<?>> methods = new HashMap<>();
+        private final Map<ParameterData, Method> methodParameterTypes = new HashMap<>();
 
-        private CacheObject(Collection<Method> methods) {
-            methods.forEach(method -> this.methods.put(method, method.getParameterTypes().length == 0 ? null : method.getParameterTypes()[0]));
+        private MethodData(Collection<Method> methods) {
+            methods.forEach(method -> methodParameterTypes.put(new ParameterData(method.getParameterTypes()), method));
         }
-    }
 
+        /**
+         * Collects methods with the matched parameter types.
+         *
+         * @param types the types
+         * @return a list of methods
+         */
+        private Collection<Method> getMatchingParameterType(Class<?>... types) {
+            final var parameterData = methodParameterTypes.keySet();
+            final var length = types.length;
+            final var found = parameterData
+                    .stream()
+                    .filter(data -> data.count == length)
+                    .filter(data -> data.assignable(types))
+                    .collect(Collectors.toList());
+            final var list = new LinkedHashSet<Method>();
+            found.forEach(data -> list.add(methodParameterTypes.get(data)));
+            return list;
+        }
+
+        /**
+         * @return get all methods stored
+         */
+        private Collection<Method> getMethods() {
+            return methodParameterTypes.values();
+        }
+
+        /**
+         * Stores parameter info
+         */
+        private static final class ParameterData {
+            /**
+             * The parameter types
+             */
+            private final Class<?>[] parameters;
+            /**
+             * Amount of types
+             */
+            private final int count;
+
+            private ParameterData(Class<?>[] parameters) {
+                this.parameters = parameters;
+                this.count = parameters.length;
+            }
+
+            /**
+             * @param types the types
+             * @return {@code true} if each class in {@code types} is assignable from {@code parameters}
+             */
+            private boolean assignable(Class<?>... types) {
+                for (int i = 0; i < types.length; i++) {
+                    if (!types[i].isAssignableFrom(parameters[i])) return false;
+                }
+                return true;
+            }
+
+        }
+
+    }
 
 }

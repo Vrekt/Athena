@@ -16,8 +16,31 @@ import com.google.gson.Gson;
  */
 public final class DefaultAthenaContext extends AthenaContext {
 
-    public DefaultAthenaContext(Athena athena) {
-        initializeContext(athena);
+    /**
+     * Initialize services only.
+     *
+     * @param athena the athena instance.
+     */
+    public void initializeServicesOnly(Athena athena) {
+        initializeServices(athena);
+    }
+
+    /**
+     * Initialize resources only.
+     *
+     * @param athena the athena instance.
+     */
+    public void initializeResourcesOnly(Athena athena) {
+        initializeResources(athena);
+    }
+
+    /**
+     * Initialize other things only.
+     *
+     * @param athena the athena instance.
+     */
+    public void initializeOtherOnly(Athena athena) {
+        initializeOther(athena);
     }
 
     /**
@@ -88,10 +111,6 @@ public final class DefaultAthenaContext extends AthenaContext {
      */
     public Friends friends() {
         return friends;
-    }
-
-    public void friends(Friends friends) {
-        this.friends = friends;
     }
 
 }

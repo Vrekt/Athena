@@ -2,27 +2,20 @@ package athena.util.event;
 
 import java.lang.annotation.Annotation;
 
+/**
+ * Used to dispatch listener/annotated type events.
+ */
 public interface EventFactory {
 
     /**
-     * Create a new event factory.
+     * Creates a new annotated factory.
      *
-     * @param primaryAnnotation the primary annotation.
-     * @param parameterLimit    the parameter limit for methods
+     * @param annotations the set of annotations that are valid.
      * @return a new {@link EventFactory}
      */
-    static EventFactory create(Class<? extends Annotation> primaryAnnotation, int parameterLimit) {
-        return new EventFactoryImpl(primaryAnnotation, parameterLimit);
-    }
-
-    /**
-     * Create a new event factory from another.
-     *
-     * @param other the other
-     * @return a new {@link EventFactory}
-     */
-    static EventFactory create(EventFactory other) {
-        return new EventFactoryImpl((EventFactoryImpl) other);
+    @SafeVarargs
+    static EventFactory createAnnotatedFactory(Class<? extends Annotation>... annotations) {
+        return new EventFactoryImpl(annotations);
     }
 
     /**
@@ -40,11 +33,17 @@ public interface EventFactory {
     void unregisterEventListener(Object eventListener);
 
     /**
+     * Unregister all event listeners.
+     */
+    void unregisterAll();
+
+    /**
      * Invoke an event type.
      *
-     * @param arguments the arguments.
+     * @param annotation the annotation
+     * @param arguments  the arguments.
      */
-    void invoke(Object... arguments);
+    void invoke(Class<? extends Annotation> annotation, Object... arguments);
 
     /**
      * Dispose of this factory.

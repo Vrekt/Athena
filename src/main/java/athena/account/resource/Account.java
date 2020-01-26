@@ -1,17 +1,23 @@
 package athena.account.resource;
 
+import athena.account.resource.action.FriendAcceptor;
 import athena.account.resource.external.ExternalAuth;
+import athena.context.AthenaContext;
+import athena.friend.resource.summary.Profile;
 import athena.friend.xmpp.event.events.FriendRequestEvent;
 import athena.friend.xmpp.listener.FriendEventListener;
 import athena.types.Platform;
 import athena.util.json.post.annotation.PostDeserialize;
+import athena.util.other.EmptyAction;
 import athena.util.request.Requests;
-import athena.context.AthenaContext;
 import com.google.gson.annotations.SerializedName;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.impl.JidCreate;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -40,7 +46,7 @@ public final class Account extends AthenaContext {
     }
 
     @PostDeserialize
-    private void post() {
+    private void postDeserialize() {
         jid = JidCreate.bareFromOrThrowUnchecked(accountId + "@prod.ol.epicgames.com");
     }
 
@@ -141,33 +147,93 @@ public final class Account extends AthenaContext {
     }
 
     /**
-     * Add an incoming friend request listener.
+     * Retrieve the friend profile of this account.
      *
-     * @param consumer the consumer
+     * @return their {@link Profile}
+     * @throws athena.exception.EpicGamesErrorException if an API error occurred or they are not a friend
      */
-    public void addIncomingFriendRequestListener(Consumer<FriendRequestEvent> consumer) {
+    public Profile friendProfile() {
+        return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
+    }
+
+    /**
+     * Automatically accept the incoming friend request from this account.
+     *
+     * @return a new {@link FriendAcceptor}
+     */
+    public FriendAcceptor acceptAsFriendAutomatically() {
+        final var acceptor = new DefaultFriendAcceptor();
+        friends.registerEventListenerForAccount(accountId, acceptor);
+        return acceptor;
+    }
+
+    /**
+     * Accepts a {@link FriendRequestEvent} when a friend request is sent from this account.
+     *
+     * @param consumer the consumer.
+     */
+    public void onFriendRequest(Consumer<FriendRequestEvent> consumer) {
         friends.registerEventListenerForAccount(accountId, new FriendEventListener() {
             @Override
             public void friendRequest(FriendRequestEvent event) {
                 consumer.accept(event);
+                friends.unregisterEventListenerForAccount(accountId, this);
             }
         });
     }
 
     /**
-     * Remove the incoming friend request listener.
-     */
-    public void removeIncomingFriendRequestListener() {
-        friends.unregisterEventListenerForAccount(accountId);
-    }
-
-    /**
      * Add a friend listener just for this account.
-     * If you already have a listener via {@code addIncomingFriendRequestListener} then this listener will overwrite that one.
      *
      * @param friendEventListener the listener.
      */
     public void addFriendListener(FriendEventListener friendEventListener) {
         friends.registerEventListenerForAccount(accountId, friendEventListener);
     }
+
+    /**
+     * Provides a default implementation for {@link FriendAcceptor}
+     */
+    private final class DefaultFriendAcceptor implements FriendAcceptor, FriendEventListener {
+
+        private Executor delayed;
+        private EmptyAction action;
+        private Consumer<Profile> profileConsumer;
+
+        @Override
+        public FriendAcceptor waitUntil(int seconds) {
+            if (delayed == null) {
+                delayed = CompletableFuture.delayedExecutor(seconds, TimeUnit.SECONDS);
+                delayed.execute(() -> {
+                    Account.this.friends.unregisterEventListenerForAccount(Account.this.accountId, this);
+                    if (action != null) {
+                        action.execute();
+                    }
+                });
+            } else {
+                throw new UnsupportedOperationException("Wait until was already set!");
+            }
+            return this;
+        }
+
+        @Override
+        public FriendAcceptor onExpired(EmptyAction run) {
+            this.action = run;
+            return this;
+        }
+
+        @Override
+        public FriendAcceptor onAccepted(Consumer<Profile> profileConsumer) {
+            this.profileConsumer = profileConsumer;
+            return this;
+        }
+
+        @Override
+        public void friendRequest(FriendRequestEvent event) {
+            Account.this.friends.unregisterEventListenerForAccount(Account.this.accountId, this);
+            final var profile = event.accept();
+            if (profileConsumer != null) profileConsumer.accept(profile);
+        }
+    }
+
 }

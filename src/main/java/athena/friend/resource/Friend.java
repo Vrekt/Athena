@@ -56,7 +56,7 @@ public final class Friend extends AthenaContext {
     }
 
     @PostDeserialize
-    private void post() {
+    private void postDeserialize() {
         jid = JidCreate.bareFromOrThrowUnchecked(accountId + "@prod.ol.epicgames.com");
     }
 

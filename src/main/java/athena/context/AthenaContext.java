@@ -64,4 +64,23 @@ public abstract class AthenaContext {
         this.gson = athena.gson();
     }
 
+    protected void initializeServices(Athena athena) {
+        this.accountPublicService = athena.accountPublicService();
+        this.friendsPublicService = athena.friendsPublicService();
+        this.statsproxyPublicService = athena.statsproxyPublicService();
+        this.eventsPublicService = athena.eventsPublicService();
+        this.fortnitePublicService = athena.fortnitePublicService();
+        this.presencePublicService = athena.presencePublicService();
+    }
+
+    protected void initializeOther(Athena athena) {
+        this.localAccountId = athena.accountId();
+        this.connectionManager = athena.xmpp();
+        this.gson = athena.gson();
+    }
+
+    protected void initializeResources(Athena athena) {
+        this.friends = athena.friend();
+    }
+
 }

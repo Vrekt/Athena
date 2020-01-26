@@ -1,6 +1,7 @@
 package athena.util.json.context;
 
 import athena.Athena;
+import athena.context.DefaultAthenaContext;
 import athena.util.json.context.annotation.Context;
 import athena.util.reflection.MethodInspector;
 import com.google.gson.TypeAdapter;
@@ -30,12 +31,13 @@ public final class AthenaContextAdapter<T> extends TypeAdapter<T> {
      */
     private final Athena athena;
 
+    @SuppressWarnings("unchecked")
     public AthenaContextAdapter(Class<?> clazz, TypeAdapter<T> adapter, Athena athena) {
         this.adapter = adapter;
         this.athena = athena;
 
         // collect all methods annotated and cache them.
-        inspector.cacheAnnotatedMethods(clazz, Context.class);
+        inspector.cacheAnnotatedMethodsOnce(clazz, new Class[]{Context.class});
     }
 
     /**
@@ -52,15 +54,13 @@ public final class AthenaContextAdapter<T> extends TypeAdapter<T> {
     @Override
     public T read(JsonReader in) throws IOException {
         final var deserialized = adapter.read(in);
-        final var methods = inspector.getAnnotatedMethods(deserialized.getClass(), Context.class);
+        final var methods = inspector.getMethodsWithParameters(deserialized.getClass(), Context.class, DefaultAthenaContext.class);
 
         for (final var method : methods) {
             try {
                 method.invoke(deserialized, athena);
             } catch (IllegalAccessException | InvocationTargetException exception) {
                 exception.printStackTrace();
-
-                // TODO: Logger later maybe?
             }
         }
         return deserialized;

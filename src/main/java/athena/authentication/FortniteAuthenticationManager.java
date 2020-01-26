@@ -1,6 +1,8 @@
 package athena.authentication;
 
 import athena.authentication.session.Session;
+import athena.authentication.type.AuthClient;
+import athena.authentication.type.GrantType;
 import athena.exception.EpicGamesErrorException;
 import athena.exception.FortniteAuthenticationException;
 import athena.util.json.JsonFind;
@@ -25,7 +27,7 @@ import java.io.IOException;
  * Built with help from: iXyles, Loukios#6383, and Joe for whole Kairos auth-flow.
  * https://gist.github.com/iXyles/ec40cb40a2a186425ec6bfb9dcc2ddda
  *
- * @author Vrekt, iXyles, Loukios, Mix
+ * @author Vrekt, iXyles, Loukios, Mix, RobertoGraham
  */
 public final class FortniteAuthenticationManager {
     /**
@@ -45,7 +47,9 @@ public final class FortniteAuthenticationManager {
      */
     private final String authorizationToken;
     private final String emailAddress, password, code;
+    private final String accountId, deviceId, secret;
     private final boolean rememberMe, use2fa;
+    private GrantType grantType;
 
     /**
      * The constructor to initialize a new authentication manager.
@@ -53,19 +57,28 @@ public final class FortniteAuthenticationManager {
      * @param emailAddress       The email address of the account
      * @param password           the password of the account.
      * @param code               the 2FA code if 2FA is enabled.
+     * @param accountId          the account ID for device-auth
+     * @param deviceId           the device ID for device-auth
+     * @param secret             the device ID for device-auth
      * @param authorizationToken the authorization token.
      * @param rememberMe         if user/device should be remembered.
+     * @param grantType          the grant type to use.
      * @param client             the HTTP client.
      * @param gson               the {@link athena.Athena} internal GSON instance.
      */
-    public FortniteAuthenticationManager(String emailAddress, String password, String code,
-                                         String authorizationToken, boolean rememberMe, OkHttpClient client, Gson gson) {
+    public FortniteAuthenticationManager(String emailAddress, String password, String code, String accountId, String deviceId, String secret,
+                                         String authorizationToken, boolean rememberMe, GrantType grantType, OkHttpClient client, Gson gson) {
         this.emailAddress = emailAddress;
         this.password = password;
         this.code = code;
+        this.accountId = accountId;
+        this.deviceId = deviceId;
+        this.secret = secret;
 
         this.authorizationToken = authorizationToken;
         this.rememberMe = rememberMe;
+        this.grantType = grantType;
+
         this.client = client;
 
         use2fa = code != null && !code.isEmpty();
@@ -84,7 +97,7 @@ public final class FortniteAuthenticationManager {
             retrieveReputation(token);
             postLoginForm(token, false);
 
-            // If using 2FA is enabled we must retrieve all new stuff.
+            // Since using 2FA, retrieve new token and post the login again.
             if (use2fa) {
                 token = retrieveXSRFToken();
                 postLoginForm(token, true);
@@ -95,7 +108,7 @@ public final class FortniteAuthenticationManager {
                 LOGGER.atSevere().log("Exchange code was not given via endpoint [https://www.epicgames.com/id/api/exchange]");
                 throw new FortniteAuthenticationException("Failed to exchange code. [Exchange code was not given]");
             }
-            return retrieveSession(token, code);
+            return retrieveSession(token, code, null, grantType);
         } catch (final EpicGamesErrorException | IOException exception) {
             throw new FortniteAuthenticationException("Failed to authenticate.", exception);
         }
@@ -103,7 +116,6 @@ public final class FortniteAuthenticationManager {
 
     /**
      * Attempts to authenticate with Fortnite.
-     * TODO: Don't think it currently works with 2FA?
      *
      * @return a new {@link Session} if authentication was successful.
      * @throws FortniteAuthenticationException if an error occurred while authenticating.
@@ -113,8 +125,15 @@ public final class FortniteAuthenticationManager {
             var token = retrieveXSRFToken();
             retrieveReputation(token);
             postKairosLogin(token);
+
+            // Since using 2FA, retrieve new token and post the login again.
+            if (use2fa) {
+                token = retrieveXSRFToken();
+                postKairosLogin(token);
+            }
+
             final var code = redirectKairos(token);
-            return retrieveKairosSession(token, code);
+            return retrieveSession(token, code, null, grantType);
         } catch (final EpicGamesErrorException | IOException exception) {
             throw new FortniteAuthenticationException("Failed to authenticate.", exception);
         }
@@ -274,32 +293,28 @@ public final class FortniteAuthenticationManager {
     }
 
     /**
-     * Finally, exchange the code and retrieve the new session!
+     * Retrieve a new {@link Session}
      *
-     * @param token the token
-     * @param code  the exchange code
+     * @param token        the XSRF-TOKEN
+     * @param code         the exchange or authorization code.
+     * @param refreshToken the refresh token if refreshing.
+     * @param grantType    the grant type to use.
      * @return a new session
      * @throws IOException             if an error occurred
      * @throws EpicGamesErrorException if the API response returned an error.
      */
     @SuppressWarnings("ConstantConditions")
-    private Session retrieveSession(String token, String code) throws IOException, EpicGamesErrorException {
+    public Session retrieveSession(String token, String code, String refreshToken, GrantType grantType) throws IOException, EpicGamesErrorException {
         final var url = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
-        final var body = new FormBody.Builder()
-                .add("grant_type", "exchange_code")
-                .add("exchange_code", code)
-                .add("includePerms", "false")
-                .add("token_type", "eg1")
-                .build();
+        final var body = createGrantTypeForm(code == null ? refreshToken : code, grantType);
 
-        final var response = client.newCall(new Request.Builder()
+        final var request = new Request.Builder()
                 .url(url)
-                .header("x-xsrf-token", token)
                 .header("Authorization", "basic " + authorizationToken)
-                .post(body)
-                .build())
-                .execute();
+                .post(body);
+        if (token != null) request.header("x-xsrf-token", token);
 
+        final var response = client.newCall(request.build()).execute();
         final var result = response.body().string();
         response.close();
 
@@ -308,66 +323,43 @@ public final class FortniteAuthenticationManager {
     }
 
     /**
-     * Finally, exchange the authorization code for kairos and retrieve the new session.
+     * Creates a {@link FormBody} based on the {@code grantType}
      *
-     * @param token the token
-     * @param code  the authorization code
-     * @return a new session
-     * @throws IOException             if an error occurred
-     * @throws EpicGamesErrorException if the API response returned an error.
+     * @param codeOrToken the code or token
+     * @return a new {@link FormBody}
      */
-    @SuppressWarnings("ConstantConditions")
-    private Session retrieveKairosSession(String token, String code) throws IOException, EpicGamesErrorException {
-        final var url = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
-        final var body = new FormBody.Builder()
-                .add("grant_type", "authorization_code")
-                .add("code", code)
-                .add("includePerms", "false")
-                .build();
-
-        final var response = client.newCall(new Request.Builder()
-                .url(url)
-                .header("x-xsrf-token", token)
-                .header("Authorization", "basic " + authorizationToken)
-                .post(body)
-                .build())
-                .execute();
-
-        final var result = response.body().string();
-        response.close();
-
-        if (response.isSuccessful()) return gson.fromJson(result, Session.class);
-        throw EpicGamesErrorException.create(url, gson.fromJson(result, JsonObject.class));
-    }
-
-    /**
-     * Retrieve the refresh session.
-     *
-     * @param refreshToken the refresh token.
-     * @return a new session
-     * @throws IOException             if an error occurred
-     * @throws EpicGamesErrorException if the API response returned an error.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public Session retrieveRefreshSession(String refreshToken) throws IOException, EpicGamesErrorException {
-        final var url = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
-        final var body = new FormBody.Builder()
-                .add("grant_type", "refresh_token")
-                .add("refresh_token", refreshToken)
-                .build();
-
-        final var response = client.newCall(new Request.Builder()
-                .url(url)
-                .header("Authorization", "basic " + authorizationToken)
-                .post(body)
-                .build())
-                .execute();
-
-        final var result = response.body().string();
-        response.close();
-
-        if (response.isSuccessful()) return gson.fromJson(result, Session.class);
-        throw EpicGamesErrorException.create(url, gson.fromJson(result, JsonObject.class));
+    private FormBody createGrantTypeForm(String codeOrToken, GrantType grantType) {
+        final var body = new FormBody.Builder();
+        switch (grantType) {
+            case EXCHANGE_CODE:
+                return body
+                        .add("grant_type", "exchange_code")
+                        .add("exchange_code", codeOrToken)
+                        .add("includePerms", "false")
+                        .add("token_type", "eg1")
+                        .build();
+            case REFRESH_TOKEN:
+                return body
+                        .add("grant_type", "refresh_token")
+                        .add("refresh_token", codeOrToken)
+                        .build();
+            case AUTHORIZATION_CODE:
+                return body
+                        .add("grant_type", "authorization_code")
+                        .add("code", codeOrToken)
+                        .add("includePerms", "false")
+                        .build();
+            case DEVICE_AUTH:
+                return body
+                        .add("grant_type", "device_auth")
+                        .add("account_id", accountId)
+                        .add("device_id", deviceId)
+                        .add("secret", secret)
+                        .add("includePerms", "false")
+                        .build();
+            default:
+                return body.build();
+        }
     }
 
     /**

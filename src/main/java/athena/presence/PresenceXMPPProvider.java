@@ -21,7 +21,7 @@ public final class PresenceXMPPProvider implements StanzaListener {
     /**
      * The event factory for presence events
      */
-    private final EventFactory factory;
+    private final EventFactory factory = EventFactory.createAnnotatedFactory(PresenceEvent.class);
     /**
      * COW list of listeners.
      */
@@ -30,7 +30,6 @@ public final class PresenceXMPPProvider implements StanzaListener {
      * COW list of filters.
      */
     private final CopyOnWriteArrayList<PresenceFilter> filters = new CopyOnWriteArrayList<>();
-
     /**
      * The context
      */
@@ -38,21 +37,10 @@ public final class PresenceXMPPProvider implements StanzaListener {
 
     PresenceXMPPProvider(DefaultAthenaContext context) {
         this.context = context;
-        this.factory = EventFactory.create(PresenceEvent.class, 1);
-        context.connectionManager().connection().addAsyncStanzaListener(this, PresenceTypeFilter.AVAILABLE);
-    }
-
-    /**
-     * Initialize this provider from another one.
-     *
-     * @param other the other
-     */
-    PresenceXMPPProvider(DefaultAthenaContext context, PresenceXMPPProvider other) {
-        this.context = context;
-        this.listeners.addAll(other.listeners);
-        this.filters.addAll(other.filters);
-        this.factory = EventFactory.create(other.factory);
-        context.connectionManager().connection().addAsyncStanzaListener(this, PresenceTypeFilter.AVAILABLE);
+        context
+                .connectionManager()
+                .connection()
+                .addAsyncStanzaListener(this, PresenceTypeFilter.AVAILABLE);
     }
 
     @Override
@@ -63,7 +51,7 @@ public final class PresenceXMPPProvider implements StanzaListener {
         final var fortnitePresence = context.gson().fromJson(presence.getStatus(), FortnitePresence.class);
         fortnitePresence.setFrom(presence.getFrom());
 
-        factory.invoke(fortnitePresence);
+        factory.invoke(PresenceEvent.class, fortnitePresence);
         listeners.forEach(listener -> listener.presenceReceived(fortnitePresence));
         filters.stream().filter(filter -> filter.active() && filter.ready() && filter.isRelevant(accountId)).forEach(filter -> filter.consume(fortnitePresence));
     }
@@ -123,26 +111,35 @@ public final class PresenceXMPPProvider implements StanzaListener {
     }
 
     /**
-     * Removes the stanza listener.
+     * Invoked after refreshing to re-add the stanza listener.
+     *
+     * @param context the new context.
      */
-    void removeStanzaListener() {
+    void afterRefresh(DefaultAthenaContext context) {
+        this.context = context;
+
+        context
+                .connectionManager()
+                .connection()
+                .addAsyncStanzaListener(this, PresenceTypeFilter.AVAILABLE);
+    }
+
+    /**
+     * Invoked before a refresh to remove the stanza listener.
+     */
+    void beforeRefresh() {
         context.connectionManager().connection().removeAsyncStanzaListener(this);
     }
 
     /**
-     * Close this provider.
+     * Invoked to shutdown this provider.
      */
-    void close() {
-        removeStanzaListener();
+    void shutdown() {
+        context.connectionManager().connection().removeAsyncStanzaListener(this);
+
         factory.dispose();
         listeners.clear();
-    }
-
-    /**
-     * Clean.
-     */
-    void clean() {
-        removeStanzaListener();
+        filters.clear();
     }
 
 }

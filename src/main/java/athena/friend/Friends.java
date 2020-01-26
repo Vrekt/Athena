@@ -9,7 +9,9 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.resource.summary.Summary;
 import athena.friend.service.FriendsPublicService;
 import athena.friend.xmpp.listener.FriendEventListener;
-import athena.util.cleanup.Closeable;
+import athena.util.cleanup.AfterRefresh;
+import athena.util.cleanup.BeforeRefresh;
+import athena.util.cleanup.Shutdown;
 import athena.util.request.Requests;
 import okhttp3.RequestBody;
 
@@ -19,28 +21,26 @@ import java.util.stream.Collectors;
 /**
  * Provides easy access to the {@link FriendsPublicService} and XMPP.
  */
-public final class Friends implements Closeable {
+public final class Friends {
 
     /**
      * The athena context.
      */
-    private DefaultAthenaContext context;
+    private final DefaultAthenaContext context;
     /**
      * The service.
      */
-    private FriendsPublicService service;
+    private final FriendsPublicService service;
 
     /**
      * The XMPP provider.
      */
-    private FriendsXMPPProvider provider;
+    private final FriendsXMPPProvider provider;
 
     public Friends(DefaultAthenaContext context, boolean enableXMPP) {
         this.context = context;
         this.service = context.friendsService();
-        if (enableXMPP) provider = new FriendsXMPPProvider(context);
-
-        context.friends(this);
+        provider = enableXMPP ? new FriendsXMPPProvider(context) : null;
     }
 
     /**
@@ -269,7 +269,7 @@ public final class Friends implements Closeable {
      * @param listener the listener.
      */
     public void registerEventListener(FriendEventListener listener) {
-        if (provider != null) provider.registerEventListener(listener);
+        provider.registerEventListener(listener);
     }
 
     /**
@@ -278,7 +278,7 @@ public final class Friends implements Closeable {
      * @param listener the listener
      */
     public void unregisterEventListener(FriendEventListener listener) {
-        if (provider != null) provider.unregisterEventListener(listener);
+        provider.unregisterEventListener(listener);
     }
 
     /**
@@ -287,7 +287,7 @@ public final class Friends implements Closeable {
      * @param type the class/type to register.
      */
     public void registerEventListener(Object type) {
-        if (provider != null) provider.registerEventListener(type);
+        provider.registerEventListener(type);
     }
 
     /**
@@ -296,7 +296,7 @@ public final class Friends implements Closeable {
      * @param type the class/type to register.
      */
     public void unregisterEventListener(Object type) {
-        if (provider != null) provider.unregisterEventListener(type);
+        provider.unregisterEventListener(type);
     }
 
     /**
@@ -306,36 +306,46 @@ public final class Friends implements Closeable {
      * @param listener  the listener.
      */
     public void registerEventListenerForAccount(String accountId, FriendEventListener listener) {
-        if (provider != null) provider.registerEventListenerForAccount(accountId, listener);
+        provider.registerEventListenerForAccount(accountId, listener);
     }
 
     /**
      * Unregister an event listener for the account {@code accountId}
      *
      * @param accountId the account ID.
+     * @param listener  the event listener.
      */
-    public void unregisterEventListenerForAccount(String accountId) {
-        if (provider != null) provider.unregisterEventListenerForAccount(accountId);
+    public void unregisterEventListenerForAccount(String accountId, FriendEventListener listener) {
+        provider.unregisterEventListenerForAccount(accountId, listener);
     }
 
-    @Override
-    public void refresh(DefaultAthenaContext context) {
-        this.context = context;
-        if (provider != null) {
-            final var old = provider;
-            provider.removeStanzaListener();
-            provider = new FriendsXMPPProvider(context, old);
-            old.close();
-        }
+    /**
+     * Unregister all event listeners.
+     */
+    public void unregisterAllEventListeners() {
+        provider.unregisterAllEventListeners();
     }
 
-    @Override
-    public void dispose() {
-        if (provider != null) provider.close();
+    /**
+     * Unregister all account event listeners.
+     */
+    public void unregisterAllAccountEventListeners() {
+        provider.unregisterAllAccountEventListeners();
     }
 
-    @Override
-    public void clean() {
-        if (provider != null) provider.clean();
+    @AfterRefresh
+    private void after(DefaultAthenaContext context) {
+        if (provider != null) provider.afterRefresh(context);
     }
+
+    @BeforeRefresh
+    private void before() {
+        if (provider != null) provider.beforeRefresh();
+    }
+
+    @Shutdown
+    private void shutdown() {
+        if (provider != null) provider.shutdown();
+    }
+
 }

@@ -1,4 +1,4 @@
-package athena.authentication;
+package athena.authentication.type;
 
 import java.util.Base64;
 

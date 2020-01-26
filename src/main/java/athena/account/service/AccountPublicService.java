@@ -1,14 +1,14 @@
 package athena.account.service;
 
-import athena.Athena;
 import athena.account.resource.Account;
 import athena.account.resource.EpicGamesProfile;
+import athena.account.resource.device.DeviceAuth;
 import athena.authentication.session.Session;
-import okhttp3.FormBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides access to the account public service.
@@ -58,6 +58,7 @@ public interface AccountPublicService {
      * OTHERS
      *
      * @param killType the kill type
+     * @return Void
      */
     @DELETE("account/api/oauth/sessions/kill")
     Call<Void> killSessions(@Query("killType") String killType);
@@ -66,28 +67,23 @@ public interface AccountPublicService {
      * Kills an active access token.
      *
      * @param accessToken the access token
+     * @return Void
      */
     @DELETE("account/api/oauth/sessions/kill/{accessToken}")
     Call<Void> killAccessToken(@Path("accessToken") String accessToken);
 
     /**
-     * Authenticate and retrieve the session.
+     * Grant a new session.
      *
-     * @param xsrfToken the XSRF token
-     * @param body      the form-body.
-     *                  <p>
-     *                  final var body = new FormBody.Builder()
-     *                  .add("grant_type", "exchange_code")
-     *                  .add("exchange_code", code)
-     *                  .add("includePerms", "false")
-     *                  .add("token_type", "eg1")
-     *                  .build();
+     * @param authorizationToken the authorization token, see {@link athena.authentication.type.AuthClient}
+     * @param grantType          the grant_type, see {@link athena.authentication.type.GrantType} or https://github.com/MixV2/EpicResearch#grant-types
+     * @param fields             required fields for the grant type, see https://github.com/MixV2/EpicResearch#grant-types
+     * @param includePerms       {@code true} if perms included? (usually false)
      * @return a {@link Call} returned by retrofit containing the {@link Session} if the call was successful.
-     * TODO: May or may not work.
      */
-    @Headers("Authorization: basic " + Athena.EPIC_GAMES_LAUNCHER_TOKEN)
+    @FormUrlEncoded
     @POST("account/api/oauth/token")
-    Call<Session> retrieveSession(@Header("x-xsrf-token") String xsrfToken, @Body FormBody body);
+    Call<Session> grantSession(@Header("Authorization") String authorizationToken, @Field("grant_type") String grantType, @FieldMap Map<String, String> fields, @Field("includePerms") boolean includePerms);
 
     /**
      * Get the profile of the current authenticated account.
@@ -97,5 +93,44 @@ public interface AccountPublicService {
      */
     @GET("account/api/public/account/{accountId}")
     Call<EpicGamesProfile> profile(@Path("accountId") String accountId);
+
+    /**
+     * Get device auths for the provided {@code accountId}
+     *
+     * @param accountId the account ID.
+     * @return a {@link Call} returned by retrofit containing the {@link List<DeviceAuth>} if the call was successful.
+     */
+    @GET("account/api/public/account/{accountId}/deviceAuth")
+    Call<List<DeviceAuth>> deviceAuths(@Path("accountId") String accountId);
+
+    /**
+     * Get a specific device-auth for the provided {@code accountId}
+     *
+     * @param accountId the account ID.
+     * @param deviceId  the device ID.
+     * @return a {@link Call} returned by retrofit containing the {@link DeviceAuth} if the call was successful.
+     */
+    @GET("account/api/public/account/{accountId}/deviceAuth/{deviceId}")
+    Call<DeviceAuth> deviceAuth(@Path("accountId") String accountId, @Path("deviceId") String deviceId);
+
+    /**
+     * Create a new device-auth.
+     *
+     * @param accountId the account ID.
+     * @param device    the device info as JSON, see {@link athena.account.resource.device.Device}
+     * @return a {@link Call} returned by retrofit containing the {@link DeviceAuth} if the call was successful.
+     */
+    @POST("account/api/public/account/{accountId}/deviceAuth")
+    Call<DeviceAuth> createDeviceAuth(@Path("accountId") String accountId, @Header("X-Epic-Device-Info") String device);
+
+    /**
+     * Delete a device-auth.
+     *
+     * @param accountId the account ID.
+     * @param deviceId  the device ID.
+     * @return Void
+     */
+    @DELETE("account/api/public/account/{accountId}/deviceAuth/{deviceId}")
+    Call<Void> deleteDeviceAuth(@Path("accountId") String accountId, @Path("deviceId") String deviceId);
 
 }

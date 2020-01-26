@@ -6,6 +6,7 @@ import athena.account.resource.external.ExternalAuth;
 import athena.account.service.AccountPublicService;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
+import athena.authentication.type.GrantType;
 import athena.channels.service.ChannelsPublicService;
 import athena.context.DefaultAthenaContext;
 import athena.eula.service.EulatrackingPublicService;
@@ -31,6 +32,10 @@ import athena.stats.service.StatsproxyPublicService;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.types.Region;
+import athena.util.cleanup.AfterRefresh;
+import athena.util.cleanup.BeforeRefresh;
+import athena.util.cleanup.Shutdown;
+import athena.util.event.EventFactory;
 import athena.util.json.context.AthenaContextAdapterFactory;
 import athena.util.json.post.PostDeserializeAdapterFactory;
 import athena.xmpp.XMPPConnectionManager;
@@ -67,31 +72,37 @@ final class AthenaImpl implements Athena, Interceptor {
      * The LOGGER.
      */
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-
     /**
      * The HTTP client.
      */
     private final OkHttpClient client;
-
     /**
      * The authentication manager.
      */
     private final FortniteAuthenticationManager fortniteAuthenticationManager;
 
     /**
+     * The original builder.
+     */
+    private final Builder builder;
+
+    /**
      * Scheduled executor service for refreshes.
      */
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
     /**
      * The reference for the session.
      */
     private final AtomicReference<Session> session = new AtomicReference<>();
-
     /**
      * A list of interceptor actions.
      */
     private final CopyOnWriteArrayList<InterceptorAction> interceptorActions = new CopyOnWriteArrayList<>();
+    /**
+     * The event factory.
+     */
+    private final EventFactory eventFactory = EventFactory.createAnnotatedFactory(BeforeRefresh.class, AfterRefresh.class, Shutdown.class);
+
     /**
      * Manages account actions like: Finding them by ID and display name.
      */
@@ -100,22 +111,18 @@ final class AthenaImpl implements Athena, Interceptor {
      * Manages friend actions like: Sending friend requests, accepting, deleting, blocking, etc.
      */
     private final Friends friends;
-
     /**
      * Manages statistics.
      */
     private final StatisticsV2 statisticsV2;
-
     /**
      * Manages events/tournaments.
      */
     private final Events events;
-
     /**
      * Manages fortnite services
      */
     private final Fortnite fortnite;
-
     /**
      * Manages presence.
      */
@@ -133,27 +140,27 @@ final class AthenaImpl implements Athena, Interceptor {
     private final PresencePublicService presencePublicService;
     private final ChannelsPublicService channelsPublicService;
     private final GroupsService groupsService;
+
     /**
      * GSON instance.
      */
     private final Gson gson;
-
     /**
      * This context.
      */
     private final DefaultAthenaContext context;
-
     /**
      * This account.
      */
     private Account account;
-
     /**
      * XMPP connection manager
      */
     private XMPPConnectionManager connectionManager;
 
     AthenaImpl(Builder builder) throws FortniteAuthenticationException {
+        this.builder = builder;
+
         // Create a new cookie manager for the cookie jar.
         final var manager = new CookieManager();
         manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
@@ -165,7 +172,19 @@ final class AthenaImpl implements Athena, Interceptor {
 
         // initialize our gson instance
         gson = initializeGson();
-        fortniteAuthenticationManager = new FortniteAuthenticationManager(builder.email(), builder.password(), builder.code(), builder.authorizationToken(), builder.shouldRememberMe(), client, gson);
+        fortniteAuthenticationManager = new FortniteAuthenticationManager(
+                builder.email(),
+                builder.password(),
+                builder.code(),
+                builder.accountId(),
+                builder.deviceId(),
+                builder.secret(),
+                builder.authorizationToken(),
+                builder.shouldRememberMe(),
+                builder.grantType(),
+                client,
+                gson);
+
         // authenticate!
         final var session = builder.authenticateKairos() ? fortniteAuthenticationManager.authenticateKairos() : fortniteAuthenticationManager.authenticate();
         this.session.set(session); // set the session
@@ -174,6 +193,7 @@ final class AthenaImpl implements Athena, Interceptor {
         // schedule the refresh and handle the shutdown hook.
         if (builder.shouldHandleShutdown()) Runtime.getRuntime().addShutdownHook(new Thread(this::close));
         if (builder.shouldRefreshAutomatically()) scheduleRefresh();
+
         try {
             // kill other sessions and accept the EULA.
             if (builder.shouldKillOtherSessions()) fortniteAuthenticationManager.killOtherSessions();
@@ -203,15 +223,25 @@ final class AthenaImpl implements Athena, Interceptor {
         channelsPublicService = initializeRetrofitService(ChannelsPublicService.BASE_URL, factory, ChannelsPublicService.class);
         groupsService = initializeRetrofitService(GroupsService.BASE_URL, factory, GroupsService.class);
 
-        context = new DefaultAthenaContext(this);
+        // initialize our context
+        context = new DefaultAthenaContext();
+        context.initializeServicesOnly(this);
+        context.initializeOtherOnly(this);
 
-        // initialize each wrapper class.
+        // initialize our resources.
         accounts = new Accounts(context);
         friends = new Friends(context, builder.shouldEnableXmpp());
         statisticsV2 = new StatisticsV2(context);
         events = new Events(context);
         fortnite = new Fortnite(context);
         presences = new Presences(context, builder.shouldEnableXmpp());
+
+        // register XMPP resources with the event factory.
+        eventFactory.registerEventListener(friends);
+        eventFactory.registerEventListener(presences);
+
+        // finally initialize resources inside the context.
+        context.initializeResourcesOnly(this);
 
         // find the account that belongs to this instance.
         account = accounts.findByAccountId(session.accountId());
@@ -286,15 +316,15 @@ final class AthenaImpl implements Athena, Interceptor {
         try {
             final var old = session();
             // retrieve the refresh session.
-            session.set(fortniteAuthenticationManager.retrieveRefreshSession(old.refreshToken()));
+            session.set(fortniteAuthenticationManager.retrieveSession(null, null, old.refreshToken(), GrantType.REFRESH_TOKEN));
             // kill the old token.
             fortniteAuthenticationManager.killToken(old.accessToken());
             if (connectionManager != null) {
-                cleanXmppResources();
+                beforeRefresh();
 
                 connectionManager.disconnect();
                 connectionManager.connect(session().accountId(), session().accessToken());
-                refreshXmppResources();
+                afterRefresh();
             }
         } catch (IOException | EpicGamesErrorException exception) {
             LOGGER.atSevere().withCause(exception).log("Failed to refresh session.");
@@ -309,14 +339,14 @@ final class AthenaImpl implements Athena, Interceptor {
         try {
             final var old = session();
             // retrieve the refresh session.
-            session.set(fortniteAuthenticationManager.authenticate());
+            session.set(builder.authenticateKairos() ? fortniteAuthenticationManager.authenticateKairos() : fortniteAuthenticationManager.authenticate());
             // kill the old token.
             fortniteAuthenticationManager.killToken(old.accessToken());
             if (connectionManager != null) {
-                cleanXmppResources();
+                beforeRefresh();
                 connectionManager.disconnect();
                 connectionManager.connect(session().accountId(), session().accessToken());
-                refreshXmppResources();
+                afterRefresh();
             }
         } catch (IOException | FortniteAuthenticationException exception) {
             LOGGER.atSevere().withCause(exception).log("Failed to refresh session.");
@@ -325,19 +355,17 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     /**
-     * Clean each XMPP resource.
+     * Invoked before refreshing.
      */
-    private void cleanXmppResources() {
-        friends.clean();
-        presences.clean();
+    private void beforeRefresh() {
+        eventFactory.invoke(BeforeRefresh.class);
     }
 
     /**
-     * Refresh each XMPP resource.
+     * Invoked after refreshing
      */
-    private void refreshXmppResources() {
-        friends.refresh(context);
-        presences.refresh(context);
+    private void afterRefresh() {
+        eventFactory.invoke(AfterRefresh.class, context);
     }
 
     @Override
@@ -463,13 +491,13 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public void close() {
         try {
-            if (friends != null) friends.dispose();
-            if (presences != null) presences.dispose();
+            eventFactory.invoke(Shutdown.class);
 
             if (connectionManager != null) connectionManager.close();
             fortniteAuthenticationManager.killToken(session().accessToken());
             client.dispatcher().executorService().shutdownNow();
             client.connectionPool().evictAll();
+            eventFactory.dispose();
         } catch (final IOException exception) {
             exception.printStackTrace();
         }
@@ -496,7 +524,7 @@ final class AthenaImpl implements Athena, Interceptor {
         // TODO: diff random uuid gen for fn requests
         final var finalRequest = nextRequestChain.newBuilder()
                 .addHeader("Authorization", "bearer " + session.get().accessToken())
-                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-11.40-CL-10951104 {0}")
+                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-11.40-CL-11039906 {0}")
                 .addHeader("X-Epic-Correlation-ID", UUID.randomUUID().toString())
                 .build();
         return chain.proceed(finalRequest);
