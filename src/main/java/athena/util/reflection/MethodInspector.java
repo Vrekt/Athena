@@ -2,10 +2,7 @@ package athena.util.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -136,14 +133,12 @@ public final class MethodInspector {
         private Collection<Method> getMatchingParameterType(Class<?>... types) {
             final var parameterData = methodParameterTypes.keySet();
             final var length = types.length;
-            final var found = parameterData
+            return parameterData
                     .stream()
                     .filter(data -> data.count == length)
                     .filter(data -> data.assignable(types))
-                    .collect(Collectors.toList());
-            final var list = new LinkedHashSet<Method>();
-            found.forEach(data -> list.add(methodParameterTypes.get(data)));
-            return list;
+                    .map(methodParameterTypes::get)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         /**

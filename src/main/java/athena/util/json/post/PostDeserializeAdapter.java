@@ -9,6 +9,11 @@ import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Provides an adapter for post deserialize operations.
+ *
+ * @param <T> T
+ */
 public final class PostDeserializeAdapter<T> extends TypeAdapter<T> {
 
     /**

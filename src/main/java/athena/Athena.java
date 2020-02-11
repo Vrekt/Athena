@@ -6,6 +6,7 @@ import athena.authentication.session.Session;
 import athena.authentication.type.AuthClient;
 import athena.authentication.type.GrantType;
 import athena.channels.service.ChannelsPublicService;
+import athena.chat.XMPPChat;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
 import athena.events.service.EventsPublicService;
@@ -125,6 +126,11 @@ public interface Athena {
      * @return the presences class that handles presence.
      */
     Presences presence();
+
+    /**
+     * @return the XMPPChat class that handles chat.
+     */
+    XMPPChat chat();
 
     /**
      * @return the {@link ChannelsPublicService} instance.

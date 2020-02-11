@@ -10,7 +10,7 @@ import athena.friend.xmpp.types.blocklist.BlockListUpdate;
 import athena.friend.xmpp.types.friend.FriendApiObject;
 import athena.friend.xmpp.types.friend.Friendship;
 import athena.util.event.EventFactory;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.packet.Message;
@@ -57,7 +57,14 @@ public final class FriendsXMPPProvider implements StanzaListener {
     @Override
     public void processStanza(Stanza packet) {
         final var message = (Message) packet;
-        final var object = context.gson().fromJson(message.getBody(), JsonObject.class);
+        // Make sure we don't have a JSON array.
+        // This fixes a new issue discovered, epic changed their backend
+        // to include a new message type that is an array - not an object.
+        // 1/29/2020 - 6:08PM
+        final var element = context.gson().fromJson(message.getBody(), JsonElement.class);
+        if (element.isJsonArray()) return;
+        final var object = element.getAsJsonObject();
+
         final var type = object.getAsJsonPrimitive("type").getAsString();
         final var of = FriendType.typeOf(type);
         if (of == FriendType.UNKNOWN) return;

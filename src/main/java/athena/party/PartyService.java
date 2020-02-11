@@ -2,6 +2,8 @@ package athena.party;
 
 public interface PartyService {
 
+    String BASE_URL = "https://party-service-prod.ol.epicgames.com/";
+
     //	Line 1183324: /api/v1/{namespace}/parties/{partyId}/invites/{accountId}
     //	Line 1183331: /api/v1/{namespace}/parties/{partyId}/invites/{accountId}/decline
     //	Line 1183378: /api/v1/{namespace}/parties/{partyId}/members/{accountId}

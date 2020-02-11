@@ -1,7 +1,10 @@
 package athena.account;
 
+import athena.Athena;
 import athena.account.resource.Account;
 import athena.account.resource.EpicGamesProfile;
+import athena.account.resource.device.Device;
+import athena.account.resource.device.DeviceAuth;
 import athena.account.service.AccountPublicService;
 import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
@@ -147,5 +150,34 @@ public final class Accounts {
         final var call = service.profile(accountId);
         return Requests.executeCall(call);
     }
+
+    /**
+     * Creates a new device-auth.
+     *
+     * @param device the device
+     * @return a new {@link DeviceAuth}
+     */
+    public DeviceAuth createDeviceAuth(Device device) {
+        final var toJson = Athena.GSON.toJson(device);
+        final var call = service.createDeviceAuth(accountId, toJson);
+        return Requests.executeCall(call);
+    }
+
+    /**
+     * Delete a device auth.
+     *
+     * @param deviceId the device ID.
+     */
+    public void deleteDeviceAuth(String deviceId) {
+        Requests.executeVoidCall(service.deleteDeviceAuth(accountId, deviceId));
+    }
+
+    /**
+     * Deletes all device auths.
+     */
+    public void deleteAllDeviceAuths() {
+        Requests.executeVoidCall(service.deviceAuths(accountId));
+    }
+
 
 }

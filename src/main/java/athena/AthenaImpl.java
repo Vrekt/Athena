@@ -8,6 +8,7 @@ import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.session.Session;
 import athena.authentication.type.GrantType;
 import athena.channels.service.ChannelsPublicService;
+import athena.chat.XMPPChat;
 import athena.context.DefaultAthenaContext;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
@@ -22,6 +23,8 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.service.FriendsPublicService;
 import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
+import athena.party.resource.connection.Connection;
+import athena.party.resource.meta.PartyMeta;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
@@ -37,6 +40,8 @@ import athena.util.cleanup.BeforeRefresh;
 import athena.util.cleanup.Shutdown;
 import athena.util.event.EventFactory;
 import athena.util.json.context.AthenaContextAdapterFactory;
+import athena.util.json.converters.InstantConverter;
+import athena.util.json.wrapped.WrappedTypeAdapterFactory;
 import athena.util.json.post.PostDeserializeAdapterFactory;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
@@ -127,6 +132,10 @@ final class AthenaImpl implements Athena, Interceptor {
      * Manages presence.
      */
     private final Presences presences;
+    /**
+     * Manages XMPP Chat.
+     */
+    private final XMPPChat chat;
 
     /**
      * Retrofit services
@@ -236,6 +245,13 @@ final class AthenaImpl implements Athena, Interceptor {
         fortnite = new Fortnite(context);
         presences = new Presences(context, builder.shouldEnableXmpp());
 
+        if (builder.shouldEnableXmpp()) {
+            chat = new XMPPChat(context);
+            eventFactory.registerEventListener(chat);
+        } else {
+            chat = null;
+        }
+
         // register XMPP resources with the event factory.
         eventFactory.registerEventListener(friends);
         eventFactory.registerEventListener(presences);
@@ -262,11 +278,15 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Account.class));
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Profile.class));
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Friend.class));
+        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Connection.class));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Account.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Profile.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Friend.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(FortnitePresence.class, this));
-        gsonBuilder.registerTypeAdapter(Instant.class, (JsonDeserializer<Instant>) (json, typeOfT, context) -> Instant.parse(json.getAsJsonPrimitive().getAsString()));
+
+        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(PartyMeta.class));
+
+        gsonBuilder.registerTypeAdapter(Instant.class, new InstantConverter());
         gsonBuilder.registerTypeAdapter(Input.class, (JsonDeserializer<Input>) (json, typeOfT, context) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Platform.class, (JsonDeserializer<Platform>) (json, typeOfT, context) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
@@ -446,6 +466,12 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public Presences presence() {
         return presences;
+    }
+
+    @Override
+    public XMPPChat chat() {
+        if (!builder.shouldEnableXmpp()) throw new UnsupportedOperationException("XMPP is not enabled.");
+        return chat;
     }
 
     @Override

@@ -269,7 +269,7 @@ public final class Friends {
      * @param listener the listener.
      */
     public void registerEventListener(FriendEventListener listener) {
-        provider.registerEventListener(listener);
+        if (provider != null) provider.registerEventListener(listener);
     }
 
     /**
@@ -278,7 +278,7 @@ public final class Friends {
      * @param listener the listener
      */
     public void unregisterEventListener(FriendEventListener listener) {
-        provider.unregisterEventListener(listener);
+        if (provider != null) provider.unregisterEventListener(listener);
     }
 
     /**
@@ -287,7 +287,7 @@ public final class Friends {
      * @param type the class/type to register.
      */
     public void registerEventListener(Object type) {
-        provider.registerEventListener(type);
+        if (provider != null) provider.registerEventListener(type);
     }
 
     /**
@@ -296,7 +296,7 @@ public final class Friends {
      * @param type the class/type to register.
      */
     public void unregisterEventListener(Object type) {
-        provider.unregisterEventListener(type);
+        if (provider != null) provider.unregisterEventListener(type);
     }
 
     /**
@@ -306,7 +306,7 @@ public final class Friends {
      * @param listener  the listener.
      */
     public void registerEventListenerForAccount(String accountId, FriendEventListener listener) {
-        provider.registerEventListenerForAccount(accountId, listener);
+        if (provider != null) provider.registerEventListenerForAccount(accountId, listener);
     }
 
     /**
@@ -316,21 +316,21 @@ public final class Friends {
      * @param listener  the event listener.
      */
     public void unregisterEventListenerForAccount(String accountId, FriendEventListener listener) {
-        provider.unregisterEventListenerForAccount(accountId, listener);
+        if (provider != null) provider.unregisterEventListenerForAccount(accountId, listener);
     }
 
     /**
      * Unregister all event listeners.
      */
     public void unregisterAllEventListeners() {
-        provider.unregisterAllEventListeners();
+        if (provider != null) provider.unregisterAllEventListeners();
     }
 
     /**
      * Unregister all account event listeners.
      */
     public void unregisterAllAccountEventListeners() {
-        provider.unregisterAllAccountEventListeners();
+        if (provider != null) provider.unregisterAllAccountEventListeners();
     }
 
     @AfterRefresh

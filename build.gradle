@@ -26,5 +26,4 @@ dependencies {
     compile group: 'org.igniterealtime.smack', name: 'smack-tcp', version: '4.3.3'
     compile group: 'org.igniterealtime.smack', name: 'smack-extensions', version: '4.3.3'
     compile group: 'org.igniterealtime.smack', name: 'smack-java7', version: '4.3.3'
-
 }
