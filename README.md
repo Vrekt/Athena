@@ -5,6 +5,7 @@ Athena is a java library for interacting with the Fortnite/Epic Games API.
 
 ### Configuration
 When building new instances of `Athena` there are many configuration options available:
+- Device Auth support
 - Kill other sessions
 - Handle shutdown/cleanup automatically
 - Accept EULA if needed.
@@ -21,6 +22,9 @@ When building new instances of `Athena` there are many configuration options ava
 - Add friend listeners attached to an account.
 - Basic functions within the `Account` object such as (remove, block, unblock, etc)
 - External Auths support
+- Device Auth support
+- Addresses support
+- Changing password
 
 ### EULA
 - `EulatrackingPublicService` interface for EULA requests.
@@ -55,6 +59,11 @@ When building new instances of `Athena` there are many configuration options ava
 - Able to be filtered by input and playlist.
 - Query specific stats
 - Leaderboards
+
+### Chat
+- Receive messages to consumers or listeners.
+- Send messages
+- Reply to messages
 
 # Documentation
 Refer to the wiki.
