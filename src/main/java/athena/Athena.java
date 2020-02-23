@@ -173,6 +173,11 @@ public interface Athena {
     Session session();
 
     /**
+     * @return {@code true} if XMPP is enabled.
+     */
+    boolean xmppEnabled();
+
+    /**
      * Close this instance of Athena.
      */
     void close();

@@ -35,7 +35,7 @@ public final class Connection {
     private Instant updatedAt;
 
     /**
-     * ?
+     * if {@code true} leadership cannot be given to the person.
      */
     @SerializedName("yield_leadership")
     private boolean yieldLeadership;

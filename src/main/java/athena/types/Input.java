@@ -30,5 +30,4 @@ public enum Input {
         if (key == null) return null;
         return TYPES.stream().filter(type -> type.names.stream().anyMatch(key::equalsIgnoreCase)).findAny().orElse(null);
     }
-
 }

@@ -2,6 +2,7 @@ package athena.context;
 
 import athena.Athena;
 import athena.account.service.AccountPublicService;
+import athena.chat.XMPPChat;
 import athena.events.service.EventsPublicService;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
@@ -41,9 +42,19 @@ public abstract class AthenaContext {
      */
     protected Friends friends;
     /**
+     * XMPP chat provider.
+     */
+    protected XMPPChat chat;
+
+    /**
      * Athena GSON instance.
      */
     protected Gson gson;
+
+    /**
+     * If XMPP is enabled or not.
+     */
+    protected boolean xmppEnabled;
 
     /**
      * Initialize the context.
@@ -61,7 +72,9 @@ public abstract class AthenaContext {
         this.presencePublicService = athena.presencePublicService();
         this.connectionManager = athena.xmpp();
         this.friends = athena.friend();
+        this.chat = athena.chat();
         this.gson = athena.gson();
+        this.xmppEnabled = athena.xmppEnabled();
     }
 
     protected void initializeServices(Athena athena) {
@@ -81,6 +94,7 @@ public abstract class AthenaContext {
 
     protected void initializeResources(Athena athena) {
         this.friends = athena.friend();
+        this.chat = athena.chat();
     }
 
 }

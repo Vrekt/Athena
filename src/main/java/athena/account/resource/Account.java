@@ -192,6 +192,15 @@ public final class Account extends AthenaContext {
     }
 
     /**
+     * Send a message to this account.
+     *
+     * @param message the message
+     */
+    public void sendMessage(String message) {
+        chat.sendMessage(this, message);
+    }
+
+    /**
      * Provides a default implementation for {@link FriendAcceptor}
      */
     private final class DefaultFriendAcceptor implements FriendAcceptor, FriendEventListener {

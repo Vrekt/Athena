@@ -1,7 +1,7 @@
 package athena.friend.resource.types;
 
 /**
- * An enum of friend directions.
+ * An constants of friend directions.
  */
 public enum FriendDirection {
 

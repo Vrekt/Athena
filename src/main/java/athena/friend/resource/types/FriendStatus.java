@@ -1,7 +1,7 @@
 package athena.friend.resource.types;
 
 /**
- * An enum of friend statuses.
+ * An constants of friend statuses.
  */
 public enum FriendStatus {
 

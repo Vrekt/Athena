@@ -1,15 +1,22 @@
 package athena.chat;
 
+import athena.account.resource.Account;
 import athena.chat.resource.BasicMessage;
 import athena.chat.resource.listener.IncomingMessageListener;
 import athena.context.DefaultAthenaContext;
+import athena.exception.EpicGamesErrorException;
+import athena.friend.resource.Friend;
+import athena.friend.resource.summary.Profile;
 import athena.util.cleanup.AfterRefresh;
 import athena.util.cleanup.BeforeRefresh;
 import athena.util.cleanup.Shutdown;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.impl.JidCreate;
 
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
@@ -60,6 +67,68 @@ public final class XMPPChat implements StanzaListener {
      */
     public void removeMessageListener(IncomingMessageListener messageListener) {
         messageListeners.remove(messageListener);
+    }
+
+    /**
+     * Send a message to the specified {@code accountId}
+     *
+     * @param accountId the account ID.
+     * @param message   the message
+     * @throws EpicGamesErrorException if the message could not be sent.
+     */
+    public void sendMessage(String accountId, String message) {
+        sendMessage(JidCreate.bareFromOrThrowUnchecked(accountId + "@prod.ol.epicgames.com"), message);
+    }
+
+    /**
+     * Send a message to the specified {@code account}
+     *
+     * @param account the account
+     * @param message the message
+     * @throws EpicGamesErrorException if the message could not be sent.
+     */
+    public void sendMessage(Account account, String message) {
+        sendMessage(JidCreate.bareFromOrThrowUnchecked(account.accountId() + "@prod.ol.epicgames.com"), message);
+    }
+
+    /**
+     * Send a message to the specified {@code friend}
+     *
+     * @param friend  the friend
+     * @param message the message
+     * @throws EpicGamesErrorException if the message could not be sent.
+     */
+    public void sendMessage(Friend friend, String message) {
+        sendMessage(JidCreate.bareFromOrThrowUnchecked(friend.accountId() + "@prod.ol.epicgames.com"), message);
+    }
+
+    /**
+     * Send a message to the specified {@code jid}
+     *
+     * @param profile the profile
+     * @param message the message
+     * @throws EpicGamesErrorException if the message could not be sent.
+     */
+    public void sendMessage(Profile profile, String message) {
+        sendMessage(JidCreate.bareFromOrThrowUnchecked(profile.accountId() + "@prod.ol.epicgames.com"), message);
+    }
+
+    /**
+     * Send a message to the specified {@code jid}
+     *
+     * @param jid     the jid
+     * @param message the message
+     * @throws EpicGamesErrorException if the message could not be sent.
+     */
+    public void sendMessage(Jid jid, String message) {
+        final var packet = new Message(jid, Message.Type.chat);
+        packet.setBody(message);
+
+        try {
+            context.connectionManager().connection().sendStanza(packet);
+        } catch (SmackException.NotConnectedException | InterruptedException exception) {
+            throw EpicGamesErrorException.createFromOther(exception);
+        }
     }
 
     @Override

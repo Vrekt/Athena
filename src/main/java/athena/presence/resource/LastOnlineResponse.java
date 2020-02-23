@@ -1,8 +1,7 @@
 package athena.presence.resource;
 
 import athena.account.resource.Account;
-import athena.account.service.AccountPublicService;
-import athena.context.DefaultAthenaContext;
+import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
 import com.google.common.collect.Lists;
@@ -16,17 +15,15 @@ import java.util.Map;
 /**
  * Represents the response from last-online in {@link athena.presence.service.PresencePublicService}
  */
-public final class LastOnlineResponse {
+public final class LastOnlineResponse extends AthenaContext {
 
     /**
      * The map for storing times by account ID.
      */
     private Map<String, Instant> lastOnline;
-    private final AccountPublicService accountPublicService;
 
-    public LastOnlineResponse(Map<String, Instant> lastOnline, DefaultAthenaContext context) {
+    public LastOnlineResponse(Map<String, Instant> lastOnline) {
         this.lastOnline = lastOnline;
-        this.accountPublicService = context.account();
     }
 
     /**

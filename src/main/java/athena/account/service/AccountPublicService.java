@@ -2,6 +2,7 @@ package athena.account.service;
 
 import athena.account.resource.Account;
 import athena.account.resource.EpicGamesProfile;
+import athena.account.resource.address.AccountAddress;
 import athena.account.resource.device.DeviceAuth;
 import athena.authentication.session.Session;
 import retrofit2.Call;
@@ -21,7 +22,7 @@ public interface AccountPublicService {
     /**
      * The base url for the AccountPublicService
      */
-    String BASE_URL = "https://account-public-service-prod03.ol.epicgames.com/";
+    String BASE_URL = "https://account-public-service-prod.ol.epicgames.com/";
 
     /**
      * Finds an account by display name.
@@ -132,5 +133,17 @@ public interface AccountPublicService {
      */
     @DELETE("account/api/public/account/{accountId}/deviceAuth/{deviceId}")
     Call<Void> deleteDeviceAuth(@Path("accountId") String accountId, @Path("deviceId") String deviceId);
+
+    /**
+     * Get a list of addresses for an account.
+     * Credit: Armisto
+     *
+     * @param accountId the account ID.
+     * @return a {@link Call} returned by retrofit containing the {@link List<AccountAddress>} if the call was successful.
+     */
+    @GET("account/api/public/account/{accountId}/addresses")
+    Call<List<AccountAddress>> accountAddresses(@Path("accountId") String accountId);
+
+
 
 }

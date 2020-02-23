@@ -33,7 +33,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
      *
      * @param baseType the base type class.
      */
-    private WrappedTypeAdapterFactory(Class<?> baseType) {
+    public WrappedTypeAdapterFactory(Class<?> baseType) {
 
         // Add our list of typeObject field types.
         FieldUtils.getFieldsListWithAnnotation(baseType, WrappedObject.class)
@@ -50,16 +50,6 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
                     final var type = annotation.useRawType() ? annotation.type() : TypeToken.getParameterized(List.class, annotation.type()).getType();
                     fields.put(type, new WrappedField(annotation.type(), annotation.type(), annotation.value(), annotation.useRawType()));
                 });
-    }
-
-    /**
-     * Factory method to create new instances of this type adapter.
-     *
-     * @param baseType the base type to register for.
-     * @return a new {@link WrappedTypeAdapterFactory}
-     */
-    public static WrappedTypeAdapterFactory of(Class<?> baseType) {
-        return new WrappedTypeAdapterFactory(baseType);
     }
 
     @Override

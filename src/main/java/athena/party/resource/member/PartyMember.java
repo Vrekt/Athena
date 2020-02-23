@@ -49,31 +49,51 @@ public final class PartyMember {
      */
     private PartyRole role;
 
-
+    /**
+     * @return the account ID of this party member.
+     */
     public String accountId() {
         return accountId;
     }
 
+    /**
+     * @return a list of connections
+     */
     public List<Connection> connections() {
         return connections;
     }
 
+    /**
+     * @return the first or primary connection for this member.
+     */
     public Connection connection() {
         return connection;
     }
 
+    /**
+     * @return the current revision
+     */
     public int revision() {
         return revision;
     }
 
+    /**
+     * @return when this member was updated.
+     */
     public Instant updatedAt() {
         return updatedAt;
     }
 
+    /**
+     * @return when this member joined.
+     */
     public Instant joinedAt() {
         return joinedAt;
     }
 
+    /**
+     * @return the role of this member.
+     */
     public PartyRole role() {
         return role;
     }

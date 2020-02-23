@@ -41,8 +41,9 @@ import athena.util.cleanup.Shutdown;
 import athena.util.event.EventFactory;
 import athena.util.json.context.AthenaContextAdapterFactory;
 import athena.util.json.converters.InstantConverter;
-import athena.util.json.wrapped.WrappedTypeAdapterFactory;
+import athena.util.json.converters.LastOnlineResponseConverter;
 import athena.util.json.post.PostDeserializeAdapterFactory;
+import athena.util.json.wrapped.WrappedTypeAdapterFactory;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
@@ -63,7 +64,6 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -245,6 +245,7 @@ final class AthenaImpl implements Athena, Interceptor {
         fortnite = new Fortnite(context);
         presences = new Presences(context, builder.shouldEnableXmpp());
 
+        // register our XMPP services.
         if (builder.shouldEnableXmpp()) {
             chat = new XMPPChat(context);
             eventFactory.registerEventListener(chat);
@@ -273,6 +274,7 @@ final class AthenaImpl implements Athena, Interceptor {
         final var gsonBuilder = new GsonBuilder();
 
         // TODO: Create separate type adapter factory that combines both post/context?
+        // Deserialize and context adapters.
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(UnfilteredStatistic.class));
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(ExternalAuth.class));
         gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Account.class));
@@ -283,25 +285,22 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Profile.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Friend.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(FortnitePresence.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(LastOnlineResponse.class, this));
 
-        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(PartyMeta.class));
+        // wrapped type adapters for deserializing nested JSON objects.
+        gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMeta.class));
 
+        // converters.
+        gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, new LastOnlineResponseConverter());
         gsonBuilder.registerTypeAdapter(Instant.class, new InstantConverter());
+
+        // constants type adapters.
+        // TODO: More clean way to do this in the future.
         gsonBuilder.registerTypeAdapter(Input.class, (JsonDeserializer<Input>) (json, typeOfT, context) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Platform.class, (JsonDeserializer<Platform>) (json, typeOfT, context) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
-        gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, (JsonDeserializer<LastOnlineResponse>) (json, typeOfT, context) -> {
-            final var object = json.getAsJsonObject();
-            final var map = new HashMap<String, Instant>();
 
-            object.keySet().forEach(key -> {
-                final var array = object.getAsJsonArray(key);
-                final var time = Instant.parse(array.get(0).getAsJsonObject().get("last_online").getAsString());
-                map.put(key, time);
-            });
-            return new LastOnlineResponse(map, this.context);
-        });
-
+        // ignore super classes basically.
         gsonBuilder.excludeFieldsWithModifiers(Modifier.PROTECTED);
         return gsonBuilder.create();
     }
@@ -512,6 +511,11 @@ final class AthenaImpl implements Athena, Interceptor {
     @Override
     public Session session() {
         return session.get();
+    }
+
+    @Override
+    public boolean xmppEnabled() {
+        return builder.shouldEnableXmpp();
     }
 
     @Override

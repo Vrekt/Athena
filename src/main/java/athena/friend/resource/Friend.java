@@ -185,6 +185,15 @@ public final class Friend extends AthenaContext {
     }
 
     /**
+     * Send a message to this friend.
+     *
+     * @param message the message
+     */
+    public void sendMessage(String message) {
+        chat.sendMessage(this, message);
+    }
+
+    /**
      * @return the jid of this friend.
      */
     public BareJid jid() {

@@ -206,4 +206,13 @@ public final class Profile extends AthenaContext {
         Requests.executeVoidCall(call);
     }
 
+    /**
+     * Send a message to this profile.
+     *
+     * @param message the message
+     */
+    public void sendMessage(String message) {
+        chat.sendMessage(this, message);
+    }
+
 }
