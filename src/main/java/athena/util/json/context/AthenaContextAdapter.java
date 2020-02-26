@@ -1,7 +1,6 @@
 package athena.util.json.context;
 
 import athena.Athena;
-import athena.context.DefaultAthenaContext;
 import athena.util.json.context.annotation.Context;
 import athena.util.reflection.MethodInspector;
 import com.google.gson.TypeAdapter;
@@ -54,7 +53,8 @@ public final class AthenaContextAdapter<T> extends TypeAdapter<T> {
     @Override
     public T read(JsonReader in) throws IOException {
         final var deserialized = adapter.read(in);
-        final var methods = inspector.getMethodsWithParameters(deserialized.getClass(), Context.class, DefaultAthenaContext.class);
+        final var methods = inspector.getMethodsWithParameters(deserialized.getClass(), Context.class, Athena.class);
+
 
         for (final var method : methods) {
             try {
