@@ -6,7 +6,7 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.resource.types.FriendDirection;
 import athena.friend.resource.types.FriendStatus;
 import athena.friend.service.FriendsPublicService;
-import athena.util.json.post.annotation.PostDeserialize;
+import athena.util.json.hooks.annotation.PostDeserialize;
 import athena.util.request.Requests;
 import athena.context.AthenaContext;
 import okhttp3.RequestBody;

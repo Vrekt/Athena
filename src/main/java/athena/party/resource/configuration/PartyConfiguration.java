@@ -66,6 +66,18 @@ public final class PartyConfiguration {
     private boolean joinConfirmation;
 
     /**
+     * Related to the party meta cfg settings.
+     * Presence permission is related to presence publishing of party join data.
+     * Accepting members is a boolean field.
+     * Join request action is usually "manual"
+     * Invite permission is usually always "Anyone"
+     * For a private party not accepting members reason is 7.
+     * Chat enabled is a boolean
+     * can join is a boolean.
+     */
+    private transient String presencePermission, acceptingMembers, joinRequestAction, invitePermission, notAcceptingMembersReason, chatEnabled, canJoin;
+
+    /**
      * Static factory method for a public party.
      *
      * @return a new {@link PartyConfiguration}
@@ -108,6 +120,23 @@ public final class PartyConfiguration {
         this.maxSize = maxSize;
         this.inviteTtl = INVITE_TTL;
         this.joinConfirmation = joinConfirmation;
+
+        // party meta related configuration.
+        joinRequestAction = "Manual";
+        invitePermission = "Anyone";
+        chatEnabled = "true";
+        canJoin = "true";
+
+        if (joinability == Joinability.OPEN) {
+            presencePermission = "Anyone";
+            acceptingMembers = "true";
+            notAcceptingMembersReason = null;
+        } else {
+            presencePermission = "Noone";
+            acceptingMembers = "false";
+            notAcceptingMembersReason = "7";
+        }
+
     }
 
     /**
@@ -173,4 +202,119 @@ public final class PartyConfiguration {
         return joinability == Joinability.INVITE_AND_FORMER;
     }
 
+    /**
+     * @return the presence permission
+     */
+    public String presencePermission() {
+        return presencePermission;
+    }
+
+    /**
+     * @return if this party is accepting members
+     */
+    public boolean acceptingMembers() {
+        return Boolean.parseBoolean(acceptingMembers);
+    }
+
+    /**
+     * @return the join request action, usually "manual"
+     */
+    public String joinRequestAction() {
+        return joinRequestAction;
+    }
+
+    /**
+     * @return the invite permission
+     */
+    public String invitePermission() {
+        return invitePermission;
+    }
+
+    /**
+     * @return the not accepting members reason integer value
+     */
+    public int notAcceptingMembersReason() {
+        return Integer.parseInt(notAcceptingMembersReason);
+    }
+
+    /**
+     * @return if chat is enabled.
+     */
+    public boolean chatEnabled() {
+        return Boolean.parseBoolean(chatEnabled);
+    }
+
+    /**
+     * @return if members can join.
+     */
+    public boolean canJoin() {
+        return Boolean.parseBoolean(canJoin);
+    }
+
+    /**
+     * The presence permission setter.
+     *
+     * @param presencePermission the value
+     */
+    public void presencePermission(String presencePermission) {
+        this.presencePermission = presencePermission;
+    }
+
+    /**
+     * Sets the accepting members value.
+     * Requires a boolean wrapped in a string.
+     *
+     * @param acceptingMembers the value
+     */
+    public void acceptingMembers(String acceptingMembers) {
+        this.acceptingMembers = acceptingMembers;
+    }
+
+    /**
+     * Sets the join request action, usually "manual"
+     *
+     * @param joinRequestAction the join request action.
+     */
+    public void joinRequestAction(String joinRequestAction) {
+        this.joinRequestAction = joinRequestAction;
+    }
+
+    /**
+     * The invite permission.
+     *
+     * @param invitePermission the invite permission
+     */
+    public void invitePermission(String invitePermission) {
+        this.invitePermission = invitePermission;
+    }
+
+    /**
+     * The not accepting members reason.
+     * Requires a integer wrapped in a string.
+     *
+     * @param notAcceptingMembersReason the reason.
+     */
+    public void notAcceptingMembersReason(String notAcceptingMembersReason) {
+        this.notAcceptingMembersReason = notAcceptingMembersReason;
+    }
+
+    /**
+     * If chat is enabled or not.
+     * Must be a boolean wrapped in a string.
+     *
+     * @param chatEnabled if chat is enabled.
+     */
+    public void chatEnabled(String chatEnabled) {
+        this.chatEnabled = chatEnabled;
+    }
+
+    /**
+     * If members can join.
+     * Must be a boolean wrapped in a string.
+     *
+     * @param canJoin if members can join.
+     */
+    public void canJoin(String canJoin) {
+        this.canJoin = canJoin;
+    }
 }

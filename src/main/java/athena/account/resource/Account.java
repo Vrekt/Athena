@@ -7,7 +7,7 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.xmpp.event.events.FriendRequestEvent;
 import athena.friend.xmpp.listener.FriendEventListener;
 import athena.types.Platform;
-import athena.util.json.post.annotation.PostDeserialize;
+import athena.util.json.hooks.annotation.PostDeserialize;
 import athena.util.other.EmptyAction;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;

@@ -23,9 +23,8 @@ public final class MethodInspector {
      */
     public void cacheAnnotatedMethodsOnce(Class<?> clazz, Class<? extends Annotation>[] annotations) {
         if (clazz == null || annotations == null) throw new NullPointerException("Clazz or annotation is null.");
-        if (cache.containsKey(clazz)) throw new UnsupportedOperationException("Class is already cached.");
 
-        final var cache = new HashMap<Class<? extends Annotation>, MethodData>();
+        final var cache = this.cache.containsKey(clazz) ? this.cache.get(clazz) : new HashMap<Class<? extends Annotation>, MethodData>();
         for (var annotation : annotations) {
             if (annotation == null) throw new NullPointerException("one of the annotations is null.");
             final var methods = collectAnnotatedMethods(new Class[]{clazz}, annotation);

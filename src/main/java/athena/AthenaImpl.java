@@ -23,7 +23,9 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.service.FriendsPublicService;
 import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
+import athena.party.resource.Party;
 import athena.party.resource.connection.Connection;
+import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.meta.PartyMeta;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
@@ -42,7 +44,7 @@ import athena.util.event.EventFactory;
 import athena.util.json.context.AthenaContextAdapterFactory;
 import athena.util.json.converters.InstantConverter;
 import athena.util.json.converters.LastOnlineResponseConverter;
-import athena.util.json.post.PostDeserializeAdapterFactory;
+import athena.util.json.hooks.HooksAdapterFactory;
 import athena.util.json.wrapped.WrappedTypeAdapterFactory;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
@@ -100,7 +102,7 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private final AtomicReference<Session> session = new AtomicReference<>();
     /**
-     * A list of interceptor actions.
+     * A list of interceptor hooks.
      */
     private final CopyOnWriteArrayList<InterceptorAction> interceptorActions = new CopyOnWriteArrayList<>();
     /**
@@ -109,11 +111,11 @@ final class AthenaImpl implements Athena, Interceptor {
     private final EventFactory eventFactory = EventFactory.createAnnotatedFactory(BeforeRefresh.class, AfterRefresh.class, Shutdown.class);
 
     /**
-     * Manages account actions like: Finding them by ID and display name.
+     * Manages account hooks like: Finding them by ID and display name.
      */
     private final Accounts accounts;
     /**
-     * Manages friend actions like: Sending friend requests, accepting, deleting, blocking, etc.
+     * Manages friend hooks like: Sending friend requests, accepting, deleting, blocking, etc.
      */
     private final Friends friends;
     /**
@@ -273,22 +275,25 @@ final class AthenaImpl implements Athena, Interceptor {
     private Gson initializeGson() {
         final var gsonBuilder = new GsonBuilder();
 
-        // TODO: Create separate type adapter factory that combines both post/context?
+        // TODO: Create separate type adapter factory that combines both hooks/context?
         // Deserialize and context adapters.
-        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(UnfilteredStatistic.class));
-        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(ExternalAuth.class));
-        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Account.class));
-        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Profile.class));
-        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Friend.class));
-        gsonBuilder.registerTypeAdapterFactory(new PostDeserializeAdapterFactory(Connection.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(UnfilteredStatistic.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(ExternalAuth.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(Account.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(Profile.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(Friend.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(Connection.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(Party.class));
+        gsonBuilder.registerTypeAdapterFactory(new HooksAdapterFactory(PartyMemberMeta.class));
+
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Account.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Profile.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Friend.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(FortnitePresence.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(LastOnlineResponse.class, this));
 
-        // wrapped type adapters for deserializing nested JSON objects.
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMeta.class));
+        gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMemberMeta.class));
 
         // converters.
         gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, new LastOnlineResponseConverter());
