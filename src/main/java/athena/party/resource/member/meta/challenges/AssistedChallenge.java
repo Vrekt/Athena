@@ -3,16 +3,25 @@ package athena.party.resource.member.meta.challenges;
 /**
  * Represents assisted challenges.
  */
-public final class AssistedChallengeInfo {
+public final class AssistedChallenge {
 
     /**
      * The quest item definition.
      */
-    private String questItemDef;
+    private String questItemDef = "None";
     /**
      * How many objectives have been completed.
      */
-    private int objectivesCompleted;
+    private int objectivesCompleted = 0;
+
+    public AssistedChallenge() {
+
+    }
+
+    public AssistedChallenge(String questItemDef, int objectivesCompleted) {
+        this.questItemDef = questItemDef;
+        this.objectivesCompleted = objectivesCompleted;
+    }
 
     /**
      * @return the quest item definition.

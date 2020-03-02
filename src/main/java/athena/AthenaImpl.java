@@ -23,10 +23,16 @@ import athena.friend.resource.summary.Profile;
 import athena.friend.service.FriendsPublicService;
 import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
+import athena.party.Parties;
 import athena.party.resource.Party;
 import athena.party.resource.connection.Connection;
+import athena.party.resource.invite.PartyInvitation;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.meta.PartyMeta;
+import athena.party.resource.ping.PartyPing;
+import athena.party.service.PartyService;
+import athena.party.xmpp.event.invite.PartyInviteEvent;
+import athena.party.xmpp.event.invite.PartyPingEvent;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
@@ -42,6 +48,7 @@ import athena.util.cleanup.BeforeRefresh;
 import athena.util.cleanup.Shutdown;
 import athena.util.event.EventFactory;
 import athena.util.json.context.AthenaContextAdapterFactory;
+import athena.util.json.converters.InputConverter;
 import athena.util.json.converters.InstantConverter;
 import athena.util.json.converters.LastOnlineResponseConverter;
 import athena.util.json.hooks.HooksAdapterFactory;
@@ -138,6 +145,10 @@ final class AthenaImpl implements Athena, Interceptor {
      * Manages XMPP Chat.
      */
     private final XMPPChat chat;
+    /**
+     * Manages parties.
+     */
+    private final Parties parties;
 
     /**
      * Retrofit services
@@ -151,6 +162,7 @@ final class AthenaImpl implements Athena, Interceptor {
     private final PresencePublicService presencePublicService;
     private final ChannelsPublicService channelsPublicService;
     private final GroupsService groupsService;
+    private final PartyService partyService;
 
     /**
      * GSON instance.
@@ -160,6 +172,10 @@ final class AthenaImpl implements Athena, Interceptor {
      * This context.
      */
     private final DefaultAthenaContext context;
+    /**
+     * The platform
+     */
+    private final Platform platform;
     /**
      * This account.
      */
@@ -171,6 +187,7 @@ final class AthenaImpl implements Athena, Interceptor {
 
     AthenaImpl(Builder builder) throws FortniteAuthenticationException {
         this.builder = builder;
+        this.platform = builder.platform();
 
         // Create a new cookie manager for the cookie jar.
         final var manager = new CookieManager();
@@ -233,6 +250,7 @@ final class AthenaImpl implements Athena, Interceptor {
         presencePublicService = initializeRetrofitService(PresencePublicService.BASE_URL, factory, PresencePublicService.class);
         channelsPublicService = initializeRetrofitService(ChannelsPublicService.BASE_URL, factory, ChannelsPublicService.class);
         groupsService = initializeRetrofitService(GroupsService.BASE_URL, factory, GroupsService.class);
+        partyService = initializeRetrofitService(PartyService.BASE_URL, factory, PartyService.class);
 
         // initialize our context
         context = new DefaultAthenaContext();
@@ -241,29 +259,38 @@ final class AthenaImpl implements Athena, Interceptor {
 
         // initialize our resources.
         accounts = new Accounts(context);
+
+        // find the account that belongs to this instance.
+        account = accounts.findByAccountId(session.accountId());
+        context.initializeAccountOnly(this);
+
+        // initialize other resources
         friends = new Friends(context, builder.shouldEnableXmpp());
         statisticsV2 = new StatisticsV2(context);
         events = new Events(context);
         fortnite = new Fortnite(context);
         presences = new Presences(context, builder.shouldEnableXmpp());
 
-        // register our XMPP services.
+        // Initialize XMPP dependant resources.
         if (builder.shouldEnableXmpp()) {
             chat = new XMPPChat(context);
+            parties = new Parties(context);
+            // register their events
             eventFactory.registerEventListener(chat);
-        } else {
-            chat = null;
-        }
+            eventFactory.registerEventListener(parties);
 
-        // register XMPP resources with the event factory.
-        eventFactory.registerEventListener(friends);
-        eventFactory.registerEventListener(presences);
+            // register XMPP resources with the event factory.
+            eventFactory.registerEventListener(friends);
+            eventFactory.registerEventListener(presences);
+        } else {
+            // we dont have XMPP so just set them to null.
+            chat = null;
+            parties = null;
+        }
 
         // finally initialize resources inside the context.
         context.initializeResourcesOnly(this);
 
-        // find the account that belongs to this instance.
-        account = accounts.findByAccountId(session.accountId());
         LOGGER.atInfo().log("Ready!");
     }
 
@@ -291,17 +318,21 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Friend.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(FortnitePresence.class, this));
         gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(LastOnlineResponse.class, this));
-
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(Party.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(PartyInvitation.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(PartyPing.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(PartyPingEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(new AthenaContextAdapterFactory(PartyInviteEvent.class, this));
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMeta.class));
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMemberMeta.class));
 
         // converters.
+        gsonBuilder.registerTypeAdapter(Input.class, new InputConverter());
         gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, new LastOnlineResponseConverter());
         gsonBuilder.registerTypeAdapter(Instant.class, new InstantConverter());
 
         // constants type adapters.
         // TODO: More clean way to do this in the future.
-        gsonBuilder.registerTypeAdapter(Input.class, (JsonDeserializer<Input>) (json, typeOfT, context) -> Input.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Platform.class, (JsonDeserializer<Platform>) (json, typeOfT, context) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
 
@@ -489,6 +520,16 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
+    public PartyService partyService() {
+        return partyService;
+    }
+
+    @Override
+    public Parties party() {
+        return parties;
+    }
+
+    @Override
     public XMPPConnectionManager xmpp() {
         return connectionManager;
     }
@@ -510,12 +551,18 @@ final class AthenaImpl implements Athena, Interceptor {
 
     @Override
     public String displayName() {
+        if (account == null) return "";
         return account.displayName();
     }
 
     @Override
     public Session session() {
         return session.get();
+    }
+
+    @Override
+    public Platform platform() {
+        return platform;
     }
 
     @Override

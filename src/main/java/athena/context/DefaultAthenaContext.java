@@ -7,8 +7,11 @@ import athena.events.service.EventsPublicService;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
+import athena.party.Parties;
+import athena.party.service.PartyService;
 import athena.presence.service.PresencePublicService;
 import athena.stats.service.StatsproxyPublicService;
+import athena.types.Platform;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
 
@@ -45,10 +48,33 @@ public final class DefaultAthenaContext extends AthenaContext {
     }
 
     /**
+     * Initializes account information
+     *
+     * @param athena the athena instance
+     */
+    public void initializeAccountOnly(Athena athena) {
+        initializeAccount(athena);
+    }
+
+    /**
      * @return the athena account ID.
      */
     public String localAccountId() {
         return localAccountId;
+    }
+
+    /**
+     * @return the athena display name.
+     */
+    public String displayName() {
+        return displayName;
+    }
+
+    /**
+     * @return the athena platform
+     */
+    public Platform platform() {
+        return platform;
     }
 
     /**
@@ -94,6 +120,13 @@ public final class DefaultAthenaContext extends AthenaContext {
     }
 
     /**
+     * @return the party service
+     */
+    public PartyService partyService() {
+        return partyService;
+    }
+
+    /**
      * @return the gson
      */
     public Gson gson() {
@@ -119,6 +152,13 @@ public final class DefaultAthenaContext extends AthenaContext {
      */
     public XMPPChat chat() {
         return chat;
+    }
+
+    /**
+     * @return party provider
+     */
+    public Parties party() {
+        return parties;
     }
 
     /**

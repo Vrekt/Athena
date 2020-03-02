@@ -3,6 +3,7 @@ package athena.party.resource.member.meta.cosmetic;
 import athena.party.resource.member.meta.cosmetic.variant.CosmeticVariant;
 import com.google.gson.JsonArray;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,27 +14,27 @@ public final class CosmeticLoadout {
     /**
      * Character
      */
-    private String characterDef, characterEKey;
+    private String characterDef = "None", characterEKey = "";
     /**
      * Backpack
      */
-    private String backpackDef, backpackEKey;
+    private String backpackDef = "None", backpackEKey = "";
     /**
      * Pickaxe
      */
-    private String pickaxeDef, pickaxeEKey;
+    private String pickaxeDef = "None", pickaxeEKey = "";
     /**
      * Contrail
      */
-    private String contrailDef, contrailEKey;
+    private String contrailDef = "None", contrailEKey = "";
     /**
      * Unknown yet.
      */
-    private JsonArray scratchpad;
+    private JsonArray scratchpad = new JsonArray();
     /**
      * List of cosmetic variants/stages.
      */
-    private List<CosmeticVariant> variants;
+    private List<CosmeticVariant> variants = new ArrayList<>();
 
     /**
      * @return the character definition

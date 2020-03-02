@@ -45,6 +45,7 @@ public final class MethodInspector {
         if (!cache.containsKey(clazz)) throw new IllegalArgumentException("That class is not cached yet.");
         final var cache = this.cache.get(clazz);
         final var data = cache.get(annotation);
+        if (data == null) return Collections.emptyList();
         return data.getMethods();
     }
 

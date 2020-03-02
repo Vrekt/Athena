@@ -6,11 +6,15 @@ package athena.party.resource.member.meta.assignments;
 public final class MemberSquadAssignmentRequest {
 
     /**
-     * The starting index, target index and version(?)
+     * The starting index, target index
      * The swap target member ID to change with, sometimes is "INVALID" if no request.
      */
-    private int startingAbsoluteIdx, targetAbsoluteIdx, version;
-    private String swapTargetMemberId;
+    private int startingAbsoluteIdx = -1, targetAbsoluteIdx = -1;
+    private String swapTargetMemberId = "INVALID";
+    /**
+     * Version?
+     */
+    private int version = 0;
 
     /**
      * @return The starting index.
@@ -24,8 +28,9 @@ public final class MemberSquadAssignmentRequest {
      *
      * @param startingAbsoluteIdx The starting index.
      */
-    public void startingAbsoluteIdx(int startingAbsoluteIdx) {
+    public MemberSquadAssignmentRequest startingAbsoluteIdx(int startingAbsoluteIdx) {
         this.startingAbsoluteIdx = startingAbsoluteIdx;
+        return this;
     }
 
     /**
@@ -40,8 +45,9 @@ public final class MemberSquadAssignmentRequest {
      *
      * @param targetAbsoluteIdx The target index
      */
-    public void targetAbsoluteIdx(int targetAbsoluteIdx) {
+    public MemberSquadAssignmentRequest targetAbsoluteIdx(int targetAbsoluteIdx) {
         this.targetAbsoluteIdx = targetAbsoluteIdx;
+        return this;
     }
 
     /**
@@ -56,8 +62,9 @@ public final class MemberSquadAssignmentRequest {
      *
      * @param version the version
      */
-    public void version(int version) {
+    public MemberSquadAssignmentRequest version(int version) {
         this.version = version;
+        return this;
     }
 
     /**
@@ -72,7 +79,8 @@ public final class MemberSquadAssignmentRequest {
      *
      * @param swapTargetMemberId the account ID.
      */
-    public void swapTargetMemberId(String swapTargetMemberId) {
+    public MemberSquadAssignmentRequest swapTargetMemberId(String swapTargetMemberId) {
         this.swapTargetMemberId = swapTargetMemberId;
+        return this;
     }
 }

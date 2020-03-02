@@ -1,4 +1,4 @@
-package athena.party.resource.invite;
+package athena.party.resource.ping;
 
 import athena.account.resource.Account;
 import athena.context.AthenaContext;
@@ -12,59 +12,39 @@ import com.google.gson.annotations.SerializedName;
 import java.time.Instant;
 
 /**
- * Represents a party invitation
+ * Represents a party ping.
  */
-public final class PartyInvitation extends AthenaContext {
+public final class PartyPing extends AthenaContext {
 
     /**
-     * The ID of the party ID.
-     */
-    @SerializedName("party_id")
-    private String partyId;
-
-    /**
-     * Who the invite was sent by.
+     * Who the ping was sent by.
      */
     @SerializedName("sent_by")
     private String sentBy;
 
     /**
-     * The meta of this invitation
-     */
-    private PingOrInvitationMeta meta;
-
-    /**
-     * Who the invitation was sent to.
+     * Who the ping was sent to.
      */
     @SerializedName("sent_to")
     private String sentTo;
 
     /**
-     * When the invite was sent.
+     * When the ping was sent.
      */
     @SerializedName("sent_at")
     private Instant sentAt;
+
     /**
-     * When the invite was updated.
-     */
-    @SerializedName("updated_at")
-    private Instant updatedAt;
-    /**
-     * When the invite expires.
+     * When the ping expires.
      */
     @SerializedName("expires_at")
     private Instant expiresAt;
-    /**
-     * The status of this invite - "SENT"
-     */
-    private String status;
 
     /**
-     * @return the ID of the party
+     * The meta of this ping
      */
-    public String partyId() {
-        return partyId;
-    }
+    private PingOrInvitationMeta meta;
+
 
     /**
      * @return who it was sent by
@@ -81,28 +61,28 @@ public final class PartyInvitation extends AthenaContext {
     }
 
     /**
-     * @return the friend profile of who sent this invite.
+     * @return the friend profile of who sent this ping.
      */
     public Profile sentByProfile() {
         return Requests.executeCall(friendsPublicService.profile(localAccountId, sentBy, true));
     }
 
     /**
-     * @return the connection type of who sent the invite.
+     * @return the connection type of who sent the ping.
      */
     public String type() {
         return meta.type();
     }
 
     /**
-     * @return the platform of who sent the invite
+     * @return the platform of who sent the ping.
      */
     public Platform platform() {
         return meta.platform();
     }
 
     /**
-     * @return the display name of who sent the invite
+     * @return the display name of who sent the ping
      */
     public String displayName() {
         return meta.displayName();
@@ -123,14 +103,14 @@ public final class PartyInvitation extends AthenaContext {
     }
 
     /**
-     * @return the account ID of who the invite was sent to.
+     * @return the account ID of who the ping was sent to.
      */
     public String sentTo() {
         return sentTo;
     }
 
     /**
-     * @return the {@link Account} of who the invite was sent to.
+     * @return the {@link Account} of who the ping was sent to.
      */
     public Account sentToAccount() {
         final var call = accountPublicService.findOneByAccountId(sentTo);
@@ -140,7 +120,7 @@ public final class PartyInvitation extends AthenaContext {
     }
 
     /**
-     * @return the {@link Profile} of who the invite was sent to.
+     * @return the {@link Profile} of who the ping was sent to.
      * They must be a friend for this call to succeed.
      */
     public Profile sentToProfile() {
@@ -148,31 +128,17 @@ public final class PartyInvitation extends AthenaContext {
     }
 
     /**
-     * @return when this invite was sent
+     * @return when this ping was sent
      */
     public Instant sentAt() {
         return sentAt;
     }
 
     /**
-     * @return when this invite was updated.
-     */
-    public Instant updatedAt() {
-        return updatedAt;
-    }
-
-    /**
-     * @return when this invite expires.
+     * @return when this ping expires.
      */
     public Instant expiresAt() {
         return expiresAt;
-    }
-
-    /**
-     * @return the status of this invite, "SENT"/???
-     */
-    public String status() {
-        return status;
     }
 
 }

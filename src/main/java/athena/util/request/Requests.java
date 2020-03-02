@@ -36,7 +36,7 @@ public final class Requests {
      * @return a {@link Optional} containing the type or empty.
      */
     @SuppressWarnings("ConstantConditions")
-    public static <T> Optional<T> executeCallOptional(Call<T> call) {
+    public static <T> T executeCallOptional(Call<T> call) {
         Response<T> result;
         try {
             result = call.execute();
@@ -54,7 +54,7 @@ public final class Requests {
                 throw EpicGamesErrorException.create("Failed to execute a request to [" + call.request().url().toString() + "].\n");
             }
         }
-        return Optional.ofNullable(result.body());
+        return result.body();
     }
 
     /**
@@ -65,7 +65,7 @@ public final class Requests {
      * @return the TYPE or {@code null} if an error occurred.
      */
     public static <T> T executeCall(Call<T> call) {
-        return executeCallOptional(call).orElseThrow(() -> EpicGamesErrorException.create("Failed to execute a request to [" + call.request().url().toString() + "].\n"));
+        return executeCallOptional(call);
     }
 
     /**

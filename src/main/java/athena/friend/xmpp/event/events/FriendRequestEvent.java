@@ -23,7 +23,7 @@ public final class FriendRequestEvent extends AbstractFriendEvent {
      */
     public Profile accept() {
         Requests.executeVoidCall(context.friendsService().add(context.localAccountId(), accountId));
-        return Requests.executeCallOptional(context.friendsService().profile(context.localAccountId(), accountId, true)).orElse(null);
+        return Requests.executeCallOptional(context.friendsService().profile(context.localAccountId(), accountId, true));
     }
 
 

@@ -21,4 +21,5 @@ public @interface WrappedObject {
      * @return the value
      */
     String value();
+
 }

@@ -10,7 +10,7 @@ public final class CosmeticVariant {
      * "Parts",
      * "Stage1"
      */
-    private String item, channel, variant;
+    private String item = "AthenaCharacter", channel = "Parts", variant = "Stage1";
 
     /**
      * @return the item

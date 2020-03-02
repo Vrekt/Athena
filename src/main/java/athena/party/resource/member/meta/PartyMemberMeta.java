@@ -1,9 +1,9 @@
 package athena.party.resource.member.meta;
 
 import athena.party.resource.member.meta.assignments.MemberSquadAssignmentRequest;
-import athena.party.resource.member.meta.banner.BannerInfo;
+import athena.party.resource.member.meta.banner.AthenaBanner;
 import athena.party.resource.member.meta.battlepass.BattlePass;
-import athena.party.resource.member.meta.challenges.AssistedChallengeInfo;
+import athena.party.resource.member.meta.challenges.AssistedChallenge;
 import athena.party.resource.member.meta.cosmetic.CosmeticLoadout;
 import athena.party.resource.member.meta.emote.FrontendEmote;
 import athena.party.resource.member.meta.hero.CampaignHero;
@@ -63,7 +63,7 @@ public final class PartyMemberMeta {
      */
     @SerializedName("AssistedChallengeInfo_j")
     @WrappedObject("AssistedChallengeInfo")
-    private AssistedChallengeInfo challengeInfo;
+    private AssistedChallenge challengeInfo;
 
     /**
      * {@code "false"} if voice chat is not muted
@@ -126,7 +126,7 @@ public final class PartyMemberMeta {
      */
     @SerializedName("AthenaBannerInfo_j")
     @WrappedObject("AthenaBannerInfo")
-    private BannerInfo bannerInfo;
+    private AthenaBanner banner;
 
     /**
      * {@code "true"} if content is preloaded
@@ -200,7 +200,7 @@ public final class PartyMemberMeta {
      */
     @PostDeserialize
     private void postDeserialize() {
-        platform = platformObject.platform;
+        if (platformObject != null) platform = platformObject.platform;
     }
 
     /**
@@ -248,7 +248,7 @@ public final class PartyMemberMeta {
     /**
      * @return assisted challenge information
      */
-    public AssistedChallengeInfo challengeInfo() {
+    public AssistedChallenge challengeInfo() {
         return challengeInfo;
     }
 
@@ -318,8 +318,8 @@ public final class PartyMemberMeta {
     /**
      * @return the banner information
      */
-    public BannerInfo bannerInfo() {
-        return bannerInfo;
+    public AthenaBanner banner() {
+        return banner;
     }
 
     /**
@@ -390,6 +390,115 @@ public final class PartyMemberMeta {
      */
     public int playersLeft() {
         return Integer.parseInt(playersLeft);
+    }
+
+    public void featDefinition(String featDefinition) {
+        this.featDefinition = featDefinition;
+    }
+
+    public void campaignHero(CampaignHero campaignHero) {
+        this.campaignHero = campaignHero;
+    }
+
+    public void memberSquadAssignmentRequest(MemberSquadAssignmentRequest memberSquadAssignmentRequest) {
+        this.memberSquadAssignmentRequest = memberSquadAssignmentRequest;
+    }
+
+    public void zoneInstanceId(String zoneInstanceId) {
+        this.zoneInstanceId = zoneInstanceId;
+    }
+
+    public void spectateAPartyMemberAvailable(String spectateAPartyMemberAvailable) {
+        this.spectateAPartyMemberAvailable = spectateAPartyMemberAvailable;
+    }
+
+    public void platformUniqueId(String platformUniqueId) {
+        this.platformUniqueId = platformUniqueId;
+    }
+
+    public void challengeInfo(AssistedChallenge challengeInfo) {
+        this.challengeInfo = challengeInfo;
+    }
+
+    public void voiceChatMuted(String voiceChatMuted) {
+        this.voiceChatMuted = voiceChatMuted;
+    }
+
+    public void battlePass(BattlePass battlePass) {
+        this.battlePass = battlePass;
+    }
+
+    public void displayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void hiddenMatchmakingDelayMax(String hiddenMatchmakingDelayMax) {
+        this.hiddenMatchmakingDelayMax = hiddenMatchmakingDelayMax;
+    }
+
+    public void homeBaseVersion(String homeBaseVersion) {
+        this.homeBaseVersion = homeBaseVersion;
+    }
+
+    public void currentInputType(Input currentInputType) {
+        this.currentInputType = currentInputType;
+    }
+
+    public void frontendEmote(FrontendEmote frontendEmote) {
+        this.frontendEmote = frontendEmote;
+    }
+
+    public void platformSessionId(String platformSessionId) {
+        this.platformSessionId = platformSessionId;
+    }
+
+    public void matchmakingLevel(String matchmakingLevel) {
+        this.matchmakingLevel = matchmakingLevel;
+    }
+
+    public void banner(AthenaBanner banner) {
+        this.banner = banner;
+    }
+
+    public void hasPreloaded(String hasPreloaded) {
+        this.hasPreloaded = hasPreloaded;
+    }
+
+    public void voiceChatStatus(String voiceChatStatus) {
+        this.voiceChatStatus = voiceChatStatus;
+    }
+
+    public void gameReadiness(String gameReadiness) {
+        this.gameReadiness = gameReadiness;
+    }
+
+    public void platform(Platform platform) {
+        platformObject = new PlatformObject();
+        platformObject.platform = platform;
+    }
+
+    public void cosmeticLoadout(CosmeticLoadout cosmeticLoadout) {
+        this.cosmeticLoadout = cosmeticLoadout;
+    }
+
+    public void timeStartedMatch(Instant timeStartedMatch) {
+        this.timeStartedMatch = timeStartedMatch;
+    }
+
+    public void location(String location) {
+        this.location = location;
+    }
+
+    public void crossplayPreference(String crossplayPreference) {
+        this.crossplayPreference = crossplayPreference;
+    }
+
+    public void readyInputType(String readyInputType) {
+        this.readyInputType = readyInputType;
+    }
+
+    public void playersLeft(String playersLeft) {
+        this.playersLeft = playersLeft;
     }
 
     /**

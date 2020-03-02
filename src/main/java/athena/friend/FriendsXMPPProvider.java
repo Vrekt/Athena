@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Vrekt, Terbau
  */
-public final class FriendsXMPPProvider implements StanzaListener {
+final class FriendsXMPPProvider implements StanzaListener {
 
     /**
      * Provides event handling and registering/unregistering.
@@ -62,8 +62,9 @@ public final class FriendsXMPPProvider implements StanzaListener {
         // to include a new message type that is an array - not an object.
         // 1/29/2020 - 6:08PM
         final var element = context.gson().fromJson(message.getBody(), JsonElement.class);
-        if (element.isJsonArray()) return;
         final var object = element.getAsJsonObject();
+        if(object.has("interactions")) return; // ignore interactions types.
+
 
         final var type = object.getAsJsonPrimitive("type").getAsString();
         final var of = FriendType.typeOf(type);

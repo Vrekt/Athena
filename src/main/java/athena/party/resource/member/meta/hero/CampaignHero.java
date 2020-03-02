@@ -9,7 +9,7 @@ public final class CampaignHero {
      * The instance ID is ?? usually ""
      * Hero type is HID skin type.
      */
-    private String heroItemInstanceId, heroType;
+    private String heroItemInstanceId = "", heroType;
 
     /**
      * @return ""

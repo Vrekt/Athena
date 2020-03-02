@@ -8,17 +8,27 @@ public final class BattlePass {
     /**
      * {@code true} if the battle-pass is purchased.
      */
-    private boolean bHasPurchasedPass;
+    private boolean bHasPurchasedPass = false;
     /**
      * Level, and other related XP.
      */
-    private int passLevel, selfBoostXp, friendBoostXp;
+    private int passLevel = 1, selfBoostXp = 0, friendBoostXp = 0;
 
     /**
      * @return {@code true} if the battle pass has been purchased.
      */
-    public boolean bHasPurchasedPass() {
+    public boolean hasPurchasedPass() {
         return bHasPurchasedPass;
+    }
+
+    public BattlePass() {
+    }
+
+    public BattlePass(boolean bHasPurchasedPass, int passLevel, int selfBoostXp, int friendBoostXp) {
+        this.bHasPurchasedPass = bHasPurchasedPass;
+        this.passLevel = passLevel;
+        this.selfBoostXp = selfBoostXp;
+        this.friendBoostXp = friendBoostXp;
     }
 
     /**
@@ -26,7 +36,7 @@ public final class BattlePass {
      *
      * @param bHasPurchasedPass the value
      */
-    public void bHasPurchasedPass(boolean bHasPurchasedPass) {
+    public void hasPurchasedPass(boolean bHasPurchasedPass) {
         this.bHasPurchasedPass = bHasPurchasedPass;
     }
 
@@ -47,16 +57,16 @@ public final class BattlePass {
     }
 
     /**
-     * @return the self boost XP.
+     * @return the client boost XP.
      */
     public int selfBoostXp() {
         return selfBoostXp;
     }
 
     /**
-     * Set the self boost XP.
+     * Set the client boost XP.
      *
-     * @param selfBoostXp the self boost XP.
+     * @param selfBoostXp the client boost XP.
      */
     public void selfBoostXp(int selfBoostXp) {
         this.selfBoostXp = selfBoostXp;

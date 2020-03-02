@@ -75,10 +75,9 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
 
                 if (field.arrayType == null) {
                     // we are writing an object.
-                    final var asString = fieldTypeAdapter.toJson(value);
                     final var object = new JsonObject();
-                    object.addProperty(field.wrappedValue, asString);
-                    gson.toJson(object, out);
+                    object.add(field.wrappedValue, fieldTypeAdapter.toJsonTree(value));
+                    out.value(object.toString());
                 } else {
                     // find the adapter to use.
                     // if we are writing a list value then grab the delegate adapter for that.

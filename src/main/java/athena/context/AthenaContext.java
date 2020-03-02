@@ -7,8 +7,11 @@ import athena.events.service.EventsPublicService;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
+import athena.party.Parties;
+import athena.party.service.PartyService;
 import athena.presence.service.PresencePublicService;
 import athena.stats.service.StatsproxyPublicService;
+import athena.types.Platform;
 import athena.util.json.context.annotation.Context;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
@@ -19,9 +22,13 @@ import com.google.gson.Gson;
 public abstract class AthenaContext {
 
     /**
-     * The accountId of the {@link Athena} instance.
+     * The accountId and displayName of the {@link Athena} instance.
      */
-    protected String localAccountId;
+    protected String localAccountId, displayName;
+    /**
+     * The platform of the {@link Athena} instance.
+     */
+    protected Platform platform;
 
     /**
      * Various services.
@@ -32,6 +39,7 @@ public abstract class AthenaContext {
     protected EventsPublicService eventsPublicService;
     protected FortnitePublicService fortnitePublicService;
     protected PresencePublicService presencePublicService;
+    protected PartyService partyService;
 
     /**
      * The XMPP connection manager.
@@ -45,6 +53,11 @@ public abstract class AthenaContext {
      * XMPP chat provider.
      */
     protected XMPPChat chat;
+
+    /**
+     * Parties
+     */
+    protected Parties parties;
 
     /**
      * Athena GSON instance.
@@ -64,15 +77,19 @@ public abstract class AthenaContext {
     @Context
     protected void initializeContext(Athena athena) {
         this.localAccountId = athena.accountId();
+        this.displayName = athena.displayName();
+        this.platform = athena.platform();
         this.accountPublicService = athena.accountPublicService();
         this.friendsPublicService = athena.friendsPublicService();
         this.statsproxyPublicService = athena.statsproxyPublicService();
         this.eventsPublicService = athena.eventsPublicService();
         this.fortnitePublicService = athena.fortnitePublicService();
         this.presencePublicService = athena.presencePublicService();
+        this.partyService = athena.partyService();
         this.connectionManager = athena.xmpp();
         this.friends = athena.friend();
         this.chat = athena.chat();
+        this.parties = athena.party();
         this.gson = athena.gson();
         this.xmppEnabled = athena.xmppEnabled();
     }
@@ -84,10 +101,11 @@ public abstract class AthenaContext {
         this.eventsPublicService = athena.eventsPublicService();
         this.fortnitePublicService = athena.fortnitePublicService();
         this.presencePublicService = athena.presencePublicService();
+        this.partyService = athena.partyService();
     }
 
     protected void initializeOther(Athena athena) {
-        this.localAccountId = athena.accountId();
+        this.platform = athena.platform();
         this.connectionManager = athena.xmpp();
         this.gson = athena.gson();
     }
@@ -95,6 +113,12 @@ public abstract class AthenaContext {
     protected void initializeResources(Athena athena) {
         this.friends = athena.friend();
         this.chat = athena.chat();
+        this.parties = athena.party();
+    }
+
+    protected void initializeAccount(Athena athena) {
+        this.localAccountId = athena.accountId();
+        this.displayName = athena.displayName();
     }
 
 }

@@ -8,11 +8,20 @@ public final class FrontendEmote {
     /**
      * The emote item definition and encryption key.
      */
-    private String emoteItemDef, emoteEKey;
+    private String emoteItemDef = "None", emoteEKey = "";
     /**
      * -1 = stop, -2 = start
      */
-    private int emoteSection;
+    private int emoteSection = -1;
+
+    public FrontendEmote() {
+    }
+
+    public FrontendEmote(String emoteItemDef, String emoteEKey, int emoteSection) {
+        this.emoteItemDef = emoteItemDef;
+        this.emoteEKey = emoteEKey;
+        this.emoteSection = emoteSection;
+    }
 
     /**
      * @return the emote item definition

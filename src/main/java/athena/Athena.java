@@ -18,6 +18,8 @@ import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
 import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
+import athena.party.Parties;
+import athena.party.service.PartyService;
 import athena.presence.Presences;
 import athena.presence.service.PresencePublicService;
 import athena.stats.StatisticsV2;
@@ -133,6 +135,16 @@ public interface Athena {
     XMPPChat chat();
 
     /**
+     * @return the {@link PartyService} instance.
+     */
+    PartyService partyService();
+
+    /**
+     * @return the parties class that handles parties.
+     */
+    Parties party();
+
+    /**
      * @return the {@link ChannelsPublicService} instance.
      */
     ChannelsPublicService channelsPublicService();
@@ -171,6 +183,11 @@ public interface Athena {
      * @return the session of this athena instance.
      */
     Session session();
+
+    /**
+     * @return the platform of this athena instance.
+     */
+    Platform platform();
 
     /**
      * @return {@code true} if XMPP is enabled.
