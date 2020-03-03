@@ -5,7 +5,6 @@ import athena.events.resource.leaderboard.entry.EventLeaderboardEntry;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -15,11 +14,10 @@ import java.util.stream.Collectors;
 public final class EventLeaderboard {
 
     /**
-     * "Fortnite",
      * "epicgames_S11_WinterRoyale_PC_NAE",
      * "S11_WinterRoyale_PC_NAE_Event1"
      */
-    private String gameId, eventId, eventWindowId;
+    private String eventId, eventWindowId;
     /**
      * Current page and the total number of pages.
      */
@@ -32,13 +30,6 @@ public final class EventLeaderboard {
      * All leaderboard entries.
      */
     private List<EventLeaderboardEntry> entries;
-
-    /**
-     * @return "Fortnite"
-     */
-    public String gameId() {
-        return gameId;
-    }
 
     /**
      * @return the event ID.
@@ -86,20 +77,20 @@ public final class EventLeaderboard {
      * Get a {@link EventLeaderboardEntry} by account ID.
      *
      * @param accountId the account ID within the team.
-     * @return a {@link Optional} containing the {@link EventLeaderboardEntry} if found.
+     * @return the {@link EventLeaderboardEntry} if found or {@code null}
      */
-    public Optional<EventLeaderboardEntry> getEntryByAccountId(String accountId) {
-        return entries.stream().filter(entry -> entry.teamAccountIds().contains(accountId)).findAny();
+    public EventLeaderboardEntry getEntryByAccountId(String accountId) {
+        return entries.stream().filter(entry -> entry.teamAccountIds().contains(accountId)).findAny().orElse(null);
     }
 
     /**
      * Get a {@link EventLeaderboardEntry} by team ID.
      *
      * @param teamId the team ID.
-     * @return a {@link Optional} containing the {@link EventLeaderboardEntry} if found.
+     * @return the {@link EventLeaderboardEntry} if found or {@code null}
      */
-    public Optional<EventLeaderboardEntry> getEntryByTeamId(String teamId) {
-        return entries.stream().filter(entry -> entry.teamId().equals(teamId)).findAny();
+    public EventLeaderboardEntry getEntryByTeamId(String teamId) {
+        return entries.stream().filter(entry -> entry.teamId().equals(teamId)).findAny().orElse(null);
     }
 
     /**

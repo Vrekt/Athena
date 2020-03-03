@@ -1,7 +1,9 @@
 package athena.events.service;
 
 import athena.events.resource.download.event.FortniteEventDownload;
+import athena.events.resource.download.player.EventPlayer;
 import athena.events.resource.leaderboard.EventLeaderboard;
+import athena.events.resource.player.PlayerTokenResponse;
 import com.google.gson.JsonElement;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -30,7 +32,25 @@ public interface EventsPublicService {
      * @return a {@link Call} returned by retrofit containing the {@link FortniteEventDownload} if the call was successful.
      */
     @GET("api/v1/events/Fortnite/download/{accountId}")
-    Call<FortniteEventDownload> download(@Path("accountId") String accountId, @Query("region") String region, @Query("platform") String platform, @Query("teamAccountIds") String teamAccountIds);
+    Call<FortniteEventDownload> download(@Path("accountId") String accountId, @Query("region") String region, @Query("platform") String platform, @Query("teamAccountIds") String[] teamAccountIds);
+
+    /**
+     * Get the player data.
+     *
+     * @param accountId the account ID
+     * @return a {@link Call} returned by retrofit containing the {@link EventPlayer} if the call was successful.
+     */
+    @GET("api/v1/players/Fortnite/{accountId}")
+    Call<EventPlayer> player(@Path("accountId") String accountId);
+
+    /**
+     * Get the player tokens for each account ID
+     *
+     * @param teamAccountIds the array of team account IDs
+     * @return a {@link Call} returned by retrofit containing the {@link PlayerTokenResponse} if the call was successful.
+     */
+    @GET("api/v1/players/Fortnite/tokens")
+    Call<PlayerTokenResponse> tokens(@Query("teamAccountIds") String[] teamAccountIds);
 
     /**
      * Retrieve the leaderboards for a specific event.

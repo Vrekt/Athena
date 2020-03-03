@@ -11,7 +11,6 @@ import retrofit2.Response;
 import retrofit2.internal.EverythingIsNonNull;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * A utility class used to execute requests.
@@ -33,10 +32,9 @@ public final class Requests {
      *
      * @param call the call
      * @param <T>  the TYPE.
-     * @return a {@link Optional} containing the type or empty.
+     * @return the TYPE or {@code null} if an error occurred.
      */
-    @SuppressWarnings("ConstantConditions")
-    public static <T> T executeCallOptional(Call<T> call) {
+    public static <T> T executeCall(Call<T> call) {
         Response<T> result;
         try {
             result = call.execute();
@@ -55,17 +53,6 @@ public final class Requests {
             }
         }
         return result.body();
-    }
-
-    /**
-     * Execute a call.
-     *
-     * @param call the call
-     * @param <T>  the TYPE.
-     * @return the TYPE or {@code null} if an error occurred.
-     */
-    public static <T> T executeCall(Call<T> call) {
-        return executeCallOptional(call);
     }
 
     /**
@@ -109,7 +96,7 @@ public final class Requests {
      * @param <T>  the TYPE.
      */
     public static <T> void executeVoidCall(Call<T> call) {
-        executeCallOptional(call);
+        executeCall(call);
     }
 
 }

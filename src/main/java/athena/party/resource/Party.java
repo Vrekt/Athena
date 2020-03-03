@@ -15,8 +15,8 @@ import athena.party.resource.member.meta.readiness.GameReadiness;
 import athena.party.resource.meta.PartyMeta;
 import athena.types.Input;
 import athena.types.Platform;
-import athena.util.json.hooks.annotation.PostDeserialize;
-import athena.util.json.hooks.annotation.PreDeserialize;
+import athena.util.json.service.hooks.annotation.PostDeserialize;
+import athena.util.json.service.hooks.annotation.PreDeserialize;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;

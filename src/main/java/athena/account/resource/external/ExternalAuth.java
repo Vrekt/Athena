@@ -1,7 +1,7 @@
 package athena.account.resource.external;
 
 import athena.types.Platform;
-import athena.util.json.hooks.annotation.PostDeserialize;
+import athena.util.json.service.hooks.annotation.PostDeserialize;
 
 import java.util.List;
 import java.util.Optional;

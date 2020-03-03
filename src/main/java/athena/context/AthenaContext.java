@@ -12,7 +12,7 @@ import athena.party.service.PartyService;
 import athena.presence.service.PresencePublicService;
 import athena.stats.service.StatsproxyPublicService;
 import athena.types.Platform;
-import athena.util.json.context.annotation.Context;
+import athena.util.json.service.context.annotation.Context;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
 

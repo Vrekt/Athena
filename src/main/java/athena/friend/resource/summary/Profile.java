@@ -3,7 +3,7 @@ package athena.friend.resource.summary;
 import athena.account.resource.Account;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.service.FriendsPublicService;
-import athena.util.json.hooks.annotation.PostDeserialize;
+import athena.util.json.service.hooks.annotation.PostDeserialize;
 import athena.util.request.Requests;
 import athena.context.AthenaContext;
 import com.google.gson.JsonObject;

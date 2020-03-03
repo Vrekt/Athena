@@ -76,6 +76,12 @@ public final class FortniteEventDownload {
                 .orElse(null);
     }
 
+    /**
+     * Get an event by the display data ID.
+     *
+     * @param displayDataId the display data ID.
+     * @return the {@link FortniteEvent} if found or {@code null}
+     */
     public FortniteEvent getByDisplayDataId(String displayDataId) {
         return events
                 .stream()
@@ -113,6 +119,33 @@ public final class FortniteEventDownload {
                 .filter(eventTemplate -> eventTemplate.eventTemplateId().equalsIgnoreCase(eventTemplateId))
                 .findAny()
                 .orElse(null);
+    }
+
+    /**
+     * Checks if the token is required for the provided {@code eventWindow}
+     *
+     * @param tokenName   the token name, ex: "ARENA_S11_Division8"
+     * @param eventWindow the event window
+     * @return {@code true} if the token is required.
+     */
+    public boolean doesRequireToken(String tokenName, FortniteEventWindow eventWindow) {
+        if (eventWindow.requireAllTokens().contains(tokenName)) return true;
+        if (eventWindow.requireAnyTokens().contains(tokenName)) return true;
+        return !eventWindow.requireNoneTokensCaller().contains(tokenName);
+    }
+
+    /**
+     * Checks if the token is required for the provided {@code eventWindowId}
+     *
+     * @param tokenName     the token name, ex: "ARENA_S11_Division8"
+     * @param eventId       the event ID.
+     * @param eventWindowId the event window
+     * @return {@code true} if the token is required.
+     */
+    public boolean doesRequireToken(String tokenName, String eventId, String eventWindowId) {
+        final var event = events().stream().filter(fortniteEvent -> fortniteEvent.eventId().equalsIgnoreCase(eventId)).findAny().orElseThrow();
+        final var eventWindow = event.eventWindows().stream().filter(window -> window.eventWindowId().equalsIgnoreCase(eventWindowId)).findAny().orElseThrow();
+        return doesRequireToken(tokenName, eventWindow);
     }
 
 }

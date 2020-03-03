@@ -1,13 +1,9 @@
-package athena.util.json.hooks;
+package athena.util.json.service.hooks;
 
-import athena.util.json.hooks.annotation.PostDeserialize;
-import athena.util.json.hooks.annotation.PreDeserialize;
+import athena.util.json.service.hooks.annotation.PostDeserialize;
+import athena.util.json.service.hooks.annotation.PreDeserialize;
 import athena.util.reflection.MethodInspector;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -15,32 +11,25 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @param <T> T
  */
-public final class HooksAdapter<T> extends TypeAdapter<T> {
+public final class HooksAdapterExtension<T> {
 
     /**
      * The method inspector for caching methods.
      */
     private final MethodInspector inspector = new MethodInspector();
-    /**
-     * The original adapter.
-     */
-    private final TypeAdapter<T> adapter;
 
     @SuppressWarnings("unchecked")
-    public HooksAdapter(Class<?> clazz, TypeAdapter<T> adapter) {
-        this.adapter = adapter;
-
-        // collect all methods annotated and cache them.
+    public HooksAdapterExtension(Class<?> clazz) {
         inspector.cacheAnnotatedMethodsOnce(clazz, new Class[]{PostDeserialize.class});
         inspector.cacheAnnotatedMethodsOnce(clazz, new Class[]{PreDeserialize.class});
     }
 
     /**
-     * @param out   out
-     * @param value value
+     * Invoked before a object is serialized
+     *
+     * @param value the object
      */
-    @Override
-    public void write(JsonWriter out, T value) throws IOException {
+    public void preSerialize(T value) {
         final var methods = inspector.getMethods(value.getClass(), PreDeserialize.class);
         for (final var method : methods) {
             try {
@@ -49,13 +38,14 @@ public final class HooksAdapter<T> extends TypeAdapter<T> {
                 exception.printStackTrace();
             }
         }
-
-        adapter.write(out, value);
     }
 
-    @Override
-    public T read(JsonReader in) throws IOException {
-        final var deserialized = adapter.read(in);
+    /**
+     * Invoked after the object has been deserialized.
+     *
+     * @param deserialized the object
+     */
+    public void postDeserialize(T deserialized) {
         final var methods = inspector.getMethods(deserialized.getClass(), PostDeserialize.class);
 
         for (final var method : methods) {
@@ -65,7 +55,6 @@ public final class HooksAdapter<T> extends TypeAdapter<T> {
                 exception.printStackTrace();
             }
         }
-        return deserialized;
     }
 
 }

@@ -1,13 +1,9 @@
-package athena.util.json.context;
+package athena.util.json.service.context;
 
 import athena.Athena;
-import athena.util.json.context.annotation.Context;
+import athena.util.json.service.context.annotation.Context;
 import athena.util.reflection.MethodInspector;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -15,47 +11,28 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @param <T> T
  */
-public final class AthenaContextAdapter<T> extends TypeAdapter<T> {
+public final class ContextAdapterExtension<T> {
 
     /**
      * The method inspector for caching methods.
      */
     private final MethodInspector inspector = new MethodInspector();
     /**
-     * The original adapter.
-     */
-    private final TypeAdapter<T> adapter;
-    /**
      * Local athena instance.
      */
     private final Athena athena;
 
     @SuppressWarnings("unchecked")
-    public AthenaContextAdapter(Class<?> clazz, TypeAdapter<T> adapter, Athena athena) {
-        this.adapter = adapter;
+    public ContextAdapterExtension(Class<?> clazz, Athena athena) {
         this.athena = athena;
-
-        // collect all methods annotated and cache them.
         inspector.cacheAnnotatedMethodsOnce(clazz, new Class[]{Context.class});
     }
 
     /**
-     * TODO: May be needed in future.
-     *
-     * @param out   out
-     * @param value value
+     * Invoked after the object has been deserialized.
      */
-    @Override
-    public void write(JsonWriter out, T value) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public T read(JsonReader in) throws IOException {
-        final var deserialized = adapter.read(in);
+    public void postDeserialize(T deserialized) {
         final var methods = inspector.getMethodsWithParameters(deserialized.getClass(), Context.class, Athena.class);
-
-
         for (final var method : methods) {
             try {
                 method.invoke(deserialized, athena);
@@ -63,8 +40,6 @@ public final class AthenaContextAdapter<T> extends TypeAdapter<T> {
                 exception.printStackTrace();
             }
         }
-        return deserialized;
     }
-
 
 }

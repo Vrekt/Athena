@@ -14,11 +14,13 @@ import java.util.Map;
 public final class FortniteEvent {
 
     /**
-     * "Fortnite",
      * "epicgames_Arena_S11_Duos",
      * "arena_duos"
+     * ???
+     * ???
+     * ???
      */
-    private String gameId, eventId, displayDataId;
+    private String eventId, displayDataId, appId, environment, metadata;
     /**
      * Announcement time of this event.
      */
@@ -43,13 +45,6 @@ public final class FortniteEvent {
     private List<FortniteEventWindow> eventWindows;
 
     /**
-     * @return "Fortnite"
-     */
-    public String gameId() {
-        return gameId;
-    }
-
-    /**
      * @return the event ID.
      */
     public String eventId() {
@@ -61,6 +56,27 @@ public final class FortniteEvent {
      */
     public String displayDataId() {
         return displayDataId;
+    }
+
+    /**
+     * @return usually null.
+     */
+    public String appId() {
+        return appId;
+    }
+
+    /**
+     * @return usually null.
+     */
+    public String environment() {
+        return environment;
+    }
+
+    /**
+     * @return usually null.
+     */
+    public String metadata() {
+        return metadata;
     }
 
     /**
@@ -130,6 +146,31 @@ public final class FortniteEvent {
      */
     public boolean isRegionSupported(String region) {
         return regions.stream().anyMatch(r -> r.name().equalsIgnoreCase(region));
+    }
+
+    /**
+     * Checks if the token is required for the provided {@code eventWindow}
+     *
+     * @param tokenName   the token name, ex: "ARENA_S11_Division8"
+     * @param eventWindow the event window
+     * @return {@code true} if the token is required.
+     */
+    public boolean doesRequireToken(String tokenName, FortniteEventWindow eventWindow) {
+        if (eventWindow.requireAllTokens().contains(tokenName)) return true;
+        if (eventWindow.requireAnyTokens().contains(tokenName)) return true;
+        return !eventWindow.requireNoneTokensCaller().contains(tokenName);
+    }
+
+    /**
+     * Checks if the token is required for the provided {@code eventWindowId}
+     *
+     * @param tokenName     the token name, ex: "ARENA_S11_Division8"
+     * @param eventWindowId the event window
+     * @return {@code true} if the token is required.
+     */
+    public boolean doesRequireToken(String tokenName, String eventWindowId) {
+        final var eventWindow = eventWindows.stream().filter(window -> window.eventWindowId().equalsIgnoreCase(eventWindowId)).findAny().orElseThrow();
+        return doesRequireToken(tokenName, eventWindow);
     }
 
 }

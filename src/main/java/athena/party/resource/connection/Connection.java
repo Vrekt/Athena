@@ -1,7 +1,7 @@
 package athena.party.resource.connection;
 
 import athena.types.Platform;
-import athena.util.json.hooks.annotation.PostDeserialize;
+import athena.util.json.service.hooks.annotation.PostDeserialize;
 import com.google.gson.annotations.SerializedName;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
