@@ -67,3 +67,11 @@ When building new instances of `Athena` there are many configuration options ava
 
 # Documentation
 Refer to the wiki.
+
+# TODO
+- Make events system better
+- Finish parties
+- General cleanup and QOL
+- GraphQL stuff
+- MCP
+- Fix shop
