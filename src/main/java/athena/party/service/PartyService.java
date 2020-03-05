@@ -16,18 +16,18 @@ public interface PartyService {
 
     //	Line 1183324: /api/v1/{namespace}/parties/{partyId}/invites/{accountId}
     //	Line 1183331: /api/v1/{namespace}/parties/{partyId}/invites/{accountId}/decline
-    //	Line 1183378: /api/v1/{namespace}/parties/{partyId}/members/{accountId}
-    //	Line 1183380: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/conferences/connection
+    //	Line 1183378: /api/v1/{namespace}/parties/{partyId}/members/{accountId} [x]
+    //	Line 1183380: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/conferences/connection [x]
     //	Line 1183382: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/confirm
     //	Line 1183384: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/disconnect
-    //	Line 1183386: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/join
+    //	Line 1183386: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/join [x]
     //	Line 1183388: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/meta
-    //	Line 1183390: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/promote
+    //	Line 1183390: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/promote [x]
     //	Line 1183392: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/reject
     //	Line 1183438: /api/v1/{namespace}/parties
     //	Line 1183439: /api/v1/{namespace}/parties/{partyId} [x]
-    //	Line 1183445: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId}
-    //	Line 1183449: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId}/join
+    //	Line 1183445: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId} [x]
+    //	Line 1183449: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId}/join [x]
     //	Line 1183451: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId}/parties [x]
     //	Line 1183460: /api/v1/{namespace}/user/{accountId} [x]
     //	Line 1183463: /api/v1/{namespace}/user/{accountId}/notifications/undelivered/count [x]
@@ -42,6 +42,15 @@ public interface PartyService {
     Call<Party> getParty(@Path("partyId") String partyId);
 
     /**
+     * Disband/destroy a party.
+     *
+     * @param partyId the party ID.
+     * @return Void.
+     */
+    @DELETE("party/api/v1/Fortnite/parties/{partyId}")
+    Call<Void> disbandParty(@Path("partyId") String partyId);
+
+    /**
      * Get a list of parties the user {@code fromAccountId} has.
      *
      * @param accountId     the account ID.
@@ -50,6 +59,17 @@ public interface PartyService {
      */
     @GET("party/api/v1/Fortnite/user/{accountId}/pings/{fromAccountId}/parties")
     Call<List<Party>> getUserParties(@Path("accountId") String accountId, @Path("fromAccountId") String fromAccountId);
+
+    /**
+     * Joins the party from the ping from the account ID.
+     *
+     * @param accountId     the account ID.
+     * @param fromAccountId the account ID of who sent the ping
+     * @param payload       the join payload {@link athena.party.resource.authentication.PartyJoinRequest}
+     * @return a {@link PartyJoinStatus}
+     */
+    @POST("party/api/v1/Fortnite/user/{accountId}/pings/{fromAccountId}/join")
+    Call<PartyJoinStatus> joinPartyFromPing(@Path("accountId") String accountId, @Path("fromAccountId") String fromAccountId, @Body JsonObject payload);
 
     /**
      * Get party user-data for the provided {@code accountId}
@@ -74,6 +94,7 @@ public interface PartyService {
      *
      * @param partyId   the ID of the party
      * @param accountId the account ID.
+     * @param payload   the join payload {@link athena.party.resource.authentication.PartyJoinRequest}
      * @return a {@link PartyJoinStatus}
      */
     @POST("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/join")
@@ -99,5 +120,25 @@ public interface PartyService {
      */
     @PATCH("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/meta")
     Call<Void> patch(@Path("partyId") String partyId, @Path("accountId") String accountId, @Body JsonObject payload);
+
+    /**
+     * Promote a member to party leader.
+     *
+     * @param partyId   the party ID
+     * @param accountId the account ID
+     * @return void
+     */
+    @POST("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/promote")
+    Call<Void> promote(@Path("partyId") String partyId, @Path("accountId") String accountId);
+
+    /**
+     * Kick a member from the party
+     *
+     * @param partyId   the party ID.
+     * @param accountId the account ID.
+     * @return Void
+     */
+    @DELETE("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}")
+    Call<Void> kick(@Path("partyId") String partyId, @Path("accountId") String accountId);
 
 }

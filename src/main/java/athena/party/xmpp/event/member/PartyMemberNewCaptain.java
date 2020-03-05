@@ -10,12 +10,11 @@ import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
-import java.util.List;
 
 /**
- * Represents an event for when a member is updated.
+ * Represents an event for when a member is promoted.
  */
-public final class PartyMemberUpdatedEvent extends AthenaContext {
+public final class PartyMemberNewCaptain extends AthenaContext {
 
     /**
      * When this event was sent.
@@ -46,23 +45,10 @@ public final class PartyMemberUpdatedEvent extends AthenaContext {
     private String displayName;
 
     /**
-     * List of things removed from the meta
-     */
-    @SerializedName("member_state_removed")
-    private List<String> removed;
-
-    /**
      * The things updated
      */
     @SerializedName("member_state_updated")
     private PartyMemberMeta updated;
-
-    /**
-     * I'm guessing overwritten values? Ignore for now
-     * TODO
-     */
-    @SerializedName("member_state_overridden")
-    private PartyMemberMeta overriden;
 
     /**
      * When this member joined
@@ -122,24 +108,10 @@ public final class PartyMemberUpdatedEvent extends AthenaContext {
     }
 
     /**
-     * @return List of things removed from the meta
-     */
-    public List<String> removed() {
-        return removed;
-    }
-
-    /**
      * @return The updated meta for this member.
      */
     public PartyMemberMeta updated() {
         return updated;
-    }
-
-    /**
-     * @return overwritten values?
-     */
-    public PartyMemberMeta overriden() {
-        return overriden;
     }
 
     /**
@@ -203,76 +175,6 @@ public final class PartyMemberUpdatedEvent extends AthenaContext {
      */
     public Profile friendProfile() {
         return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
-    }
-
-    /**
-     * @return {@code true} if they are emoting.
-     */
-    public boolean isEmoting() {
-        return updated.frontendEmote() != null && !updated.frontendEmote().emoteItemDef().equals("None");
-    }
-
-    /**
-     * @return the emote or {@code null} if they are not emoting.
-     */
-    public String getEmote() {
-        return isEmoting() ? updated.frontendEmote().emoteItemDef() : null;
-    }
-
-    /**
-     * @return {@code true} if the character was changed.
-     */
-    public boolean isCharacterChange() {
-        return updated.cosmeticLoadout() != null && updated.cosmeticLoadout().characterDef() != null;
-    }
-
-    /**
-     * @return the new character name or {@code null} if none.
-     */
-    public String getCharacterNameChange() {
-        return isCharacterChange() ? updated.cosmeticLoadout().characterDef() : null;
-    }
-
-    /**
-     * @return {@code true} if the character was changed.
-     */
-    public boolean isBackpackChange() {
-        return updated.cosmeticLoadout() != null && updated.cosmeticLoadout().backpackDef() != null;
-    }
-
-    /**
-     * @return the new backpack name or {@code null} if none.
-     */
-    public String getBackpackNameChange() {
-        return isBackpackChange() ? updated.cosmeticLoadout().backpackDef() : null;
-    }
-
-    /**
-     * @return {@code true} if the pickaxe was changed.
-     */
-    public boolean isPickaxeChange() {
-        return updated.cosmeticLoadout() != null && updated.cosmeticLoadout().pickaxeDef() != null;
-    }
-
-    /**
-     * @return the new pickaxe name or {@code null} if none.
-     */
-    public String getPickaxeNameChange() {
-        return isPickaxeChange() ? updated.cosmeticLoadout().pickaxeDef() : null;
-    }
-
-    /**
-     * @return {@code true} if the contrail was changed.
-     */
-    public boolean isContrailChange() {
-        return updated.cosmeticLoadout() != null && updated.cosmeticLoadout().contrailDef() != null;
-    }
-
-    /**
-     * @return the new pickaxe name or {@code null} if none.
-     */
-    public String getContrailNameChange() {
-        return isContrailChange() ? updated.cosmeticLoadout().contrailDef() : null;
     }
 
 }

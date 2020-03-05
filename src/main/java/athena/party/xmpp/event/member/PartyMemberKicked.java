@@ -12,9 +12,9 @@ import com.google.gson.annotations.SerializedName;
 import java.time.Instant;
 
 /**
- * Represents an event for when a member leaves.
+ * Represents an event for when a member is kicked
  */
-public final class PartyMemberLeftEvent extends AthenaContext {
+public final class PartyMemberKicked extends AthenaContext {
 
     /**
      * When this event was sent.

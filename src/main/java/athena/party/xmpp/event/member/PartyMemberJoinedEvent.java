@@ -53,7 +53,7 @@ public final class PartyMemberJoinedEvent extends AthenaContext {
      * The updated meta for this member.
      */
     @SerializedName("member_state_updated")
-    private PartyMemberMeta memberMeta;
+    private PartyMemberMeta updated;
 
     /**
      * When this member joined
@@ -117,8 +117,8 @@ public final class PartyMemberJoinedEvent extends AthenaContext {
     /**
      * @return The updated meta for this member.
      */
-    public PartyMemberMeta memberMeta() {
-        return memberMeta;
+    public PartyMemberMeta updated() {
+        return updated;
     }
 
     /**

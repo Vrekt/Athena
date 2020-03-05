@@ -6,9 +6,7 @@ import athena.party.service.PartyService;
 import athena.party.xmpp.annotation.PartyEvent;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
 import athena.party.xmpp.event.invite.PartyPingEvent;
-import athena.party.xmpp.event.member.PartyMemberJoinedEvent;
-import athena.party.xmpp.event.member.PartyMemberLeftEvent;
-import athena.party.xmpp.event.member.PartyMemberUpdatedEvent;
+import athena.party.xmpp.event.member.*;
 import athena.util.event.EventFactory;
 import athena.util.request.Requests;
 import com.google.gson.Gson;
@@ -114,6 +112,24 @@ final class PartyNotifier implements StanzaListener {
             // update our member
             final var member = parties.updateMember(event.accountId(), event.updated());
             event.member(member);
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_NEW_CAPTAIN) {
+            final var event = gson.fromJson(object, PartyMemberNewCaptain.class);
+            // update our member
+            final var member = parties.updateMember(event.accountId(), event.updated());
+            // update who the captain is
+            parties.updateCaptain(member);
+            // set
+            event.member(member);
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_KICKED) {
+            final var event = gson.fromJson(object, PartyMemberKicked.class);
+            // update our party first.
+            parties.updateParty();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);

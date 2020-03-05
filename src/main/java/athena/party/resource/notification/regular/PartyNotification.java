@@ -27,6 +27,14 @@ public enum PartyNotification {
      * Represents when a member updates their metadata.
      */
     MEMBER_STATE_UPDATED("com.epicgames.social.party.notification.v0.MEMBER_STATE_UPDATED"),
+    /**
+     * Represents when a member gets promoted.
+     */
+    MEMBER_NEW_CAPTAIN("com.epicgames.social.party.notification.v0.MEMBER_NEW_CAPTAIN"),
+    /**
+     * Represents when a member gets kicked.
+     */
+    MEMBER_KICKED("com.epicgames.social.party.notification.v0.MEMBER_KICKED"),
 
     /**
      * An unknown notification.

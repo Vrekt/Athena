@@ -12,6 +12,7 @@ import athena.party.resource.member.meta.battlepass.BattlePass;
 import athena.party.resource.member.meta.challenges.AssistedChallenge;
 import athena.party.resource.member.meta.cosmetic.variant.CosmeticVariant;
 import athena.party.resource.member.meta.readiness.GameReadiness;
+import athena.party.resource.member.role.PartyRole;
 import athena.party.service.PartyService;
 import athena.types.Input;
 import athena.types.Platform;
@@ -96,6 +97,61 @@ public final class Parties {
             party = null;
             client.set(null);
         }
+    }
+
+    /**
+     * Disband the current party.
+     *
+     * @throws EpicGamesErrorException if an error occurred.
+     */
+    public void disbandParty() throws EpicGamesErrorException {
+        if (party != null) {
+            Requests.executeCall(service.disbandParty(party.partyId()));
+            party = null;
+            client.set(null);
+        }
+    }
+
+    /**
+     * Promote a member in the party
+     *
+     * @param accountId the account ID.
+     * @return this instance
+     */
+    public Parties promote(String accountId) {
+        if (party != null) Requests.executeCall(service.promote(party.partyId(), accountId));
+        return this;
+    }
+
+    /**
+     * Promote a member in the party
+     *
+     * @param member the member
+     * @return this instance
+     */
+    public Parties promote(PartyMember member) {
+        return promote(member.accountId());
+    }
+
+    /**
+     * Kick a member in the party
+     *
+     * @param accountId the account ID.
+     * @return this instance
+     */
+    public Parties kick(String accountId) {
+        if (party != null) Requests.executeCall(service.kick(party.partyId(), accountId));
+        return this;
+    }
+
+    /**
+     * Kick a member in the party
+     *
+     * @param member the member
+     * @return this instance
+     */
+    public Parties kick(PartyMember member) {
+        return kick(member.accountId());
     }
 
     /**
@@ -401,10 +457,23 @@ public final class Parties {
      * @return this
      */
     public PartyMember updateMember(String accountId, PartyMemberMeta meta) {
-        if (accountId.equals(context.localAccountId())) return null; // don't update us.
         final var member = party.members().stream().filter(partyMember -> partyMember.accountId().equals(accountId)).findAny().orElseThrow();
+        if (member.accountId().equals(accountId)) return member;
         member.meta().updateMeta(meta);
         return member;
+    }
+
+    /**
+     * Update the captain.
+     *
+     * @param newCaptain the new captain
+     * @return this party.
+     */
+    public Parties updateCaptain(PartyMember newCaptain) {
+        if (party == null) return this;
+        party.members().stream().filter(member -> member.role() == PartyRole.CAPTAIN).findFirst().ifPresent(member -> member.role(PartyRole.MEMBER));
+        newCaptain.role(PartyRole.CAPTAIN);
+        return this;
     }
 
     public void registerEventListener(Object listener) {

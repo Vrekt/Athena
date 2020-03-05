@@ -212,6 +212,15 @@ public final class PartyMember {
     }
 
     /**
+     * Set the role of this member
+     *
+     * @param role the role
+     */
+    public void role(PartyRole role) {
+        this.role = role;
+    }
+
+    /**
      * @return {@code true} if this member is emoting.
      */
     public boolean isEmoting() {

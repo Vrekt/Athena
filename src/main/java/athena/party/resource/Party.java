@@ -12,6 +12,7 @@ import athena.party.resource.member.meta.battlepass.BattlePass;
 import athena.party.resource.member.meta.challenges.AssistedChallenge;
 import athena.party.resource.member.meta.cosmetic.variant.CosmeticVariant;
 import athena.party.resource.member.meta.readiness.GameReadiness;
+import athena.party.resource.member.role.PartyRole;
 import athena.party.resource.meta.PartyMeta;
 import athena.types.Input;
 import athena.types.Platform;
@@ -343,6 +344,13 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Disband this party.
+     * @throws EpicGamesErrorException if an error occurred.
+     */
+    public void disband() throws EpicGamesErrorException {
+        parties.disbandParty();
+    }
+    /**
      * Sets your character model.
      *
      * @param character the character.
@@ -599,6 +607,60 @@ public final class Party extends AthenaContext {
     public Party updateClient() {
         parties.updateClient();
         return this;
+    }
+
+    /**
+     * Update the captain.
+     *
+     * @param newCaptain the new captain
+     * @return this party.
+     */
+    public Party updateCaptain(PartyMember newCaptain) {
+        members.stream().filter(member -> member.role() == PartyRole.CAPTAIN).findFirst().ifPresent(member -> member.role(PartyRole.MEMBER));
+        newCaptain.role(PartyRole.CAPTAIN);
+        return this;
+    }
+
+    /**
+     * Promote a member in the party
+     *
+     * @param accountId the account ID.
+     * @return this instance
+     */
+    public Party promote(String accountId) {
+        parties.promote(accountId);
+        return this;
+    }
+
+    /**
+     * Promote a member in the party
+     *
+     * @param member the member
+     * @return this instance
+     */
+    public Party promote(PartyMember member) {
+        return promote(member.accountId());
+    }
+
+    /**
+     * Kick a member in the party
+     *
+     * @param accountId the account ID.
+     * @return this instance
+     */
+    public Party kick(String accountId) {
+        parties.kick(accountId);
+        return this;
+    }
+
+    /**
+     * Kick a member in the party
+     *
+     * @param member the member
+     * @return this instance
+     */
+    public Party kick(PartyMember member) {
+        return kick(member.accountId());
     }
 
     /**
