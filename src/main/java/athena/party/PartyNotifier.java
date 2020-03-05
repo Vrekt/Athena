@@ -6,6 +6,9 @@ import athena.party.service.PartyService;
 import athena.party.xmpp.annotation.PartyEvent;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
 import athena.party.xmpp.event.invite.PartyPingEvent;
+import athena.party.xmpp.event.member.PartyMemberJoinedEvent;
+import athena.party.xmpp.event.member.PartyMemberLeftEvent;
+import athena.party.xmpp.event.member.PartyMemberUpdatedEvent;
 import athena.util.event.EventFactory;
 import athena.util.request.Requests;
 import com.google.gson.Gson;
@@ -30,10 +33,10 @@ final class PartyNotifier implements StanzaListener {
     private final Parties parties;
     private final Gson gson;
 
-    PartyNotifier(DefaultAthenaContext context) {
+    PartyNotifier(DefaultAthenaContext context, Parties parties) {
         this.context = context;
+        this.parties = parties;
         this.service = context.partyService();
-        this.parties = context.party();
         this.gson = context.gson();
 
         context.connectionManager().connection().addAsyncStanzaListener(this, StanzaTypeFilter.MESSAGE);
@@ -90,6 +93,29 @@ final class PartyNotifier implements StanzaListener {
             final var party = Requests.executeCall(call);
             event.party(party);
             // fire event
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_JOINED) {
+            final var event = gson.fromJson(object, PartyMemberJoinedEvent.class);
+            // update our party first.
+            parties.updateParty();
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_LEFT) {
+            final var event = gson.fromJson(object, PartyMemberLeftEvent.class);
+            // update our party first.
+            parties.updateParty();
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_STATE_UPDATED) {
+            final var event = gson.fromJson(object, PartyMemberUpdatedEvent.class);
+            if (event.accountId().equals(context.localAccountId())) return; // TODO: Change this behavior?
+            // update our member
+            final var member = parties.updateMember(event.accountId(), event.updated());
+            event.member(member);
+            event.party(parties.party());
+            // fire event now
             eventFactory.invoke(PartyEvent.class, event);
         }
 

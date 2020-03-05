@@ -54,6 +54,11 @@ public final class ClientPartyMember {
     private String partyId;
     private int revision;
 
+    /**
+     * Keeps track of emoting.
+     */
+    private boolean isEmoting;
+
     public ClientPartyMember(DefaultAthenaContext context) {
         this.context = context;
         this.service = context.partyService();
@@ -231,7 +236,25 @@ public final class ClientPartyMember {
      * @param isEmote {@code true} if the emote is not a dance.
      */
     public void playEmote(String emote, boolean isEmote) {
+        isEmoting = true;
         updateMeta.frontendEmote(new FrontendEmote(isEmote ? "/Game/Athena/Items/Cosmetics/Dances/Emoji/" + emote + "." + emote : "/Game/Athena/Items/Cosmetics/Dances/" + emote + "." + emote, "", -2));
+    }
+
+    /**
+     * Play an emote or a dance.
+     *
+     * @param fullEmoteDefinition the emote or dance including its path, (example: /Game/Athena/Items/Cosmetics/Dances/EID_SnowGlobe.EID_SnowGlobe)
+     */
+    public void playEmote(String fullEmoteDefinition) {
+        isEmoting = true;
+        updateMeta.frontendEmote(new FrontendEmote(fullEmoteDefinition, "", -2));
+    }
+
+    /**
+     * @return {@code true} if the client is emoting.
+     */
+    public boolean isEmoting() {
+        return isEmoting;
     }
 
     /**
@@ -240,6 +263,7 @@ public final class ClientPartyMember {
      * @param emote the emote or dance
      */
     public void stopEmote(String emote) {
+        isEmoting = false;
         updateMeta.frontendEmote(new FrontendEmote(emote, "", -1));
     }
 

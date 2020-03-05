@@ -4,7 +4,9 @@ import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.party.resource.Party;
 import athena.party.resource.authentication.PartyJoinRequest;
+import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.client.ClientPartyMember;
+import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.member.meta.banner.AthenaBanner;
 import athena.party.resource.member.meta.battlepass.BattlePass;
 import athena.party.resource.member.meta.challenges.AssistedChallenge;
@@ -19,6 +21,8 @@ import athena.util.cleanup.Shutdown;
 import athena.util.request.Requests;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provides easy access and management for the party system and {@link athena.party.service.PartyService}
@@ -53,7 +57,7 @@ public final class Parties {
     public Parties(DefaultAthenaContext context) {
         this.context = context;
         this.service = context.partyService();
-        this.notifier = new PartyNotifier(context);
+        this.notifier = new PartyNotifier(context, this);
         this.client = new ClientPartyMember(context);
         // TODO: Create our own party later.
     }
@@ -92,6 +96,13 @@ public final class Parties {
             party = null;
             client.set(null);
         }
+    }
+
+    /**
+     * @return the party
+     */
+    public Party party() {
+        return party;
     }
 
     /**
@@ -252,6 +263,30 @@ public final class Parties {
     }
 
     /**
+     * Play an emote or a dance.
+     *
+     * @param fullEmoteDefinition the emote or dance including its path, (example: /Game/Athena/Items/Cosmetics/Dances/EID_SnowGlobe.EID_SnowGlobe)
+     * @return this instance
+     */
+    public Parties playEmote(String fullEmoteDefinition) {
+        if (client.isEmoting()) return this;
+        client.playEmote(fullEmoteDefinition);
+        client.update();
+        return this;
+    }
+
+    /**
+     * The amount of seconds to let pass before stopping the emote.
+     *
+     * @param seconds the seconds
+     * @return this instance
+     */
+    public Parties stopEmoteAfter(int seconds) {
+        CompletableFuture.delayedExecutor(seconds, TimeUnit.SECONDS).execute(() -> stopEmote("None"));
+        return this;
+    }
+
+    /**
      * Stop the emote or dance
      *
      * @param emote the emote or dance
@@ -341,11 +376,35 @@ public final class Parties {
     /**
      * Updates your client.
      *
-     * @return this party.
+     * @return this
      */
     public Parties updateClient() {
         client.update();
         return this;
+    }
+
+    /**
+     * Updates the party.
+     *
+     * @return this
+     */
+    public Parties updateParty() {
+        if (party != null) party = Requests.executeCall(service.getParty(party.partyId()));
+        return this;
+    }
+
+    /**
+     * Update a member.
+     *
+     * @param accountId the account ID of the member
+     * @param meta      the updated meta
+     * @return this
+     */
+    public PartyMember updateMember(String accountId, PartyMemberMeta meta) {
+        if (accountId.equals(context.localAccountId())) return null; // don't update us.
+        final var member = party.members().stream().filter(partyMember -> partyMember.accountId().equals(accountId)).findAny().orElseThrow();
+        member.meta().updateMeta(meta);
+        return member;
     }
 
     public void registerEventListener(Object listener) {

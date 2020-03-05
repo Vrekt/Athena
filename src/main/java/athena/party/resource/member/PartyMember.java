@@ -72,6 +72,13 @@ public final class PartyMember {
     }
 
     /**
+     * @return the meta for this member
+     */
+    public PartyMemberMeta meta() {
+        return meta;
+    }
+
+    /**
      * @return the current input type
      */
     public Input currentInputType() {
@@ -204,5 +211,25 @@ public final class PartyMember {
         return role;
     }
 
+    /**
+     * @return {@code true} if this member is emoting.
+     */
+    public boolean isEmoting() {
+        return meta != null && meta.isEmoting();
+    }
+
+    /**
+     * @return {@code true} if this member is readied up.
+     */
+    public boolean isReady() {
+        return meta != null && meta.gameReadiness().equals("Ready");
+    }
+
+    /**
+     * @return {@code true} if this member is sitting out.
+     */
+    public boolean isSittingOut() {
+        return meta != null && meta.gameReadiness().equals("SittingOut");
+    }
 
 }

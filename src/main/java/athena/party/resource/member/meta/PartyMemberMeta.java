@@ -204,6 +204,41 @@ public final class PartyMemberMeta {
     }
 
     /**
+     * Updates this meta.
+     * TODO: Make this better
+     *
+     * @param other the other meta
+     */
+    public void updateMeta(PartyMemberMeta other) {
+        if (other.featDefinition != null) featDefinition = other.featDefinition;
+        if (other.campaignHero != null) campaignHero = other.campaignHero;
+        if (other.memberSquadAssignmentRequest != null) memberSquadAssignmentRequest = other.memberSquadAssignmentRequest;
+        if (other.zoneInstanceId != null) zoneInstanceId = other.zoneInstanceId;
+        if (other.spectateAPartyMemberAvailable != null) spectateAPartyMemberAvailable = other.spectateAPartyMemberAvailable;
+        if (other.platformUniqueId != null) platformUniqueId = other.platformUniqueId;
+        if (other.challengeInfo != null) challengeInfo = other.challengeInfo;
+        if (other.voiceChatMuted != null) voiceChatMuted = other.voiceChatMuted;
+        if (other.battlePass != null) battlePass = other.battlePass;
+        if (other.displayName != null) displayName = other.displayName;
+        if (other.hiddenMatchmakingDelayMax != null) hiddenMatchmakingDelayMax = other.hiddenMatchmakingDelayMax;
+        if (other.homeBaseVersion != null) homeBaseVersion = other.homeBaseVersion;
+        if (other.currentInputType != null) currentInputType = other.currentInputType;
+        if (other.frontendEmote != null) frontendEmote = other.frontendEmote;
+        if (other.platformSessionId != null) platformSessionId = other.platformSessionId;
+        if (other.matchmakingLevel != null) matchmakingLevel = other.matchmakingLevel;
+        if (other.banner != null) banner = other.banner;
+        if (other.hasPreloaded != null) hasPreloaded = other.hasPreloaded;
+        if (other.voiceChatStatus != null) voiceChatStatus = other.voiceChatStatus;
+        if (other.gameReadiness != null) gameReadiness = other.gameReadiness;
+        if (other.platform != null) platform = other.platform;
+        if (other.timeStartedMatch != null) timeStartedMatch = other.timeStartedMatch;
+        if (other.location != null) location = other.location;
+        if (other.crossplayPreference != null) crossplayPreference = other.crossplayPreference;
+        if (other.readyInputType != null) readyInputType = other.readyInputType;
+        if (other.playersLeft != null) playersLeft = other.playersLeft;
+    }
+
+    /**
      * @return "None"
      */
     public String featDefinition() {
@@ -299,6 +334,20 @@ public final class PartyMemberMeta {
      */
     public FrontendEmote frontendEmote() {
         return frontendEmote;
+    }
+
+    /**
+     * @return {@code true} if this member is emoting.
+     */
+    public boolean isEmoting() {
+        return frontendEmote != null && !frontendEmote.emoteItemDef().equals("None");
+    }
+
+    /**
+     * @return the emote name or {@code null} if no emote definition is present.
+     */
+    public String emoteName() {
+        return frontendEmote == null ? null : frontendEmote.emoteItemDef();
     }
 
     /**

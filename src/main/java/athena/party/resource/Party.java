@@ -294,6 +294,16 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Get a member by account ID.
+     *
+     * @param accountId the account ID
+     * @return the member or {@code null} if not found.
+     */
+    public PartyMember getMember(String accountId) {
+        return members.stream().filter(member -> member.accountId().equals(accountId)).findAny().orElse(null);
+    }
+
+    /**
      * @return the metadata of this party.
      */
     public PartyMeta meta() {
@@ -477,6 +487,28 @@ public final class Party extends AthenaContext {
      */
     public Party playEmote(String emote, boolean isEmote) {
         parties.playEmote(emote, isEmote);
+        return this;
+    }
+
+    /**
+     * Play an emote or a dance.
+     *
+     * @param fullEmoteDefinition the emote or dance including its path, (example: /Game/Athena/Items/Cosmetics/Dances/EID_SnowGlobe.EID_SnowGlobe)
+     * @return this instance
+     */
+    public Party playEmote(String fullEmoteDefinition) {
+        parties.playEmote(fullEmoteDefinition);
+        return this;
+    }
+
+    /**
+     * The amount of seconds to let pass before stopping the emote.
+     *
+     * @param seconds the seconds
+     * @return this instance
+     */
+    public Party stopEmoteAfter(int seconds) {
+        parties.stopEmoteAfter(seconds);
         return this;
     }
 

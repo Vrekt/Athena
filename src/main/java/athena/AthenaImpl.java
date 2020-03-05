@@ -308,7 +308,7 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Friend.class, this).useHooks().useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Connection.class, this).useHooks());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Party.class, this).useHooks().useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberMeta.class, this).useHooks().useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberMeta.class, this).useHooks());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(FortnitePresence.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(LastOnlineResponse.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyInvitation.class, this).useContext());
@@ -324,7 +324,6 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapter(Instant.class, new InstantConverter());
 
         // constants type adapters.
-        // TODO: More clean way to do this in the future.
         gsonBuilder.registerTypeAdapter(Platform.class, (JsonDeserializer<Platform>) (json, typeOfT, context) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()));
         gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
 

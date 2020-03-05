@@ -16,6 +16,19 @@ public enum PartyNotification {
      */
     INITIAL_INVITE("com.epicgames.social.party.notification.v0.INITIAL_INVITE"),
     /**
+     * Represents a member joining.
+     */
+    MEMBER_JOINED("com.epicgames.social.party.notification.v0.MEMBER_JOINED"),
+    /**
+     * Represents a member leaving.
+     */
+    MEMBER_LEFT("com.epicgames.social.party.notification.v0.MEMBER_LEFT"),
+    /**
+     * Represents when a member updates their metadata.
+     */
+    MEMBER_STATE_UPDATED("com.epicgames.social.party.notification.v0.MEMBER_STATE_UPDATED"),
+
+    /**
      * An unknown notification.
      */
     UNKNOWN("UNKNOWN");

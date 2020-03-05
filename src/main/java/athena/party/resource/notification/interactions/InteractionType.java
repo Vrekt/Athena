@@ -13,7 +13,15 @@ public enum InteractionType {
     /**
      * A party invite has been sent.
      */
-    PARTY_INVITE_SENT("PartyInviteSent");
+    PARTY_INVITE_SENT("PartyInviteSent"),
+    /**
+     * The party has been joined
+     */
+    PARTY_JOINED("PartyJoined"),
+    /**
+     * The party has been left.
+     */
+    PARTY_LEFT("PartyLeft");
 
     /**
      * The name of the interaction
