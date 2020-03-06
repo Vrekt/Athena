@@ -116,7 +116,7 @@ final class PartyNotifier implements StanzaListener {
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
         } else if (notification == PartyNotification.MEMBER_NEW_CAPTAIN) {
-            final var event = gson.fromJson(object, PartyMemberNewCaptain.class);
+            final var event = gson.fromJson(object, PartyMemberNewCaptainEvent.class);
             // update our member
             final var member = parties.updateMember(event.accountId(), event.updated());
             // update who the captain is
@@ -127,7 +127,7 @@ final class PartyNotifier implements StanzaListener {
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
         } else if (notification == PartyNotification.MEMBER_KICKED) {
-            final var event = gson.fromJson(object, PartyMemberKicked.class);
+            final var event = gson.fromJson(object, PartyMemberKickedEvent.class);
             // update our party first.
             parties.updateParty();
             event.party(parties.party());

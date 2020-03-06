@@ -27,12 +27,14 @@ import athena.party.Parties;
 import athena.party.resource.Party;
 import athena.party.resource.connection.Connection;
 import athena.party.resource.invite.PartyInvitation;
+import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.meta.PartyMeta;
 import athena.party.resource.ping.PartyPing;
 import athena.party.service.PartyService;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
 import athena.party.xmpp.event.invite.PartyPingEvent;
+import athena.party.xmpp.event.member.*;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
@@ -315,6 +317,12 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyPing.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyPingEvent.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyInviteEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberJoinedEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberKickedEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberLeftEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberNewCaptainEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberUpdatedEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMember.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMeta.class));
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMemberMeta.class));
 

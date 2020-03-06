@@ -14,7 +14,7 @@ import java.time.Instant;
 /**
  * Represents an event for when a member is kicked
  */
-public final class PartyMemberKicked extends AthenaContext {
+public final class PartyMemberKickedEvent extends AthenaContext {
 
     /**
      * When this event was sent.

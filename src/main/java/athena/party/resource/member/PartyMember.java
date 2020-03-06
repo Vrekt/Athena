@@ -1,5 +1,6 @@
 package athena.party.resource.member;
 
+import athena.context.AthenaContext;
 import athena.party.resource.connection.Connection;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.member.role.PartyRole;
@@ -13,7 +14,7 @@ import java.util.List;
 /**
  * Represents a party member.
  */
-public final class PartyMember {
+public final class PartyMember extends AthenaContext {
 
     /**
      * The account ID of this member.
@@ -218,6 +219,13 @@ public final class PartyMember {
      */
     public void role(PartyRole role) {
         this.role = role;
+    }
+
+    /**
+     * Promote this member.
+     */
+    public void promote() {
+        parties.promote(this);
     }
 
     /**

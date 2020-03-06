@@ -14,7 +14,7 @@ import java.time.Instant;
 /**
  * Represents an event for when a member is promoted.
  */
-public final class PartyMemberNewCaptain extends AthenaContext {
+public final class PartyMemberNewCaptainEvent extends AthenaContext {
 
     /**
      * When this event was sent.
