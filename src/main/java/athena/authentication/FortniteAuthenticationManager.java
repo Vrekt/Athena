@@ -176,7 +176,6 @@ public final class FortniteAuthenticationManager {
                 .get()
                 .build())
                 .execute();
-
         response.close();
     }
 

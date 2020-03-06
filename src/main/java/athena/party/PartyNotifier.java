@@ -7,6 +7,7 @@ import athena.party.xmpp.annotation.PartyEvent;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
 import athena.party.xmpp.event.invite.PartyPingEvent;
 import athena.party.xmpp.event.member.*;
+import athena.party.xmpp.event.party.PartyUpdatedEvent;
 import athena.util.event.EventFactory;
 import athena.util.request.Requests;
 import com.google.gson.Gson;
@@ -95,14 +96,14 @@ final class PartyNotifier implements StanzaListener {
         } else if (notification == PartyNotification.MEMBER_JOINED) {
             final var event = gson.fromJson(object, PartyMemberJoinedEvent.class);
             // update our party first.
-            parties.updateParty();
+            parties.updatePartyInformation();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
         } else if (notification == PartyNotification.MEMBER_LEFT) {
             final var event = gson.fromJson(object, PartyMemberLeftEvent.class);
             // update our party first.
-            parties.updateParty();
+            parties.updatePartyInformation();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
@@ -129,7 +130,29 @@ final class PartyNotifier implements StanzaListener {
         } else if (notification == PartyNotification.MEMBER_KICKED) {
             final var event = gson.fromJson(object, PartyMemberKickedEvent.class);
             // update our party first.
-            parties.updateParty();
+            parties.updatePartyInformation();
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_DISCONNECTED) {
+            final var event = gson.fromJson(object, PartyMemberDisconnectedEvent.class);
+            // update our party first.
+            // TODO: We may not have to update here.
+            parties.updatePartyInformation();
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_EXPIRED) {
+            final var event = gson.fromJson(object, PartyMemberExpiredEvent.class);
+            // update our party first.
+            parties.updatePartyInformation();
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.PARTY_UPDATED) {
+            final var event = gson.fromJson(object, PartyUpdatedEvent.class);
+            // update the party meta
+            parties.updatePartyMeta(event.updated());
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);

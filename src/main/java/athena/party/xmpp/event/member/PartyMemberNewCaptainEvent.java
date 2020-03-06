@@ -33,13 +33,13 @@ public final class PartyMemberNewCaptainEvent extends AthenaContext {
     private String partyId;
 
     /**
-     * The account ID of who updated
+     * The account ID of who was promoted
      */
     @SerializedName("account_id")
     private String accountId;
 
     /**
-     * The display name of who updated
+     * The display name of who was promoted
      */
     @SerializedName("account_dn")
     private String displayName;
@@ -94,14 +94,14 @@ public final class PartyMemberNewCaptainEvent extends AthenaContext {
     }
 
     /**
-     * @return The account ID of who joined
+     * @return The account ID of who was promoted
      */
     public String accountId() {
         return accountId;
     }
 
     /**
-     * @return The display name of who joined
+     * @return The display name of who was promoted
      */
     public String displayName() {
         return displayName;
@@ -161,7 +161,7 @@ public final class PartyMemberNewCaptainEvent extends AthenaContext {
     }
 
     /**
-     * @return the account of who joined.
+     * @return the account of who was promoted
      */
     public Account account() {
         return Requests.executeCall(accountPublicService.findByDisplayName(displayName));
@@ -175,6 +175,13 @@ public final class PartyMemberNewCaptainEvent extends AthenaContext {
      */
     public Profile friendProfile() {
         return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
+    }
+
+    /**
+     * @return {@code true} if you were promoted.
+     */
+    public boolean localAccountPromoted() {
+        return accountId.equals(localAccountId);
     }
 
 }

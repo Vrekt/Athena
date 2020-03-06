@@ -11,6 +11,13 @@ public final class PartyPlaylistData {
      */
     private String playlistName, tournamentId, eventWindowId, regionId;
 
+    public PartyPlaylistData(String playlistName, String tournamentId, String eventWindowId, String regionId) {
+        this.playlistName = playlistName;
+        this.tournamentId = tournamentId;
+        this.eventWindowId = eventWindowId;
+        this.regionId = regionId;
+    }
+
     /**
      * @return the playlist name.
      */

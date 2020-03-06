@@ -2,9 +2,9 @@ package athena.party.xmpp.event.member;
 
 import athena.account.resource.Account;
 import athena.context.AthenaContext;
-import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
 import athena.party.resource.Party;
+import athena.party.resource.connection.Connection;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
@@ -12,33 +12,60 @@ import com.google.gson.annotations.SerializedName;
 import java.time.Instant;
 
 /**
- * Represents an event for when a member leaves.
+ * Represents an event for when a member disconnects from the party by closing their game.
  */
-public final class PartyMemberLeftEvent extends AthenaContext {
+public final class PartyMemberDisconnectedEvent extends AthenaContext {
 
     /**
      * When this event was sent.
      */
     private Instant sent;
+
     /**
-     * The revision
+     * The connection of this member
+     */
+    private Connection connection;
+
+    /**
+     * The revision of this event
      */
     private int revision;
+
     /**
      * The party ID.
      */
     @SerializedName("party_id")
     private String partyId;
+
     /**
-     * The account ID of who left.
+     * The account ID of who disconnected
      */
     @SerializedName("account_id")
     private String accountId;
+
     /**
-     * Their updated state.
+     * The display name of who disconnected
+     */
+    @SerializedName("account_dn")
+    private String displayName;
+
+    /**
+     * The updated meta for this member.
      */
     @SerializedName("member_state_updated")
     private PartyMemberMeta updated;
+
+    /**
+     * When this member joined
+     */
+    @SerializedName("joined_at")
+    private Instant joinedAt;
+
+    /**
+     * When this member was updated.
+     */
+    @SerializedName("updated_at")
+    private Instant updatedAt;
 
     /**
      * The party
@@ -46,38 +73,66 @@ public final class PartyMemberLeftEvent extends AthenaContext {
     private Party party;
 
     /**
-     * @return when it was sent
+     * @return When this event was sent.
      */
     public Instant sent() {
         return sent;
     }
 
     /**
-     * @return the revision
+     * @return The connection of this member
+     */
+    public Connection connection() {
+        return connection;
+    }
+
+    /**
+     * @return The revision of this event
      */
     public int revision() {
         return revision;
     }
 
     /**
-     * @return the party ID.
+     * @return The party ID.
      */
     public String partyId() {
         return partyId;
     }
 
     /**
-     * @return The account ID of who left.
+     * @return The account ID of who disconnected
      */
     public String accountId() {
         return accountId;
     }
 
     /**
-     * @return Their updated state.
+     * @return The display name of who disconnected
+     */
+    public String displayName() {
+        return displayName;
+    }
+
+    /**
+     * @return The updated meta for this member.
      */
     public PartyMemberMeta updated() {
         return updated;
+    }
+
+    /**
+     * @return When this member joined
+     */
+    public Instant joinedAt() {
+        return joinedAt;
+    }
+
+    /**
+     * @return When this member was updated.
+     */
+    public Instant updatedAt() {
+        return updatedAt;
     }
 
     /**
@@ -97,13 +152,10 @@ public final class PartyMemberLeftEvent extends AthenaContext {
     }
 
     /**
-     * @return the account of who left.
+     * @return the account of who disconnected
      */
     public Account account() {
-        final var call = accountPublicService.findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + accountId);
-        return result[0];
+        return Requests.executeCall(accountPublicService.findByDisplayName(displayName));
     }
 
     /**

@@ -35,6 +35,19 @@ public enum PartyNotification {
      * Represents when a member gets kicked.
      */
     MEMBER_KICKED("com.epicgames.social.party.notification.v0.MEMBER_KICKED"),
+    /**
+     * Represents when a member disconnects from the party by closing their game.
+     */
+    MEMBER_DISCONNECTED("com.epicgames.social.party.notification.v0.MEMBER_DISCONNECTED"),
+    /**
+     * Represents when a member expires after disconnecting.
+     */
+    MEMBER_EXPIRED("com.epicgames.social.party.notification.v0.MEMBER_EXPIRED"),
+
+    /**
+     * Represents when the party gets updated
+     */
+    PARTY_UPDATED("com.epicgames.social.party.notification.v0.PARTY_UPDATED"),
 
     /**
      * An unknown notification.
@@ -64,4 +77,4 @@ public enum PartyNotification {
         return VALUES.stream().filter(partyNotification -> partyNotification.type.equals(type)).findAny().orElse(UNKNOWN);
     }
 
-}
+    }

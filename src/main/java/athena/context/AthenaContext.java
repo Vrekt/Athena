@@ -108,6 +108,7 @@ public abstract class AthenaContext {
         this.platform = athena.platform();
         this.connectionManager = athena.xmpp();
         this.gson = athena.gson();
+        this.localAccountId = athena.accountId();
     }
 
     protected void initializeResources(Athena athena) {
@@ -117,7 +118,6 @@ public abstract class AthenaContext {
     }
 
     protected void initializeAccount(Athena athena) {
-        this.localAccountId = athena.accountId();
         this.displayName = athena.displayName();
     }
 

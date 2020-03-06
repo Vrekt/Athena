@@ -14,6 +14,7 @@ import athena.party.resource.member.meta.cosmetic.variant.CosmeticVariant;
 import athena.party.resource.member.meta.readiness.GameReadiness;
 import athena.party.resource.member.role.PartyRole;
 import athena.party.resource.meta.PartyMeta;
+import athena.party.resource.playlist.PartyPlaylistData;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.util.json.service.hooks.annotation.PostDeserialize;
@@ -134,6 +135,16 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Set the custom match key for the party.
+     *
+     * @param matchKey the match key
+     */
+    public void setCustomMatchKey(String matchKey) {
+        parties.updateMeta().customMatchKey(matchKey);
+        parties.updateParty();
+    }
+
+    /**
      * @return {@code true} if the party is joined in progress.
      */
     public boolean partyIsJoinedInProgress() {
@@ -180,6 +191,29 @@ public final class Party extends AthenaContext {
      */
     public PartyPrivacy privacySettings() {
         return meta.privacySettings();
+    }
+
+    /**
+     * Set the privacy settings of the party.
+     *
+     * @param privacy the privacy settings
+     */
+    public void setPartyPrivacy(PartyPrivacy privacy) {
+        if (!privacy.isPrivate()) {
+            parties.addDeleteMeta("urn:epic:cfg:not-accepting-members");
+            parties.updateMeta().presencePerm("Anyone");
+        } else {
+            parties.updateMeta().notAcceptingMembersReason("7");
+            parties.updateMeta().presencePerm("Noone");
+        }
+
+        // set our configuration
+        config = privacy.isPrivate() ? PartyConfiguration.PRIVATE_PARTY
+                : privacy.partyType().equals("Public") ? PartyConfiguration.PUBLIC_PARTY
+                : PartyConfiguration.FRIENDS_ONLY_PARTY;
+
+        parties.updateMeta().privacySettings(privacy);
+        parties.updateParty();
     }
 
     /**
@@ -281,10 +315,42 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Set the playlist for this party.
+     *
+     * @param playlistName the playlist name
+     */
+    public void setPlaylist(String playlistName) {
+        setPlaylist(playlistName, "", "", meta.playlistData().regionId());
+    }
+
+    /**
+     * Set the playlist for this party
+     *
+     * @param playlistName  the playlist name
+     * @param tournamentId  the tournament ID or ""
+     * @param eventWindowId the event window ID or ""
+     * @param regionId      the region ID, ex: "NAE"
+     */
+    public void setPlaylist(String playlistName, String tournamentId, String eventWindowId, String regionId) {
+        parties.updateMeta().playlistData(new PartyPlaylistData(playlistName, tournamentId, eventWindowId, regionId));
+        parties.update();
+    }
+
+    /**
      * @return {@code true} if squad fill is enabled.
      */
     public boolean squadFill() {
         return meta.squadFill();
+    }
+
+    /**
+     * Set the squad fill
+     *
+     * @param squadFill the squad fill
+     */
+    public void setSquadFill(boolean squadFill) {
+        parties.updateMeta().squadFill(Boolean.toString(squadFill));
+        parties.update();
     }
 
     /**
@@ -345,11 +411,13 @@ public final class Party extends AthenaContext {
 
     /**
      * Disband this party.
+     *
      * @throws EpicGamesErrorException if an error occurred.
      */
     public void disband() throws EpicGamesErrorException {
         parties.disbandParty();
     }
+
     /**
      * Sets your character model.
      *
@@ -610,6 +678,16 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Updates the party meta, can only be done if you are leader.
+     *
+     * @return this
+     */
+    public Party update() {
+        parties.update();
+        return this;
+    }
+
+    /**
      * Update the captain.
      *
      * @param newCaptain the new captain
@@ -620,6 +698,7 @@ public final class Party extends AthenaContext {
         newCaptain.role(PartyRole.CAPTAIN);
         return this;
     }
+
 
     /**
      * Promote a member in the party
@@ -668,17 +747,24 @@ public final class Party extends AthenaContext {
      */
     @PostDeserialize
     private void postDeserialize() {
-        if (config != null && meta != null) {
-            config.presencePermission(meta.presencePerm());
-            config.acceptingMembers(Boolean.toString(meta.acceptingMembers()));
-            config.joinRequestAction(meta.joinRequestAction());
-            config.invitePermission(meta.invitePermission());
-            config.notAcceptingMembersReason(Integer.toString(meta.notAcceptingMembersReason()));
-            config.chatEnabled(Boolean.toString(meta.chatEnabled()));
-            config.canJoin(Boolean.toString(meta.canJoin()));
-        }
+        if (config != null && meta != null) updateConfigurationFromMeta();
     }
 
+    /**
+     * Update the configuration from the meta.
+     *
+     * @return this
+     */
+    public Party updateConfigurationFromMeta() {
+        config.presencePermission(meta.presencePerm());
+        config.acceptingMembers(Boolean.toString(meta.acceptingMembers()));
+        config.joinRequestAction(meta.joinRequestAction());
+        config.invitePermission(meta.invitePermission());
+        config.notAcceptingMembersReason(Integer.toString(meta.notAcceptingMembersReason()));
+        config.chatEnabled(Boolean.toString(meta.chatEnabled()));
+        config.canJoin(Boolean.toString(meta.canJoin()));
+        return this;
+    }
 
     @PreDeserialize
     private void preDeserialize() {

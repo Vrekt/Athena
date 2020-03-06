@@ -62,7 +62,7 @@ public final class PartyMemberUpdatedEvent extends AthenaContext {
      * TODO
      */
     @SerializedName("member_state_overridden")
-    private PartyMemberMeta overriden;
+    private PartyMemberMeta overridden;
 
     /**
      * When this member joined
@@ -108,14 +108,14 @@ public final class PartyMemberUpdatedEvent extends AthenaContext {
     }
 
     /**
-     * @return The account ID of who joined
+     * @return The account ID of who was updated
      */
     public String accountId() {
         return accountId;
     }
 
     /**
-     * @return The display name of who joined
+     * @return The display name of who was updated
      */
     public String displayName() {
         return displayName;
@@ -138,8 +138,8 @@ public final class PartyMemberUpdatedEvent extends AthenaContext {
     /**
      * @return overwritten values?
      */
-    public PartyMemberMeta overriden() {
-        return overriden;
+    public PartyMemberMeta overridden() {
+        return overridden;
     }
 
     /**

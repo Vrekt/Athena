@@ -12,9 +12,9 @@ import com.google.gson.annotations.SerializedName;
 import java.time.Instant;
 
 /**
- * Represents an event for when a member leaves.
+ * Represents an event for when a member disconnects and they expire (thus, leaving)
  */
-public final class PartyMemberLeftEvent extends AthenaContext {
+public final class PartyMemberExpiredEvent extends AthenaContext {
 
     /**
      * When this event was sent.
@@ -67,7 +67,7 @@ public final class PartyMemberLeftEvent extends AthenaContext {
     }
 
     /**
-     * @return The account ID of who left.
+     * @return The account ID of who expired.
      */
     public String accountId() {
         return accountId;
@@ -97,7 +97,7 @@ public final class PartyMemberLeftEvent extends AthenaContext {
     }
 
     /**
-     * @return the account of who left.
+     * @return the account of who expired.
      */
     public Account account() {
         final var call = accountPublicService.findOneByAccountId(accountId);

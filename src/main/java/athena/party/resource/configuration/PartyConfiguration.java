@@ -118,7 +118,7 @@ public final class PartyConfiguration {
         this.discoverability = discoverability;
         this.subType = "default";
         this.maxSize = maxSize;
-        this.inviteTtl = INVITE_TTL;
+        this.inviteTtl = 14440;
         this.joinConfirmation = joinConfirmation;
 
         // party meta related configuration.

@@ -20,6 +20,25 @@ public final class PartyPrivacy {
     private boolean onlyLeaderFriendsCanJoin;
 
     /**
+     * Public privacy settings
+     */
+    public static PartyPrivacy PUBLIC = new PartyPrivacy("Public", "AnyMember", false);
+    /**
+     * Friends only privacy settings
+     */
+    public static PartyPrivacy FRIENDS_ONLY = new PartyPrivacy("FriendsOnly", "AnyMember", false);
+    /**
+     * Private privacy settings
+     */
+    public static PartyPrivacy PRIVATE = new PartyPrivacy("Private", "AnyMember", false);
+
+    private PartyPrivacy(String partyType, String partyInviteRestriction, boolean onlyLeaderFriendsCanJoin) {
+        this.partyType = partyType;
+        this.partyInviteRestriction = partyInviteRestriction;
+        this.onlyLeaderFriendsCanJoin = onlyLeaderFriendsCanJoin;
+    }
+
+    /**
      * @return the privacy type.
      */
     public String partyType() {
@@ -39,4 +58,12 @@ public final class PartyPrivacy {
     public boolean onlyLeaderFriendsCanJoin() {
         return onlyLeaderFriendsCanJoin;
     }
+
+    /**
+     * @return {@code true} if this privacy is private.
+     */
+    public boolean isPrivate() {
+        return partyType.equalsIgnoreCase("Private");
+    }
+
 }

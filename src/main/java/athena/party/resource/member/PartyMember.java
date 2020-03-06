@@ -1,11 +1,14 @@
 package athena.party.resource.member;
 
+import athena.account.resource.Account;
 import athena.context.AthenaContext;
+import athena.exception.EpicGamesErrorException;
 import athena.party.resource.connection.Connection;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.member.role.PartyRole;
 import athena.types.Input;
 import athena.types.Platform;
+import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -247,6 +250,16 @@ public final class PartyMember extends AthenaContext {
      */
     public boolean isSittingOut() {
         return meta != null && meta.gameReadiness().equals("SittingOut");
+    }
+
+    /**
+     * @return the account
+     */
+    public Account account() {
+        final var call = accountPublicService.findOneByAccountId(accountId);
+        final var result = Requests.executeCall(call);
+        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + accountId);
+        return result[0];
     }
 
 }

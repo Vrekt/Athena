@@ -4,6 +4,7 @@ import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.party.resource.Party;
 import athena.party.resource.authentication.PartyJoinRequest;
+import athena.party.resource.configuration.PartyConfiguration;
 import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.client.ClientPartyMember;
 import athena.party.resource.member.meta.PartyMemberMeta;
@@ -13,14 +14,19 @@ import athena.party.resource.member.meta.challenges.AssistedChallenge;
 import athena.party.resource.member.meta.cosmetic.variant.CosmeticVariant;
 import athena.party.resource.member.meta.readiness.GameReadiness;
 import athena.party.resource.member.role.PartyRole;
+import athena.party.resource.meta.PartyMeta;
 import athena.party.service.PartyService;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.util.cleanup.AfterRefresh;
 import athena.util.cleanup.BeforeRefresh;
 import athena.util.cleanup.Shutdown;
+import athena.util.json.builder.JsonObjectBuilder;
 import athena.util.request.Requests;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +52,11 @@ public final class Parties {
     private final PartyNotifier notifier;
 
     /**
+     * Athena GSON instance
+     */
+    private final Gson gson;
+
+    /**
      * The current party.
      */
     private Party party;
@@ -55,11 +66,29 @@ public final class Parties {
      */
     private ClientPartyMember client;
 
+    /**
+     * Used to update the party.
+     */
+    private PartyMeta updateMeta;
+
+    /**
+     * Used to update the party.
+     */
+    private List<String> deleteMeta;
+
+    /**
+     * Keeps track of the update revision
+     */
+    private int revision;
+
     public Parties(DefaultAthenaContext context) {
         this.context = context;
+        this.gson = context.gson();
         this.service = context.partyService();
         this.notifier = new PartyNotifier(context, this);
         this.client = new ClientPartyMember(context);
+        updateMeta = new PartyMeta();
+        deleteMeta = new ArrayList<>();
         // TODO: Create our own party later.
     }
 
@@ -440,13 +469,51 @@ public final class Parties {
     }
 
     /**
-     * Updates the party.
+     * Updates the party information (its members, meta, etc)
+     *
+     * @return this
+     */
+    public Parties updatePartyInformation() {
+        if (party != null) party = Requests.executeCall(service.getParty(party.partyId()));
+        return this;
+    }
+
+    /**
+     * Updates the party meta, can only be done if you are leader.
      *
      * @return this
      */
     public Parties updateParty() {
-        if (party != null) party = Requests.executeCall(service.getParty(party.partyId()));
+        if (party != null) update();
         return this;
+    }
+
+    /**
+     * Update the party meta
+     *
+     * @param meta the meta
+     * @return this
+     */
+    public Parties updatePartyMeta(PartyMeta meta) {
+        party.meta().updateMeta(meta);
+        party.updateConfigurationFromMeta();
+        return this;
+    }
+
+    /**
+     * @return the update meta
+     */
+    public PartyMeta updateMeta() {
+        return updateMeta;
+    }
+
+    /**
+     * Add something to the delete list.
+     *
+     * @param deleteMeta the meta to delete.
+     */
+    public void addDeleteMeta(String deleteMeta) {
+        this.deleteMeta.add(deleteMeta);
     }
 
     /**
@@ -473,7 +540,85 @@ public final class Parties {
         if (party == null) return this;
         party.members().stream().filter(member -> member.role() == PartyRole.CAPTAIN).findFirst().ifPresent(member -> member.role(PartyRole.MEMBER));
         newCaptain.role(PartyRole.CAPTAIN);
+
+        // if we were promoted, get the revision.
+        if (newCaptain.accountId().equals(context.localAccountId())) {
+            updatePartyInformation();
+            revision = party.revision();
+        }
+
         return this;
+    }
+
+    /**
+     * Updates the party and bumps the revision
+     */
+    public void update() {
+        if (party == null) return;
+        try {
+            patch(payload());
+        } catch (EpicGamesErrorException exception) {
+            if (exception.errorCode().equals("errors.com.epicgames.social.party.stale_revision")) {
+                System.err.println("Revision is outdated, updating that!");
+                // retry the request, our revision is outdated.
+                // TODO Get revision from error
+                revision++;
+                patch(payload());
+            } else {
+                throw exception;
+            }
+        }
+
+        // reset our meta and bump the revision.
+        updateMeta = new PartyMeta();
+        deleteMeta.clear();
+        revision++;
+    }
+
+    /**
+     * Builds the payload
+     *
+     * @return the payload.
+     */
+    private JsonObject payload() {
+        return new JsonObjectBuilder()
+                .add("config", buildConfig())
+                .add("meta", new JsonObjectBuilder()
+                        .add("delete", gson.toJsonTree(deleteMeta))
+                        .add("update", gson.toJsonTree(updateMeta)).build())
+                .add("party_state_overridden", new JsonObject())
+                .add("party_privacy_type", party.config().joinability().name())
+                .add("party_type", "DEFAULT")
+                .add("party_sub_type", "default")
+                .add("max_number_of_members", party.config().maxSize())
+                .add("invite_ttl_seconds", PartyConfiguration.INVITE_TTL)
+                .add("revision", revision)
+                .build();
+    }
+
+    /**
+     * Build the configuration
+     *
+     * @return the configuration
+     */
+    private JsonObject buildConfig() {
+        return new JsonObjectBuilder()
+                .add("join_confirmation", party.config().joinConfirmation())
+                .add("joinability", party.config().joinability().name())
+                .add("max_size", party.config().maxSize())
+                .build();
+    }
+
+    /**
+     * Dispatches the HTTP request and patches the party.
+     *
+     * @param payload the payload to send.
+     * @throws EpicGamesErrorException if an error occurred
+     */
+    private void patch(JsonObject payload) throws EpicGamesErrorException {
+        System.err.println(payload.toString());
+        final var patch = service.updateParty(party.partyId(), payload);
+        Requests.executeCall(patch);
     }
 
     public void registerEventListener(Object listener) {

@@ -1,6 +1,7 @@
 package athena;
 
 import athena.account.Accounts;
+import athena.account.resource.device.Device;
 import athena.account.service.AccountPublicService;
 import athena.authentication.session.Session;
 import athena.authentication.type.AuthClient;
@@ -245,6 +246,11 @@ public interface Athena {
          */
         private GrantType grantType = GrantType.EXCHANGE_CODE;
 
+        /**
+         * Used for creating new device auths.
+         */
+        private Device deviceAuth;
+
         public Builder(String email, String password, String code) {
             this.email = email;
             this.password = password;
@@ -291,6 +297,11 @@ public interface Athena {
 
         public Builder secret(String secret) {
             this.secret = secret;
+            return this;
+        }
+
+        public Builder createDeviceAuth(Device device) {
+            this.deviceAuth = device;
             return this;
         }
 

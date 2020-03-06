@@ -35,6 +35,7 @@ import athena.party.service.PartyService;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
 import athena.party.xmpp.event.invite.PartyPingEvent;
 import athena.party.xmpp.event.member.*;
+import athena.party.xmpp.event.party.PartyUpdatedEvent;
 import athena.presence.Presences;
 import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
@@ -323,6 +324,8 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberNewCaptainEvent.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberUpdatedEvent.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMember.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberDisconnectedEvent.class, this).useContext());
+        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyUpdatedEvent.class, this).useContext());
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMeta.class));
         gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMemberMeta.class));
 
@@ -336,7 +339,7 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
 
         // ignore super classes basically.
-        gsonBuilder.excludeFieldsWithModifiers(Modifier.PROTECTED);
+        gsonBuilder.excludeFieldsWithModifiers(Modifier.PROTECTED, Modifier.STATIC, Modifier.TRANSIENT);
         return gsonBuilder.create();
     }
 

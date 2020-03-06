@@ -51,6 +51,15 @@ public interface PartyService {
     Call<Void> disbandParty(@Path("partyId") String partyId);
 
     /**
+     * Update the party.
+     *
+     * @param partyId the party ID.
+     * @return Void.
+     */
+    @PATCH("party/api/v1/Fortnite/parties/{partyId}")
+    Call<Void> updateParty(@Path("partyId") String partyId, @Body JsonObject payload);
+
+    /**
      * Get a list of parties the user {@code fromAccountId} has.
      *
      * @param accountId     the account ID.

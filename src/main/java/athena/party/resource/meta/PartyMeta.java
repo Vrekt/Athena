@@ -202,6 +202,45 @@ public final class PartyMeta {
     private String squadFill;
 
     /**
+     * Updates this meta.
+     * TODO: Make this better
+     *
+     * @param other the other meta
+     */
+    public void updateMeta(PartyMeta other) {
+        if (other.partyMatchmakingInfo != null) partyMatchmakingInfo = other.partyMatchmakingInfo;
+        if (other.platformSessions != null) platformSessions = other.platformSessions;
+        if (other.lobbyConnectionStarted != null) lobbyConnectionStarted = other.lobbyConnectionStarted;
+        if (other.customMatchKey != null) customMatchKey = other.customMatchKey;
+        if (other.zoneInstanceId != null) zoneInstanceId = other.zoneInstanceId;
+        if (other.partyIsJoinedInProgress != null) partyIsJoinedInProgress = other.partyIsJoinedInProgress;
+        if (other.partyTypeId != null) partyTypeId = other.partyTypeId;
+        if (other.isCriticalMission != null) isCriticalMission = other.isCriticalMission;
+        if (other.buildId != null) buildId = other.buildId;
+        if (other.presencePerm != null) presencePerm = other.presencePerm;
+        if (other.acceptingMembers != null) acceptingMembers = other.acceptingMembers;
+        if (other.allowJoinInProgress != null) allowJoinInProgress = other.allowJoinInProgress;
+        if (other.matchmakingResult != null) matchmakingResult = other.matchmakingResult;
+        if (other.privacySettings != null) privacySettings = other.privacySettings;
+        if (other.joinRequestAction != null) joinRequestAction = other.joinRequestAction;
+        if (other.lfgTime != null) lfgTime = other.lfgTime;
+        if (other.invitePermission != null) invitePermission = other.invitePermission;
+        if (other.tileStates != null) tileStates = other.tileStates;
+        if (other.squadAssignments != null) squadAssignments = other.squadAssignments;
+        if (other.theaterId != null) theaterId = other.theaterId;
+        if (other.notAcceptingMembersReason != null) notAcceptingMembersReason = other.notAcceptingMembersReason;
+        if (other.matchmakingState != null) matchmakingState = other.matchmakingState;
+        if (other.partyState != null) partyState = other.partyState;
+        if (other.chatEnabled != null) chatEnabled = other.chatEnabled;
+        if (other.sessionId != null) sessionId = other.sessionId;
+        if (other.zoneTileIndex != null) zoneTileIndex = other.zoneTileIndex;
+        if (other.sessionKey != null) sessionKey = other.sessionKey;
+        if (other.playlistData != null) playlistData = other.playlistData;
+        if (other.squadFill != null) squadFill = other.squadFill;
+    }
+
+
+    /**
      * @return the party matchmaking info
      */
     public PartyMatchmakingInfo partyMatchmakingInfo() {
@@ -219,6 +258,7 @@ public final class PartyMeta {
      * @return {@code true} if the lobby connection has been started
      */
     public boolean lobbyConnectionStarted() {
+        if (lobbyConnectionStarted == null) return false;
         return Boolean.parseBoolean(lobbyConnectionStarted);
     }
 
@@ -240,6 +280,7 @@ public final class PartyMeta {
      * @return {@code true} if the party is joined in progress
      */
     public boolean partyIsJoinedInProgress() {
+        if (partyIsJoinedInProgress == null) return false;
         return Boolean.parseBoolean(partyIsJoinedInProgress);
     }
 
@@ -254,6 +295,7 @@ public final class PartyMeta {
      * @return if its a critical mission
      */
     public boolean isCriticalMission() {
+        if (isCriticalMission == null) return false;
         return Boolean.parseBoolean(isCriticalMission);
     }
 
@@ -275,6 +317,7 @@ public final class PartyMeta {
      * @return {@code true} if accepting members
      */
     public boolean acceptingMembers() {
+        if (acceptingMembers == null) return false;
         return Boolean.parseBoolean(acceptingMembers);
     }
 
@@ -282,6 +325,7 @@ public final class PartyMeta {
      * @return {@code true} if allowed to join in progress
      */
     public boolean allowJoinInProgress() {
+        if (allowJoinInProgress == null) return false;
         return Boolean.parseBoolean(allowJoinInProgress);
     }
 
@@ -367,6 +411,7 @@ public final class PartyMeta {
      * @return {@code true} if chat is enabled.
      */
     public boolean chatEnabled() {
+        if (chatEnabled == null) return false;
         return Boolean.parseBoolean(chatEnabled);
     }
 
@@ -381,6 +426,7 @@ public final class PartyMeta {
      * @return -1
      */
     public int zoneTileIndex() {
+        if (zoneTileIndex == null) return -1;
         return Integer.parseInt(zoneTileIndex);
     }
 
@@ -395,6 +441,7 @@ public final class PartyMeta {
      * @return {@code true} if joinable.
      */
     public boolean canJoin() {
+        if (canJoin == null) return false;
         return Boolean.parseBoolean(canJoin);
     }
 
@@ -409,7 +456,128 @@ public final class PartyMeta {
      * @return {@code true} if squad fill is enabled.
      */
     public boolean squadFill() {
+        if (squadFill == null) return false;
         return Boolean.parseBoolean(squadFill);
+    }
+
+    public void partyMatchmakingInfo(PartyMatchmakingInfo partyMatchmakingInfo) {
+        this.partyMatchmakingInfo = partyMatchmakingInfo;
+    }
+
+    public void platformSessions(PlatformSessions platformSessions) {
+        this.platformSessions = platformSessions;
+    }
+
+    public void lobbyConnectionStarted(String lobbyConnectionStarted) {
+        this.lobbyConnectionStarted = lobbyConnectionStarted;
+    }
+
+    public void customMatchKey(String customMatchKey) {
+        this.customMatchKey = customMatchKey;
+    }
+
+    public void zoneInstanceId(String zoneInstanceId) {
+        this.zoneInstanceId = zoneInstanceId;
+    }
+
+    public void partyIsJoinedInProgress(String partyIsJoinedInProgress) {
+        this.partyIsJoinedInProgress = partyIsJoinedInProgress;
+    }
+
+    public void partyTypeId(String partyTypeId) {
+        this.partyTypeId = partyTypeId;
+    }
+
+    public void isCriticalMission(String isCriticalMission) {
+        this.isCriticalMission = isCriticalMission;
+    }
+
+    public void buildId(String buildId) {
+        this.buildId = buildId;
+    }
+
+    public void presencePerm(String presencePerm) {
+        this.presencePerm = presencePerm;
+    }
+
+    public void acceptingMembers(String acceptingMembers) {
+        this.acceptingMembers = acceptingMembers;
+    }
+
+    public void allowJoinInProgress(String allowJoinInProgress) {
+        this.allowJoinInProgress = allowJoinInProgress;
+    }
+
+    public void matchmakingResult(String matchmakingResult) {
+        this.matchmakingResult = matchmakingResult;
+    }
+
+    public void privacySettings(PartyPrivacy privacySettings) {
+        this.privacySettings = privacySettings;
+    }
+
+    public void joinRequestAction(String joinRequestAction) {
+        this.joinRequestAction = joinRequestAction;
+    }
+
+    public void lfgTime(Instant lfgTime) {
+        this.lfgTime = lfgTime;
+    }
+
+    public void invitePermission(String invitePermission) {
+        this.invitePermission = invitePermission;
+    }
+
+    public void tileStates(TileStates tileStates) {
+        this.tileStates = tileStates;
+    }
+
+    public void squadAssignments(List<SquadAssignments> squadAssignments) {
+        this.squadAssignments = squadAssignments;
+    }
+
+    public void theaterId(String theaterId) {
+        this.theaterId = theaterId;
+    }
+
+    public void notAcceptingMembersReason(String notAcceptingMembersReason) {
+        this.notAcceptingMembersReason = notAcceptingMembersReason;
+    }
+
+    public void matchmakingState(String matchmakingState) {
+        this.matchmakingState = matchmakingState;
+    }
+
+    public void partyState(String partyState) {
+        this.partyState = partyState;
+    }
+
+    public void chatEnabled(String chatEnabled) {
+        this.chatEnabled = chatEnabled;
+    }
+
+    public void sessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public void zoneTileIndex(String zoneTileIndex) {
+        this.zoneTileIndex = zoneTileIndex;
+    }
+
+    public void sessionKey(String sessionKey) {
+        this.sessionKey = sessionKey;
+    }
+
+    public void canJoin(String canJoin) {
+        this.canJoin = canJoin;
+    }
+
+    public void playlistData(PartyPlaylistData playlistData) {
+        this.playlistData = playlistData;
+    }
+
+    public void squadFill(String squadFill) {
+        this.squadFill = squadFill;
     }
 
     /**

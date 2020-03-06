@@ -30,7 +30,7 @@ public final class PartyMemberKickedEvent extends AthenaContext {
     @SerializedName("party_id")
     private String partyId;
     /**
-     * The account ID of who left.
+     * The account ID of who got kicked
      */
     @SerializedName("account_id")
     private String accountId;
@@ -67,7 +67,7 @@ public final class PartyMemberKickedEvent extends AthenaContext {
     }
 
     /**
-     * @return The account ID of who left.
+     * @return The account ID of who got kicked
      */
     public String accountId() {
         return accountId;
@@ -97,7 +97,7 @@ public final class PartyMemberKickedEvent extends AthenaContext {
     }
 
     /**
-     * @return the account of who joined.
+     * @return the account of who got kicked
      */
     public Account account() {
         final var call = accountPublicService.findOneByAccountId(accountId);
