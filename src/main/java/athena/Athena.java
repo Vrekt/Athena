@@ -3,6 +3,7 @@ package athena;
 import athena.account.Accounts;
 import athena.account.resource.device.Device;
 import athena.account.service.AccountPublicService;
+import athena.authentication.service.AuthenticationService;
 import athena.authentication.session.Session;
 import athena.authentication.type.AuthClient;
 import athena.authentication.type.GrantType;
@@ -11,7 +12,7 @@ import athena.chat.XMPPChat;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
 import athena.events.service.EventsPublicService;
-import athena.exception.FortniteAuthenticationException;
+import athena.exception.EpicGamesErrorException;
 import athena.exception.UnsupportedBuildException;
 import athena.fortnite.Fortnite;
 import athena.fortnite.service.FortnitePublicService;
@@ -154,6 +155,11 @@ public interface Athena {
      * @return the {@link GroupsService} instance.
      */
     GroupsService groupsService();
+
+    /**
+     * @return the {@link AuthenticationService} instance.
+     */
+    AuthenticationService authenticationService();
 
     /**
      * @return the {@link XMPPConnectionManager} instance.
@@ -459,14 +465,18 @@ public interface Athena {
             return grantType;
         }
 
+        Device device() {
+            return deviceAuth;
+        }
+
         /**
          * Builds this instance into a new {@link Athena}
          *
          * @return a new {@link Athena} instance
          * @throws UnsupportedBuildException       if there are fields like username and password left empty.
-         * @throws FortniteAuthenticationException if there was an authentication exception
+         * @throws EpicGamesErrorException if there was an authentication exception
          */
-        public Athena build() throws UnsupportedBuildException, FortniteAuthenticationException {
+        public Athena build() throws UnsupportedBuildException, EpicGamesErrorException {
             if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");
             if (password == null || password.isEmpty()) throw new UnsupportedBuildException("Athena needs a password to login.");
             if (enableXmpp && (platform == null || appType == null)) throw new UnsupportedBuildException("Platform and app must be set for XMPP.");

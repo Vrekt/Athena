@@ -6,6 +6,7 @@ import athena.fortnite.shop.StorefrontCatalog;
 import com.google.gson.JsonElement;
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -65,6 +66,15 @@ public interface FortnitePublicService {
      */
     @GET("fortnite/api/receipts/v1/account/{accountId}/receipts")
     Call<List<Receipt>> receipts(@Path("accountId") String accountId);
+
+    /**
+     * Grant access to Fortnite services.
+     *
+     * @param accountId the account ID.
+     * @return Void
+     */
+    @POST("fortnite/api/game/v2/grant_access/{accountId}")
+    Call<Void> grantAccess(@Path("accountId") String accountId);
 
     /**
      * TODO:

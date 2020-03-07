@@ -19,25 +19,6 @@ import java.util.List;
  */
 public final class PartyUpdatedEvent extends AthenaContext {
 
-    //   "sent": "2020-03-05T11:22:21.171Z",
-    //  "type": "com.epicgames.social.party.notification.v0.PARTY_UPDATED",
-    //  "revision": 13,
-    //  "ns": "Fortnite",
-    //  "party_id": "2faeb566037c40aa8a0cc79609f3febe",
-    //  "captain_id": "192fd8eb7a144605bfda0e386f10ed18",
-    //  "party_state_removed": [],
-    //  "party_state_updated": {
-    //    "RawSquadAssignments_j": "{\"RawSquadAssignments\":[{\"memberId\":\"192fd8eb7a144605bfda0e386f10ed18\",\"absoluteMemberIdx\":0},{\"memberId\":\"0c92bf6d958f48c9af1aed89e8d5b02b\",\"absoluteMemberIdx\":1}]}"
-    //  },
-    //  "party_state_overridden": {},
-    //  "party_privacy_type": "INVITE_AND_FORMER",
-    //  "party_type": "DEFAULT",
-    //  "party_sub_type": "default",
-    //  "max_number_of_members": 16,
-    //  "invite_ttl_seconds": 14400,
-    //  "created_at": "2020-03-05T10:56:13.298Z",
-    //  "updated_at": "2020-03-05T11:22:21.170Z"
-
     /**
      * When this event was sent
      */
