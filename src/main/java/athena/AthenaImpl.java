@@ -363,7 +363,7 @@ final class AthenaImpl implements Athena, Interceptor {
      * Schedule the refresh/authenticate process.
      */
     private void scheduleRefresh() {
-        final var refreshWhen = Instant.now().until(session.get().accessTokenExpiresAt(), ChronoUnit.SECONDS);
+        final var refreshWhen = Instant.now().plusSeconds(200).until(session.get().accessTokenExpiresAt(), ChronoUnit.SECONDS);
         scheduledExecutorService.schedule(this::refresh, refreshWhen, TimeUnit.SECONDS);
     }
 
@@ -388,28 +388,6 @@ final class AthenaImpl implements Athena, Interceptor {
             if (connectionManager != null) {
                 beforeRefresh();
 
-                connectionManager.disconnect();
-                connectionManager.connect(session().accountId(), session().accessToken());
-                afterRefresh();
-            }
-        } catch (EpicGamesErrorException exception) {
-            LOGGER.atSevere().withCause(exception).log("Failed to refresh session.");
-            close();
-        }
-    }
-
-    /**
-     * Establish a new session, will not work with 2FA enabled of-course.
-     */
-    private void authenticateNew() {
-        try {
-            final var old = session();
-            // retrieve the refresh session.
-            session.set(fortniteAuthenticationManager.authenticate());
-            // kill the old token.
-            fortniteAuthenticationManager.killToken(old.accessToken());
-            if (connectionManager != null) {
-                beforeRefresh();
                 connectionManager.disconnect();
                 connectionManager.connect(session().accountId(), session().accessToken());
                 afterRefresh();
