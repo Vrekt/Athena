@@ -2,7 +2,7 @@ package athena.context;
 
 import athena.Athena;
 import athena.account.service.AccountPublicService;
-import athena.chat.XMPPChat;
+import athena.chat.FriendChat;
 import athena.events.service.EventsPublicService;
 import athena.fortnite.service.FortnitePublicService;
 import athena.friend.Friends;
@@ -150,7 +150,7 @@ public final class DefaultAthenaContext extends AthenaContext {
     /**
      * @return XMPP chat provider.
      */
-    public XMPPChat chat() {
+    public FriendChat chat() {
         return chat;
     }
 

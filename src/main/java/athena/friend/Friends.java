@@ -35,12 +35,12 @@ public final class Friends {
     /**
      * The XMPP provider.
      */
-    private final FriendsXMPPProvider provider;
+    private final FriendsEventNotifier provider;
 
     public Friends(DefaultAthenaContext context, boolean enableXMPP) {
         this.context = context;
         this.service = context.friendsService();
-        provider = enableXMPP ? new FriendsXMPPProvider(context) : null;
+        provider = enableXMPP ? new FriendsEventNotifier(context) : null;
     }
 
     /**

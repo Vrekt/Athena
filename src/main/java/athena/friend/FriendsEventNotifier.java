@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Vrekt, Terbau
  */
-final class FriendsXMPPProvider implements StanzaListener {
+final class FriendsEventNotifier implements StanzaListener {
 
     /**
      * Provides event handling and registering/unregistering.
@@ -45,7 +45,7 @@ final class FriendsXMPPProvider implements StanzaListener {
      */
     private DefaultAthenaContext context;
 
-    FriendsXMPPProvider(DefaultAthenaContext context) {
+    FriendsEventNotifier(DefaultAthenaContext context) {
         this.context = context;
         context
                 .connectionManager()

@@ -21,13 +21,13 @@ import java.util.List;
 public final class Presences {
 
     private final PresencePublicService service;
-    private PresenceXMPPProvider provider;
+    private PresenceEventNotifier provider;
     private final String localAccountId;
 
     public Presences(DefaultAthenaContext context, boolean enableXmpp) {
         this.service = context.presence();
         this.localAccountId = context.localAccountId();
-        provider = enableXmpp ? new PresenceXMPPProvider(context) : null;
+        provider = enableXmpp ? new PresenceEventNotifier(context) : null;
     }
 
     /**

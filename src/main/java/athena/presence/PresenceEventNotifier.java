@@ -16,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Provides XMPP access to {@link Presences}
  */
-public final class PresenceXMPPProvider implements StanzaListener {
+public final class PresenceEventNotifier implements StanzaListener {
 
     /**
      * The event factory for presence events
@@ -35,7 +35,7 @@ public final class PresenceXMPPProvider implements StanzaListener {
      */
     private DefaultAthenaContext context;
 
-    PresenceXMPPProvider(DefaultAthenaContext context) {
+    PresenceEventNotifier(DefaultAthenaContext context) {
         this.context = context;
         context
                 .connectionManager()
@@ -49,8 +49,11 @@ public final class PresenceXMPPProvider implements StanzaListener {
         if (presence.getStatus() == null) return;
         final var accountId = presence.getFrom().getLocalpartOrNull().asUnescapedString();
         final var fortnitePresence = context.gson().fromJson(presence.getStatus(), FortnitePresence.class);
-        fortnitePresence.setFrom(presence.getFrom());
+        // ignore presences that aren't Fortnite
+        // ideally we want to ignore them before deserializing but whatever
+        if (!fortnitePresence.productName().equalsIgnoreCase("Fortnite")) return;
 
+        fortnitePresence.setFrom(presence.getFrom());
         factory.invoke(PresenceEvent.class, fortnitePresence);
         listeners.forEach(listener -> listener.presenceReceived(fortnitePresence));
         filters.stream().filter(filter -> filter.active() && filter.ready() && filter.isRelevant(accountId)).forEach(filter -> filter.consume(fortnitePresence));

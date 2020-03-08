@@ -49,7 +49,7 @@ public final class Parties {
     /**
      * The XMPP notifier.
      */
-    private final PartyNotifier notifier;
+    private final PartyEventNotifier notifier;
 
     /**
      * Athena GSON instance
@@ -85,7 +85,7 @@ public final class Parties {
         this.context = context;
         this.gson = context.gson();
         this.service = context.partyService();
-        this.notifier = new PartyNotifier(context, this);
+        this.notifier = new PartyEventNotifier(context, this);
         this.client = new ClientPartyMember(context);
         updateMeta = new PartyMeta();
         deleteMeta = new ArrayList<>();
@@ -620,27 +620,38 @@ public final class Parties {
         Requests.executeCall(patch);
     }
 
+    /**
+     * Register an event listener.
+     *
+     * @param listener the listener.
+     */
     public void registerEventListener(Object listener) {
         notifier.registerEventListener(listener);
     }
 
+    /**
+     * Unregister an event listener
+     *
+     * @param listener the listener
+     */
     public void unregisterEventListener(Object listener) {
         notifier.unregisterEventListener(listener);
     }
 
     @AfterRefresh
     private void after(DefaultAthenaContext context) {
-        // TODO:
+        notifier.afterRefresh(context);
     }
 
     @BeforeRefresh
     private void before() {
-        // TODO:
+        notifier.beforeRefresh();
     }
 
     @Shutdown
     private void shutdown() {
         leaveParty();
+        notifier.shutdown();
     }
 
 

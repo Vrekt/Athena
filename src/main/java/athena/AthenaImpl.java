@@ -8,7 +8,7 @@ import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.service.AuthenticationService;
 import athena.authentication.session.Session;
 import athena.channels.service.ChannelsPublicService;
-import athena.chat.XMPPChat;
+import athena.chat.FriendChat;
 import athena.context.DefaultAthenaContext;
 import athena.eula.service.EulatrackingPublicService;
 import athena.events.Events;
@@ -147,7 +147,7 @@ final class AthenaImpl implements Athena, Interceptor {
     /**
      * Manages XMPP Chat.
      */
-    private final XMPPChat chat;
+    private final FriendChat chat;
     /**
      * Manages parties.
      */
@@ -278,13 +278,12 @@ final class AthenaImpl implements Athena, Interceptor {
 
         // Initialize XMPP dependant resources.
         if (builder.shouldEnableXmpp()) {
-            chat = new XMPPChat(context);
+            chat = new FriendChat(context);
             parties = new Parties(context);
-            // register their events
-            eventFactory.registerEventListener(chat);
-            eventFactory.registerEventListener(parties);
 
             // register XMPP resources with the event factory.
+            eventFactory.registerEventListener(chat);
+            eventFactory.registerEventListener(parties);
             eventFactory.registerEventListener(friends);
             eventFactory.registerEventListener(presences);
         } else {
@@ -493,7 +492,7 @@ final class AthenaImpl implements Athena, Interceptor {
     }
 
     @Override
-    public XMPPChat chat() {
+    public FriendChat chat() {
         return chat;
     }
 

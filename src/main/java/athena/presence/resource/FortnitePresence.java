@@ -25,6 +25,13 @@ public final class FortnitePresence extends AthenaContext {
      */
     @SerializedName("SessionId")
     private String sessionId;
+
+    /**
+     * The product - the game, ex: "Fortnite"
+     */
+    @SerializedName("ProductName")
+    private String productName;
+
     /**
      * {@code true} if they are playing.
      */
@@ -72,6 +79,13 @@ public final class FortnitePresence extends AthenaContext {
      */
     public String sessionId() {
         return sessionId;
+    }
+
+    /**
+     * @return the product name
+     */
+    public String productName() {
+        return productName;
     }
 
     /**

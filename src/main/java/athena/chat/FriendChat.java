@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 /**
  * Provides access to the XMPP chat.
  */
-public final class XMPPChat implements StanzaListener {
+public final class FriendChat implements StanzaListener {
 
     /**
      * List of consumers/listeners to accept messages.
@@ -37,7 +37,7 @@ public final class XMPPChat implements StanzaListener {
      */
     private DefaultAthenaContext context;
 
-    public XMPPChat(DefaultAthenaContext context) {
+    public FriendChat(DefaultAthenaContext context) {
         this.context = context;
         context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.CHAT);
     }

@@ -20,7 +20,7 @@ import org.jivesoftware.smack.packet.Stanza;
 /**
  * Handles XMPP notifications.
  */
-final class PartyNotifier implements StanzaListener {
+final class PartyEventNotifier implements StanzaListener {
 
     /**
      * Create our event factory for party notifications.
@@ -32,7 +32,7 @@ final class PartyNotifier implements StanzaListener {
     private final Parties parties;
     private final Gson gson;
 
-    PartyNotifier(DefaultAthenaContext context, Parties parties) {
+    PartyEventNotifier(DefaultAthenaContext context, Parties parties) {
         this.context = context;
         this.parties = parties;
         this.service = context.partyService();
@@ -41,10 +41,20 @@ final class PartyNotifier implements StanzaListener {
         context.connectionManager().connection().addAsyncStanzaListener(this, StanzaTypeFilter.MESSAGE);
     }
 
+    /**
+     * Register an event listener
+     *
+     * @param listener the event listener
+     */
     void registerEventListener(Object listener) {
         eventFactory.registerEventListener(listener);
     }
 
+    /**
+     * Un-register an event listener
+     *
+     * @param listener the event listener
+     */
     void unregisterEventListener(Object listener) {
         eventFactory.unregisterEventListener(listener);
     }
@@ -158,6 +168,33 @@ final class PartyNotifier implements StanzaListener {
             eventFactory.invoke(PartyEvent.class, event);
         }
 
+    }
+
+    /**
+     * Invoked after refreshing to re-add the stanza listener.
+     *
+     * @param context the new context.
+     */
+    void afterRefresh(DefaultAthenaContext context) {
+        context
+                .connectionManager()
+                .connection()
+                .addAsyncStanzaListener(this, StanzaTypeFilter.MESSAGE);
+    }
+
+    /**
+     * Invoked before a refresh to remove the stanza listener.
+     */
+    void beforeRefresh() {
+        context.connectionManager().connection().removeAsyncStanzaListener(this);
+    }
+
+    /**
+     * Invoked to shutdown this provider.
+     */
+    void shutdown() {
+        context.connectionManager().connection().removeAsyncStanzaListener(this);
+        eventFactory.dispose();
     }
 
 }
