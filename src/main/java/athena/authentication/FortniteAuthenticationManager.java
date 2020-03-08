@@ -122,8 +122,7 @@ public final class FortniteAuthenticationManager {
             return Requests.executeCall(accountPublicService.grantSession(
                     "basic " + authorizationToken,
                     "device_auth",
-                    Map.of("account_id", accountId, "device_id", deviceId, "secret", secret),
-                    false));
+                    Map.of("account_id", accountId, "device_id", deviceId, "secret", secret)));
 
         // otherwise, request our XSRF token
         Requests.executeCall(authenticationService.csrf());
@@ -172,7 +171,7 @@ public final class FortniteAuthenticationManager {
         // finally retrieve the session
         return Requests.executeCall(accountPublicService.grantSession(
                 "basic " + authorizationToken,
-                grantType.name().toLowerCase(), map, false));
+                grantType.name().toLowerCase(), map));
     }
 
     /**

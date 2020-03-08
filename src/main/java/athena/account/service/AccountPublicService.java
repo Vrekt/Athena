@@ -79,12 +79,11 @@ public interface AccountPublicService {
      * @param authorizationToken the authorization token, see {@link athena.authentication.type.AuthClient}
      * @param grantType          the grant_type, see {@link athena.authentication.type.GrantType} or https://github.com/MixV2/EpicResearch#grant-types
      * @param fields             required fields for the grant type, see https://github.com/MixV2/EpicResearch#grant-types
-     * @param includePerms       {@code true} if perms included? (usually false)
      * @return a {@link Call} returned by retrofit containing the {@link Session} if the call was successful.
      */
     @FormUrlEncoded
     @POST("account/api/oauth/token")
-    Call<Session> grantSession(@Header("Authorization") String authorizationToken, @Field("grant_type") String grantType, @FieldMap Map<String, String> fields, @Field("includePerms") boolean includePerms);
+    Call<Session> grantSession(@Header("Authorization") String authorizationToken, @Field("grant_type") String grantType, @FieldMap Map<String, String> fields);
 
     /**
      * Get the profile of the current authenticated account.
@@ -143,7 +142,6 @@ public interface AccountPublicService {
      */
     @GET("account/api/public/account/{accountId}/addresses")
     Call<List<AccountAddress>> accountAddresses(@Path("accountId") String accountId);
-
 
 
 }

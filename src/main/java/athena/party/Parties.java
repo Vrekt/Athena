@@ -616,7 +616,6 @@ public final class Parties {
      * @throws EpicGamesErrorException if an error occurred
      */
     private void patch(JsonObject payload) throws EpicGamesErrorException {
-        System.err.println(payload.toString());
         final var patch = service.updateParty(party.partyId(), payload);
         Requests.executeCall(patch);
     }

@@ -363,10 +363,8 @@ final class AthenaImpl implements Athena, Interceptor {
      * Schedule the refresh/authenticate process.
      */
     private void scheduleRefresh() {
-        final var refreshWhen = Instant.now().plusSeconds(300).until(session.get().accessTokenExpiresAt(), ChronoUnit.SECONDS);
-        final var authenticateWhen = Instant.now().plusSeconds(300).until(session.get().refreshTokenExpiresAt(), ChronoUnit.SECONDS);
+        final var refreshWhen = Instant.now().until(session.get().accessTokenExpiresAt(), ChronoUnit.SECONDS);
         scheduledExecutorService.schedule(this::refresh, refreshWhen, TimeUnit.SECONDS);
-        scheduledExecutorService.schedule(this::authenticateNew, authenticateWhen, TimeUnit.SECONDS);
     }
 
     /**
@@ -375,14 +373,18 @@ final class AthenaImpl implements Athena, Interceptor {
     private void refresh() {
         try {
             final var old = session();
+
             // retrieve the refresh session.
-
-            final var newSession = Requests.executeCall(accountPublicService.grantSession("basic " + builder.authorizationToken(), "refresh_token",
-                    Map.of("refresh_token", old.refreshToken()), false));
-
+            final var newSession = Requests.executeCall(accountPublicService.grantSession(
+                    "basic " + builder.authorizationToken(),
+                    "refresh_token",
+                    Map.of("refresh_token", old.refreshToken())));
             session.set(newSession);
-            // kill the old token.
-            fortniteAuthenticationManager.killToken(old.accessToken());
+
+            // schedule our next refresh
+            scheduleRefresh();
+
+            // refresh our XMPP connection and resources
             if (connectionManager != null) {
                 beforeRefresh();
 
