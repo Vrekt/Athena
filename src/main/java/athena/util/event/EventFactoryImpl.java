@@ -6,10 +6,19 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Implementation of {@link EventFactory}
+ */
 final class EventFactoryImpl implements EventFactory {
 
+    /**
+     * Array of annotations
+     */
     private final Class<? extends Annotation>[] annotations;
 
+    /**
+     * Subscribers
+     */
     private final ConcurrentHashMap<Object, EventSubscriber> subscribers = new ConcurrentHashMap<>();
 
     @SafeVarargs

@@ -3,6 +3,7 @@ package athena.party.xmpp.event.invite;
 import athena.context.AthenaContext;
 import athena.party.resource.Party;
 import athena.party.resource.meta.invites.PingOrInvitationMeta;
+import athena.party.xmpp.event.IPartyEvent;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -10,7 +11,7 @@ import java.time.Instant;
 /**
  * Represents a ping event.
  */
-public final class PartyPingEvent extends AthenaContext {
+public final class PartyPingEvent extends AthenaContext implements IPartyEvent {
 
     /**
      * The account ID of who sent the ping.

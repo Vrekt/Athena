@@ -51,7 +51,7 @@ public final class PresenceEventNotifier implements StanzaListener {
         final var fortnitePresence = context.gson().fromJson(presence.getStatus(), FortnitePresence.class);
         // ignore presences that aren't Fortnite
         // ideally we want to ignore them before deserializing but whatever
-        if (!fortnitePresence.productName().equalsIgnoreCase("Fortnite")) return;
+        if (fortnitePresence.productName() == null || !fortnitePresence.productName().equalsIgnoreCase("Fortnite")) return;
 
         fortnitePresence.setFrom(presence.getFrom());
         factory.invoke(PresenceEvent.class, fortnitePresence);

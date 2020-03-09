@@ -473,8 +473,8 @@ public interface Athena {
          * Builds this instance into a new {@link Athena}
          *
          * @return a new {@link Athena} instance
-         * @throws UnsupportedBuildException       if there are fields like username and password left empty.
-         * @throws EpicGamesErrorException if there was an authentication exception
+         * @throws UnsupportedBuildException if there are fields like username and password left empty.
+         * @throws EpicGamesErrorException   if there was an authentication exception
          */
         public Athena build() throws UnsupportedBuildException, EpicGamesErrorException {
             if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");

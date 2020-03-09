@@ -13,6 +13,7 @@ import athena.util.request.Requests;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
@@ -38,7 +39,7 @@ final class PartyEventNotifier implements StanzaListener {
         this.service = context.partyService();
         this.gson = context.gson();
 
-        context.connectionManager().connection().addAsyncStanzaListener(this, StanzaTypeFilter.MESSAGE);
+        context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.NORMAL);
     }
 
     /**

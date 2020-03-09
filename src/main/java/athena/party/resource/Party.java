@@ -2,6 +2,7 @@ package athena.party.resource;
 
 import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
+import athena.party.resource.chat.PartyChat;
 import athena.party.resource.configuration.PartyConfiguration;
 import athena.party.resource.configuration.privacy.PartyPrivacy;
 import athena.party.resource.configuration.types.Joinability;
@@ -97,6 +98,13 @@ public final class Party extends AthenaContext {
      */
     public PartyConfiguration config() {
         return config;
+    }
+
+    /**
+     * @return The party chat.
+     */
+    public PartyChat chat() {
+        return parties.chat();
     }
 
     /**

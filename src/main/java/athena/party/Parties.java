@@ -4,6 +4,7 @@ import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.party.resource.Party;
 import athena.party.resource.authentication.PartyJoinRequest;
+import athena.party.resource.chat.PartyChat;
 import athena.party.resource.configuration.PartyConfiguration;
 import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.client.ClientPartyMember;
@@ -16,6 +17,9 @@ import athena.party.resource.member.meta.readiness.GameReadiness;
 import athena.party.resource.member.role.PartyRole;
 import athena.party.resource.meta.PartyMeta;
 import athena.party.service.PartyService;
+import athena.party.xmpp.event.IPartyEvent;
+import athena.party.xmpp.event.invite.PartyInviteEvent;
+import athena.party.xmpp.event.invite.PartyPingEvent;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.util.cleanup.AfterRefresh;
@@ -25,11 +29,15 @@ import athena.util.json.builder.JsonObjectBuilder;
 import athena.util.request.Requests;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import org.jivesoftware.smackx.muc.MultiUserChatManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Provides easy access and management for the party system and {@link athena.party.service.PartyService}
@@ -81,15 +89,31 @@ public final class Parties {
      */
     private int revision;
 
+    /**
+     * The party chat
+     */
+    private PartyChat chat;
+
+    private final Map<Class<? extends IPartyEvent>, List<Consumer<? extends IPartyEvent>>> map = new HashMap<>();
+
     public Parties(DefaultAthenaContext context) {
         this.context = context;
         this.gson = context.gson();
         this.service = context.partyService();
         this.notifier = new PartyEventNotifier(context, this);
         this.client = new ClientPartyMember(context);
+        this.chat = new PartyChat(MultiUserChatManager.getInstanceFor(context.connectionManager().connection()));
         updateMeta = new PartyMeta();
         deleteMeta = new ArrayList<>();
         // TODO: Create our own party later.
+    }
+
+    public void onPing(Consumer<PartyPingEvent> event) {
+        // TODO:
+    }
+
+    public void onInvite(Consumer<PartyInviteEvent> event) {
+        // TODO:
     }
 
     /**
@@ -100,7 +124,7 @@ public final class Parties {
      */
     public Party joinParty(String partyId) throws EpicGamesErrorException {
         // leave our current party.
-        if (party != null) party.leave();
+        if (party != null) leaveParty();
         // retrieve the new parties information
         party = Requests.executeCall(service.getParty(partyId));
         // craft our join payload
@@ -111,6 +135,8 @@ public final class Parties {
         Requests.executeCall(service.joinParty(partyId, context.localAccountId(), payload));
         // send our meta
         client.update();
+        // join the party chat
+        chat.joinNewChat(partyId, context.displayName(), context.localAccountId(), context.connectionManager().connection().getUser().getResourceOrEmpty().toString());
         return party;
     }
 
@@ -125,6 +151,7 @@ public final class Parties {
 
             party = null;
             client.set(null);
+            chat.leave();
         }
     }
 
@@ -139,6 +166,13 @@ public final class Parties {
             party = null;
             client.set(null);
         }
+    }
+
+    /**
+     * @return The party chat.
+     */
+    public PartyChat chat() {
+        return chat;
     }
 
     /**
@@ -641,11 +675,13 @@ public final class Parties {
     @AfterRefresh
     private void after(DefaultAthenaContext context) {
         notifier.afterRefresh(context);
+        chat = new PartyChat(MultiUserChatManager.getInstanceFor(context.connectionManager().connection()));
     }
 
     @BeforeRefresh
     private void before() {
         notifier.beforeRefresh();
+        chat.leave();
     }
 
     @Shutdown
@@ -653,6 +689,5 @@ public final class Parties {
         leaveParty();
         notifier.shutdown();
     }
-
 
 }
