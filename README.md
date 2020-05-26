@@ -2,71 +2,33 @@
 Athena is a java library for interacting with the Fortnite/Epic Games API.
 
 # Features
+Check out all the features of Athena [here](https://github.com/Vrekt/Athena2/wiki/Features).
 
-### Configuration
-When building new instances of `Athena` there are many configuration options available:
-- Device Auth support
-- Kill other sessions
-- Handle shutdown/cleanup automatically
-- Accept EULA if needed.
-- 2FA support
-- enabling XMPP.
-- Loading XMPP roster (configurable for large-friend accounts)
-- Reconnecting automatically on XMPP error.
-- Setting platform and application type
-- Debug the XMPP connection.
+This list is probably outdated but will give you a good idea of capabilities!
 
-### Account
-- Lookup accounts by display name and ID.
-- Listen for friend requests coming from the account.
-- Add friend listeners attached to an account.
-- Basic functions within the `Account` object such as (remove, block, unblock, etc)
-- External Auths support
-- Device Auth support
-- Addresses support
-- Changing password
+# Examples
 
-### EULA
-- `EulatrackingPublicService` interface for EULA requests.
+### Basic usage with only the API (Disables XMPP)
+```java
+final var athena = Athena.athenaWithoutXMPP("username", "password");
+```
 
-### Events
-- Get all Fortnite events
-- Download event data for account
-- Event leaderboards
+### Full usage with XMPP.
+```java
+final var athena = Athena.athenaWithXMPP("username", "password");
+```
 
-### Shop
-- Retrieve the weekly/daily shop.
-- Retrieve other storefronts.
+These are only default configurations, if you want more customization then check out [this](https://github.com/Vrekt/Athena2/wiki/Authenticating).
 
-### Friends
-- Get all friends
-- Get the blocklist
-- Adding, removing, blocking, unblocking, etc
-- Support for setting alias and notes for friends
-- Support for indiviual friend profiles (includes their alias, note, mutual, etc)
-- Change basic friend settings
+You can find party example code [here](https://github.com/Vrekt/Athena2/wiki/Parties).
 
-### Presence
-- Retrieve last-online times for friends.
-- Settings
-- Broadcast the account is playing Fortnite
-- Listen for incoming presences
-- Filter presences
-- Annotation event system for receiving presences.
+Check out other examples [here](https://github.com/Vrekt/Athena2/wiki/Examples)
 
-### Stats V2
-- Look up stats for an account
-- Able to be filtered by input and playlist.
-- Query specific stats
-- Leaderboards
-
-### Chat
-- Receive messages to consumers or listeners.
-- Send messages
-- Reply to messages
+# Notes
+It is recommended that if you are going to create a bot that will be constantly re-logging from testing and other events then you should use Device Auth. After awhile, Epic will prevent you from logging in and you will have to complete a captcha. To get around this you can use Device Auth. The documentation can be found [here](https://github.com/Vrekt/Athena2/wiki/Authenticating)
 
 # Documentation
-Refer to the wiki.
+The wiki will cover some stuff, but not all. Contact me on discord `vrekt#4387` for further help or questions.
 
 # TODO
 - Make events system better
@@ -75,3 +37,11 @@ Refer to the wiki.
 - GraphQL stuff
 - MCP
 - Fix shop
+
+# Credits
+- [Mix](https://github.com/MixV2/EpicResearch)
+- iXyles
+- [Terbau](https://github.com/Terbau/fortnitepy)
+- Bad_Mate | Pat
+- [Roberto](https://github.com/RobertoGraham)
+- [Kysune](https://github.com/SzymonLisowiec/node-epicgames-client)
