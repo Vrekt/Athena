@@ -37,3 +37,11 @@ The wiki will cover some stuff, but not all. Contact me on discord `vrekt#4387` 
 - GraphQL stuff
 - MCP
 - Fix shop
+
+# Credits
+- [Mix](https://github.com/MixV2/EpicResearch)
+- iXyles
+- [Terbau](https://github.com/Terbau/fortnitepy)
+- Bad_Mate | Pat
+- [Roberto](https://github.com/RobertoGraham)
+- [Kysune](https://github.com/SzymonLisowiec/node-epicgames-client)
