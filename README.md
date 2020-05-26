@@ -10,32 +10,22 @@ This list is probably outdated but will give you a good idea of capabilities!
 
 ### Basic usage with only the API (Disables XMPP)
 ```java
-            final var athena = new Athena.Builder()
-                    .email(myEmail)
-                    .password(myPassword)
-                    .killOtherSessions()
-                    .handleShutdown()
-                    .refreshAutomatically()
-                    .build();
+final var athena = Athena.athenaWithoutXMPP("username", "password");
 ```
 
 ### Full usage with XMPP.
 ```java
-            final var athena = new Athena.Builder()
-                    .email(myEmail)
-                    .password(myPassword)
-                    .killOtherSessions()
-                    .handleShutdown()
-                    .refreshAutomatically()
-                    .enableXmpp()
-                    .platform(Platform.WIN)
-                    .app("Fortnite")
-                    .build()
+final var athena = Athena.athenaWithXMPP("username", "password");
 ```
+
+These are only default configurations, if you want more customization then check out [this](https://github.com/Vrekt/Athena2/wiki/Authenticating).
 
 You can find party example code [here](https://github.com/Vrekt/Athena2/wiki/Parties).
 
 Check out other examples [here](https://github.com/Vrekt/Athena2/wiki/Examples)
+
+# Notes
+It is recommended that if you are going to create a bot that will be constantly re-logging from testing and other events then you should use Device Auth. After awhile, Epic will prevent you from logging in and you will have to complete a captcha. To get around this you can use Device Auth. The documentation can be found [here](https://github.com/Vrekt/Athena2/wiki/Authenticating)
 
 # Documentation
 The wiki will cover some stuff, but not all. Contact me on discord `vrekt#4387` for further help or questions.
