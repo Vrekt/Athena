@@ -2,71 +2,40 @@
 Athena is a java library for interacting with the Fortnite/Epic Games API.
 
 # Features
+Check out all the features of Athena [here](https://github.com/Vrekt/Athena2/wiki/Features)
+This list is probably outdated but will give you a good idea of capabilities!
 
-### Configuration
-When building new instances of `Athena` there are many configuration options available:
-- Device Auth support
-- Kill other sessions
-- Handle shutdown/cleanup automatically
-- Accept EULA if needed.
-- 2FA support
-- enabling XMPP.
-- Loading XMPP roster (configurable for large-friend accounts)
-- Reconnecting automatically on XMPP error.
-- Setting platform and application type
-- Debug the XMPP connection.
+# Examples
 
-### Account
-- Lookup accounts by display name and ID.
-- Listen for friend requests coming from the account.
-- Add friend listeners attached to an account.
-- Basic functions within the `Account` object such as (remove, block, unblock, etc)
-- External Auths support
-- Device Auth support
-- Addresses support
-- Changing password
+### Basic usage with only the API (Disables XMPP)
+```java
+            final var athena = new Athena.Builder()
+                    .email(myEmail)
+                    .password(myPassword)
+                    .killOtherSessions()
+                    .handleShutdown()
+                    .refreshAutomatically()
+                    .build();
+```
 
-### EULA
-- `EulatrackingPublicService` interface for EULA requests.
+### Full usage with XMPP.
+```java
+            final var athena = new Athena.Builder()
+                    .email(myEmail)
+                    .password(myPassword)
+                    .killOtherSessions()
+                    .handleShutdown()
+                    .refreshAutomatically()
+                    .enableXmpp()
+                    .platform(Platform.WIN)
+                    .app("Fortnite")
+                    .build()
+```
 
-### Events
-- Get all Fortnite events
-- Download event data for account
-- Event leaderboards
-
-### Shop
-- Retrieve the weekly/daily shop.
-- Retrieve other storefronts.
-
-### Friends
-- Get all friends
-- Get the blocklist
-- Adding, removing, blocking, unblocking, etc
-- Support for setting alias and notes for friends
-- Support for indiviual friend profiles (includes their alias, note, mutual, etc)
-- Change basic friend settings
-
-### Presence
-- Retrieve last-online times for friends.
-- Settings
-- Broadcast the account is playing Fortnite
-- Listen for incoming presences
-- Filter presences
-- Annotation event system for receiving presences.
-
-### Stats V2
-- Look up stats for an account
-- Able to be filtered by input and playlist.
-- Query specific stats
-- Leaderboards
-
-### Chat
-- Receive messages to consumers or listeners.
-- Send messages
-- Reply to messages
+Check out other examples with parties and more [here](https://github.com/Vrekt/Athena2/wiki/Examples)
 
 # Documentation
-Refer to the wiki.
+The wiki will cover some stuff, but not all. Contact me on discord `vrekt#4387` for further help or questions.
 
 # TODO
 - Make events system better
