@@ -758,6 +758,29 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Kick members from the party.
+     *
+     * @param members the members
+     * @return this instance
+     */
+    public Party kick(PartyMember... members) {
+        for (PartyMember member : members) kick(member);
+        return this;
+    }
+
+    /**
+     * Kick all members except the local account
+     *
+     * @return this instance
+     */
+    public Party kickAll() {
+        members.forEach(member -> {
+            if (!member.accountId().equalsIgnoreCase(localAccountId)) kick(member);
+        });
+        return this;
+    }
+
+    /**
      * Kick a member in the party
      *
      * @param member the member
