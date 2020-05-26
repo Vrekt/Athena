@@ -4,7 +4,7 @@ import athena.account.resource.Account;
 import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.party.resource.Party;
-import athena.party.resource.assignment.SquadAssignments;
+import athena.party.resource.assignment.SquadAssignment;
 import athena.party.resource.configuration.privacy.PartyPrivacy;
 import athena.party.resource.meta.PartyMeta;
 import athena.party.resource.playlist.PartyPlaylistData;
@@ -251,7 +251,7 @@ public final class PartyUpdatedEvent extends AthenaContext {
     /**
      * @return the new squad assignments
      */
-    public List<SquadAssignments> squadAssignments() {
+    public List<SquadAssignment> squadAssignments() {
         return updated.squadAssignments();
     }
 

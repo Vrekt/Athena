@@ -1,4 +1,4 @@
-package athena.party.resource.authentication;
+package athena.party.resource.requests;
 
 import athena.types.Platform;
 import athena.util.json.builder.JsonArrayBuilder;

@@ -3,6 +3,7 @@ package athena.party.xmpp.event.invite;
 import athena.context.AthenaContext;
 import athena.party.resource.Party;
 import athena.party.resource.meta.invites.PingOrInvitationMeta;
+import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -158,6 +159,13 @@ public final class PartyInviteEvent extends AthenaContext {
     public Party joinParty() {
         if (party == null) throw new IllegalStateException("No party to join!");
         return parties.joinParty(party.partyId());
+    }
+
+    /**
+     * Decline this invite
+     */
+    public void decline() {
+        Requests.executeCall(partyService.declineInvite(partyId, localAccountId));
     }
 
 }

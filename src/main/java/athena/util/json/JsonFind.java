@@ -11,11 +11,6 @@ import java.util.Optional;
 public final class JsonFind {
 
     /**
-     * An empty object used for returning when a object can't be found in the provided json.
-     */
-    private static final JsonObject EMPTY_OBJECT = new JsonObject();
-
-    /**
      * An empty array used for returning when a array can't be found in the provided json.
      */
     private static final JsonArray EMPTY_ARRAY = new JsonArray();

@@ -79,7 +79,7 @@ public final class ClientPartyMember {
     /**
      * Initialize our meta with base default values.
      */
-    private void initializeBaseMeta() {
+    public void initializeBaseMeta() {
         updateMeta.featDefinition("None");
         updateMeta.memberSquadAssignmentRequest(new MemberSquadAssignmentRequest());
         updateMeta.zoneInstanceId("");

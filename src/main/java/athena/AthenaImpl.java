@@ -28,6 +28,7 @@ import athena.party.resource.connection.Connection;
 import athena.party.resource.invite.PartyInvitation;
 import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.meta.PartyMemberMeta;
+import athena.party.resource.member.meta.joinrequest.JoinRequestUsers;
 import athena.party.resource.meta.PartyMeta;
 import athena.party.resource.ping.PartyPing;
 import athena.party.service.PartyService;
@@ -49,9 +50,7 @@ import athena.util.cleanup.AfterRefresh;
 import athena.util.cleanup.BeforeRefresh;
 import athena.util.cleanup.Shutdown;
 import athena.util.event.EventFactory;
-import athena.util.json.converters.InputConverter;
-import athena.util.json.converters.InstantConverter;
-import athena.util.json.converters.LastOnlineResponseConverter;
+import athena.util.json.converters.*;
 import athena.util.json.service.AthenaServiceAdapterFactory;
 import athena.util.json.wrapped.WrappedTypeAdapterFactory;
 import athena.util.request.Requests;
@@ -59,7 +58,6 @@ import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
 import okhttp3.Interceptor;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
@@ -287,14 +285,12 @@ final class AthenaImpl implements Athena, Interceptor {
             eventFactory.registerEventListener(friends);
             eventFactory.registerEventListener(presences);
         } else {
-            // we dont have XMPP so just set them to null.
             chat = null;
             parties = null;
         }
 
         // finally initialize resources inside the context.
         context.initializeResourcesOnly(this);
-
         LOGGER.atInfo().log("Ready!");
     }
 
@@ -306,41 +302,45 @@ final class AthenaImpl implements Athena, Interceptor {
     private Gson initializeGson() {
         final var gsonBuilder = new GsonBuilder();
 
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(UnfilteredStatistic.class, this).useHooks());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(ExternalAuth.class, this).useHooks());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Account.class, this).useHooks().useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Profile.class, this).useHooks().useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Friend.class, this).useHooks().useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Connection.class, this).useHooks());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(Party.class, this).useHooks().useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberMeta.class, this).useHooks());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(FortnitePresence.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(LastOnlineResponse.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyInvitation.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyPing.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyPingEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyInviteEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberJoinedEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberKickedEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberLeftEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberNewCaptainEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberUpdatedEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMember.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyMemberDisconnectedEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new AthenaServiceAdapterFactory(PartyUpdatedEvent.class, this).useContext());
-        gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMeta.class));
-        gsonBuilder.registerTypeAdapterFactory(new WrappedTypeAdapterFactory(PartyMemberMeta.class));
+        // hooks only
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(UnfilteredStatistic.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(ExternalAuth.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(Connection.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(PartyMemberMeta.class, this));
+        // context only
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(FortnitePresence.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(LastOnlineResponse.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyInvitation.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyPing.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyPingEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyInviteEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberJoinedEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberKickedEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberLeftEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberNewCaptainEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberUpdatedEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMember.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberDisconnectedEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyUpdatedEvent.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(PartyMemberRequireConfirmationEvent.class, this));
+        // both
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.of(Account.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.of(Profile.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.of(Friend.class, this));
+        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.of(Party.class, this));
+        // other
+        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(JoinRequestUsers.class));
+        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(PartyMeta.class));
+        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(PartyMemberMeta.class));
 
         // converters.
         gsonBuilder.registerTypeAdapter(Input.class, new InputConverter());
-        gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, new LastOnlineResponseConverter());
         gsonBuilder.registerTypeAdapter(Instant.class, new InstantConverter());
+        gsonBuilder.registerTypeAdapter(Platform.class, new PlatformConverter());
+        gsonBuilder.registerTypeAdapter(Region.class, new RegionConverter());
+        gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, new LastOnlineResponseConverter());
 
-        // constants type adapters.
-        gsonBuilder.registerTypeAdapter(Platform.class, (JsonDeserializer<Platform>) (json, typeOfT, context) -> Platform.typeOf(json.getAsJsonPrimitive().getAsString()));
-        gsonBuilder.registerTypeAdapter(Region.class, (JsonDeserializer<Region>) (json, typeOfT, context) -> Region.valueOf(json.getAsJsonPrimitive().getAsString()));
-
-        // ignore super classes basically.
+        // ignore protected, static and transient fields.
         gsonBuilder.excludeFieldsWithModifiers(Modifier.PROTECTED, Modifier.STATIC, Modifier.TRANSIENT);
         return gsonBuilder.create();
     }
@@ -573,6 +573,8 @@ final class AthenaImpl implements Athena, Interceptor {
         // shutdown OkHttp
         client.dispatcher().executorService().shutdownNow();
         client.connectionPool().evictAll();
+
+        LOGGER.atInfo().log("Shutdown successfully.");
     }
 
     @NotNull

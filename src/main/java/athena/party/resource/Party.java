@@ -2,6 +2,7 @@ package athena.party.resource;
 
 import athena.context.AthenaContext;
 import athena.exception.EpicGamesErrorException;
+import athena.party.resource.assignment.SquadAssignment;
 import athena.party.resource.chat.PartyChat;
 import athena.party.resource.configuration.PartyConfiguration;
 import athena.party.resource.configuration.privacy.PartyPrivacy;
@@ -19,7 +20,6 @@ import athena.party.resource.playlist.PartyPlaylistData;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.util.json.service.hooks.annotation.PostDeserialize;
-import athena.util.json.service.hooks.annotation.PreDeserialize;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -143,16 +143,6 @@ public final class Party extends AthenaContext {
     }
 
     /**
-     * Set the custom match key for the party.
-     *
-     * @param matchKey the match key
-     */
-    public void setCustomMatchKey(String matchKey) {
-        parties.updateMeta().customMatchKey(matchKey);
-        parties.updateParty();
-    }
-
-    /**
      * @return {@code true} if the party is joined in progress.
      */
     public boolean partyIsJoinedInProgress() {
@@ -199,29 +189,6 @@ public final class Party extends AthenaContext {
      */
     public PartyPrivacy privacySettings() {
         return meta.privacySettings();
-    }
-
-    /**
-     * Set the privacy settings of the party.
-     *
-     * @param privacy the privacy settings
-     */
-    public void setPartyPrivacy(PartyPrivacy privacy) {
-        if (!privacy.isPrivate()) {
-            parties.addDeleteMeta("urn:epic:cfg:not-accepting-members");
-            parties.updateMeta().presencePerm("Anyone");
-        } else {
-            parties.updateMeta().notAcceptingMembersReason("7");
-            parties.updateMeta().presencePerm("Noone");
-        }
-
-        // set our configuration
-        config = privacy.isPrivate() ? PartyConfiguration.PRIVATE_PARTY
-                : privacy.partyType().equals("Public") ? PartyConfiguration.PUBLIC_PARTY
-                : PartyConfiguration.FRIENDS_ONLY_PARTY;
-
-        parties.updateMeta().privacySettings(privacy);
-        parties.updateParty();
     }
 
     /**
@@ -332,19 +299,6 @@ public final class Party extends AthenaContext {
     }
 
     /**
-     * Set the playlist for this party
-     *
-     * @param playlistName  the playlist name
-     * @param tournamentId  the tournament ID or ""
-     * @param eventWindowId the event window ID or ""
-     * @param regionId      the region ID, ex: "NAE"
-     */
-    public void setPlaylist(String playlistName, String tournamentId, String eventWindowId, String regionId) {
-        parties.updateMeta().playlistData(new PartyPlaylistData(playlistName, tournamentId, eventWindowId, regionId));
-        parties.update();
-    }
-
-    /**
      * @return {@code true} if squad fill is enabled.
      */
     public boolean squadFill() {
@@ -352,13 +306,79 @@ public final class Party extends AthenaContext {
     }
 
     /**
-     * Set the squad fill
+     * Set the custom key.
      *
-     * @param squadFill the squad fill
+     * @param customKey the custom key
+     * @return this
      */
-    public void setSquadFill(boolean squadFill) {
-        parties.updateMeta().squadFill(Boolean.toString(squadFill));
-        parties.update();
+    public Party setCustomKey(String customKey) {
+        parties.setCustomKey(customKey);
+        return this;
+    }
+
+    /**
+     * Set the privacy
+     *
+     * @param privacy the privacy
+     * @return this
+     */
+    public Party setPrivacy(PartyPrivacy privacy) {
+        parties.setPrivacy(privacy);
+        return this;
+    }
+
+    /**
+     * Set the squad assignments
+     *
+     * @param squadAssignments the squad assignments
+     */
+    public Party setSquadAssignments(List<SquadAssignment> squadAssignments) {
+        parties.setSquadAssignments(squadAssignments);
+        return this;
+    }
+
+    /**
+     * Set the playlist
+     *
+     * @param playlist the playlist
+     */
+    public Party setPlaylist(PartyPlaylistData playlist) {
+        parties.setPlaylist(playlist);
+        return this;
+    }
+
+    /**
+     * Set the playlist
+     *
+     * @param playlistName  the playlist name, ex: "Playlist_DefaultSolo"
+     * @param tournamentId  the tournament ID or {@code ""}
+     * @param eventWindowId the event window ID or {@code ""}
+     * @param regionId      the region ID, ex: "NAE"
+     */
+    public Party setPlaylist(String playlistName, String tournamentId, String eventWindowId, String regionId) {
+        return setPlaylist(new PartyPlaylistData(playlistName, tournamentId, eventWindowId, regionId));
+    }
+
+    /**
+     * Set squad fill
+     *
+     * @param squadFill the squad fill status
+     * @return this
+     */
+    public Party setSquadFill(boolean squadFill) {
+        parties.setSquadFill(squadFill);
+        return this;
+    }
+
+    /**
+     * Update the configuration
+     *
+     * @param configuration the configuration
+     * @return this
+     */
+    public Party updateConfiguration(PartyConfiguration configuration) {
+        this.config = configuration;
+        return this;
     }
 
     /**
@@ -376,6 +396,13 @@ public final class Party extends AthenaContext {
      */
     public PartyMember getMember(String accountId) {
         return members.stream().filter(member -> member.accountId().equals(accountId)).findAny().orElse(null);
+    }
+
+    /**
+     * @return the leader/captain of the party.
+     */
+    public PartyMember leader() {
+        return members.stream().filter(member -> member.role() == PartyRole.CAPTAIN).findFirst().orElse(members.get(0));
     }
 
     /**
@@ -686,16 +713,6 @@ public final class Party extends AthenaContext {
     }
 
     /**
-     * Updates the party meta, can only be done if you are leader.
-     *
-     * @return this
-     */
-    public Party update() {
-        parties.update();
-        return this;
-    }
-
-    /**
      * Update the captain.
      *
      * @param newCaptain the new captain
@@ -772,10 +789,5 @@ public final class Party extends AthenaContext {
         config.chatEnabled(Boolean.toString(meta.chatEnabled()));
         config.canJoin(Boolean.toString(meta.canJoin()));
         return this;
-    }
-
-    @PreDeserialize
-    private void preDeserialize() {
-        // TODO
     }
 }

@@ -26,29 +26,52 @@ public final class AthenaServiceAdapterFactory implements TypeAdapterFactory {
      */
     private boolean useHooks, useContext;
 
-    public AthenaServiceAdapterFactory(Class<?> clazz, Athena athena) {
+    /**
+     * Initialize a new instance with hooks only.
+     *
+     * @param type   the type
+     * @param athena athena
+     * @return a new {@link AthenaServiceAdapterFactory}
+     */
+    public static AthenaServiceAdapterFactory withHooksOnly(Class<?> type, Athena athena) {
+        return new AthenaServiceAdapterFactory(type, athena, true, false);
+    }
+
+    /**
+     * Initialize a new instance with context only.
+     *
+     * @param type   the type
+     * @param athena athena
+     * @return a new {@link AthenaServiceAdapterFactory}
+     */
+    public static AthenaServiceAdapterFactory withContextOnly(Class<?> type, Athena athena) {
+        return new AthenaServiceAdapterFactory(type, athena, false, true);
+    }
+
+    /**
+     * Initialize a new instance with both services.
+     *
+     * @param type   the type
+     * @param athena athena
+     * @return a new {@link AthenaServiceAdapterFactory}
+     */
+    public static AthenaServiceAdapterFactory of(Class<?> type, Athena athena) {
+        return new AthenaServiceAdapterFactory(type, athena, true, true);
+    }
+
+    /**
+     * Initialize this service factory.
+     *
+     * @param clazz   the class type.
+     * @param athena  athena
+     * @param hooks   {@code true} if to use hooks.
+     * @param context {@code true} if to use context.
+     */
+    private AthenaServiceAdapterFactory(Class<?> clazz, Athena athena, boolean hooks, boolean context) {
         this.clazz = clazz;
         this.athena = athena;
-    }
-
-    /**
-     * Set to use hooks.
-     *
-     * @return this
-     */
-    public AthenaServiceAdapterFactory useHooks() {
-        this.useHooks = true;
-        return this;
-    }
-
-    /**
-     * Set to use context
-     *
-     * @return this
-     */
-    public AthenaServiceAdapterFactory useContext() {
-        this.useContext = true;
-        return this;
+        this.useHooks = hooks;
+        this.useContext = context;
     }
 
     @Override

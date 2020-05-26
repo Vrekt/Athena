@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Represents squad assignments inside a party.
  */
-public final class SquadAssignments {
+public final class SquadAssignment {
 
     /**
      * The account ID.
@@ -17,6 +17,11 @@ public final class SquadAssignments {
      */
     @SerializedName("absoluteMemberIdx")
     private int memberIndex;
+
+    public SquadAssignment(String memberId, int memberIndex) {
+        this.memberId = memberId;
+        this.memberIndex = memberIndex;
+    }
 
     /**
      * @return the member ID.

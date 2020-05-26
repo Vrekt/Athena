@@ -13,7 +13,6 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.ping.PingManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -77,6 +76,9 @@ public final class XMPPConnectionManager implements ConnectionListener {
         this.debug = debug;
         this.platform = platform;
         this.application = application;
+
+        connectionListeners.put(Boolean.TRUE, List.of());
+        connectionListeners.put(Boolean.FALSE, List.of());
     }
 
     /**
@@ -155,7 +157,6 @@ public final class XMPPConnectionManager implements ConnectionListener {
      * @param connectionConsumer the consumer
      */
     public void onConnected(Consumer<XMPPTCPConnection> connectionConsumer) {
-        connectionListeners.putIfAbsent(Boolean.FALSE, new ArrayList<>());
         connectionListeners.get(Boolean.FALSE).add(connectionConsumer);
     }
 
@@ -167,7 +168,6 @@ public final class XMPPConnectionManager implements ConnectionListener {
      * @param connectionConsumer the consumer
      */
     public void onAuthenticated(Consumer<XMPPTCPConnection> connectionConsumer) {
-        connectionListeners.putIfAbsent(Boolean.TRUE, new ArrayList<>());
         connectionListeners.get(Boolean.TRUE).add(connectionConsumer);
     }
 
@@ -198,7 +198,7 @@ public final class XMPPConnectionManager implements ConnectionListener {
 
     @Override
     public void authenticated(XMPPConnection connection, boolean resumed) {
-        if (connectionListeners.containsKey(Boolean.TRUE)) connectionListeners.get(Boolean.TRUE).forEach(connectionConsumer -> connectionConsumer.accept((XMPPTCPConnection) connection));
+        connectionListeners.get(Boolean.TRUE).forEach(connectionConsumer -> connectionConsumer.accept((XMPPTCPConnection) connection));
     }
 
     @Override
@@ -208,7 +208,7 @@ public final class XMPPConnectionManager implements ConnectionListener {
 
     @Override
     public void connected(XMPPConnection connection) {
-        if (connectionListeners.containsKey(Boolean.FALSE)) connectionListeners.get(Boolean.TRUE).forEach(connectionConsumer -> connectionConsumer.accept((XMPPTCPConnection) connection));
+        connectionListeners.get(Boolean.FALSE).forEach(connectionConsumer -> connectionConsumer.accept((XMPPTCPConnection) connection));
     }
 
     @Override

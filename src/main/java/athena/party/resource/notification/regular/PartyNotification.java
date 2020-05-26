@@ -43,6 +43,10 @@ public enum PartyNotification {
      * Represents when a member expires after disconnecting.
      */
     MEMBER_EXPIRED("com.epicgames.social.party.notification.v0.MEMBER_EXPIRED"),
+    /**
+     * Represents when a member requires confirmation to join.
+     */
+    MEMBER_REQUIRE_CONFIRMATION("com.epicgames.social.party.notification.v0.MEMBER_REQUIRE_CONFIRMATION"),
 
     /**
      * Represents when the party gets updated

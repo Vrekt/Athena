@@ -1,6 +1,6 @@
 package athena.party.resource.meta;
 
-import athena.party.resource.assignment.SquadAssignments;
+import athena.party.resource.assignment.SquadAssignment;
 import athena.party.resource.configuration.privacy.PartyPrivacy;
 import athena.party.resource.playlist.PartyPlaylistData;
 import athena.util.json.wrapped.annotation.WrappedArray;
@@ -132,8 +132,8 @@ public final class PartyMeta {
      * Basically its how each member is arranged in an index.
      */
     @SerializedName("RawSquadAssignments_j")
-    @WrappedArray(value = "RawSquadAssignments", type = SquadAssignments.class)
-    private List<SquadAssignments> squadAssignments;
+    @WrappedArray(value = "RawSquadAssignments", type = SquadAssignment.class)
+    private List<SquadAssignment> squadAssignments;
 
     /**
      * ""
@@ -374,7 +374,7 @@ public final class PartyMeta {
     /**
      * @return list of squad assignments
      */
-    public List<SquadAssignments> squadAssignments() {
+    public List<SquadAssignment> squadAssignments() {
         return squadAssignments;
     }
 
@@ -460,124 +460,334 @@ public final class PartyMeta {
         return Boolean.parseBoolean(squadFill);
     }
 
-    public void partyMatchmakingInfo(PartyMatchmakingInfo partyMatchmakingInfo) {
+    /**
+     * Set playlist matchmaking info
+     *
+     * @param partyMatchmakingInfo the matchmaking info
+     * @return this
+     */
+    public PartyMeta partyMatchmakingInfo(PartyMatchmakingInfo partyMatchmakingInfo) {
         this.partyMatchmakingInfo = partyMatchmakingInfo;
+        return this;
     }
 
-    public void platformSessions(PlatformSessions platformSessions) {
+    /**
+     * Set platform sessions, usually an empty array
+     *
+     * @param platformSessions the platform sessions
+     * @return this
+     */
+    public PartyMeta platformSessions(PlatformSessions platformSessions) {
         this.platformSessions = platformSessions;
+        return this;
     }
 
-    public void lobbyConnectionStarted(String lobbyConnectionStarted) {
+    /**
+     * Set connection started.
+     *
+     * @param lobbyConnectionStarted {@code "true" or "false"}
+     * @return this
+     */
+    public PartyMeta lobbyConnectionStarted(String lobbyConnectionStarted) {
         this.lobbyConnectionStarted = lobbyConnectionStarted;
+        return this;
     }
 
-    public void customMatchKey(String customMatchKey) {
+    /**
+     * Set the custom match key.
+     *
+     * @param customMatchKey the custom key
+     * @return this
+     */
+    public PartyMeta customMatchKey(String customMatchKey) {
         this.customMatchKey = customMatchKey;
+        return this;
     }
 
-    public void zoneInstanceId(String zoneInstanceId) {
+    /**
+     * Set the zone instance ID, usually empty.
+     *
+     * @param zoneInstanceId the zone instance ID.
+     * @return this
+     */
+    public PartyMeta zoneInstanceId(String zoneInstanceId) {
         this.zoneInstanceId = zoneInstanceId;
+        return this;
     }
 
-    public void partyIsJoinedInProgress(String partyIsJoinedInProgress) {
+    /**
+     * Set party joined in progress.
+     *
+     * @param partyIsJoinedInProgress {@code "true" or "false"}
+     * @return this
+     */
+    public PartyMeta partyIsJoinedInProgress(String partyIsJoinedInProgress) {
         this.partyIsJoinedInProgress = partyIsJoinedInProgress;
+        return this;
     }
 
-    public void partyTypeId(String partyTypeId) {
+    /**
+     * Set the party type ID - "default"
+     *
+     * @param partyTypeId the party type ID.
+     * @return this
+     */
+    public PartyMeta partyTypeId(String partyTypeId) {
         this.partyTypeId = partyTypeId;
+        return this;
     }
 
-    public void isCriticalMission(String isCriticalMission) {
+    /**
+     * Set if critical mission.
+     *
+     * @param isCriticalMission {@code "true" or "false"}
+     * @return this
+     */
+    public PartyMeta isCriticalMission(String isCriticalMission) {
         this.isCriticalMission = isCriticalMission;
+        return this;
     }
 
-    public void buildId(String buildId) {
+    /**
+     * Set the party build ID.
+     *
+     * @param buildId the build ID.
+     * @return this
+     */
+    public PartyMeta buildId(String buildId) {
         this.buildId = buildId;
+        return this;
     }
 
-    public void presencePerm(String presencePerm) {
+    /**
+     * Set the presence permission
+     *
+     * @param presencePerm the presence permission
+     * @return this
+     */
+    public PartyMeta presencePerm(String presencePerm) {
         this.presencePerm = presencePerm;
+        return this;
     }
 
-    public void acceptingMembers(String acceptingMembers) {
+    /**
+     * Set accepting members.
+     *
+     * @param acceptingMembers {@code "true" or "false"}
+     * @return this
+     */
+    public PartyMeta acceptingMembers(String acceptingMembers) {
         this.acceptingMembers = acceptingMembers;
+        return this;
     }
 
-    public void allowJoinInProgress(String allowJoinInProgress) {
+    /**
+     * Set allow join in progress
+     *
+     * @param allowJoinInProgress {@code "true" or "false"}
+     * @return this
+     */
+    public PartyMeta allowJoinInProgress(String allowJoinInProgress) {
         this.allowJoinInProgress = allowJoinInProgress;
+        return this;
     }
 
-    public void matchmakingResult(String matchmakingResult) {
+    /**
+     * Set the matchmaking result.
+     *
+     * @param matchmakingResult the result
+     * @return this
+     */
+    public PartyMeta matchmakingResult(String matchmakingResult) {
         this.matchmakingResult = matchmakingResult;
+        return this;
     }
 
-    public void privacySettings(PartyPrivacy privacySettings) {
+    /**
+     * Set the privacy settings
+     *
+     * @param privacySettings the privacy settings
+     * @return this
+     */
+    public PartyMeta privacySettings(PartyPrivacy privacySettings) {
         this.privacySettings = privacySettings;
+        return this;
     }
 
-    public void joinRequestAction(String joinRequestAction) {
+    /**
+     * Set the join request action, usually "Manual"
+     *
+     * @param joinRequestAction the action
+     * @return this
+     */
+    public PartyMeta joinRequestAction(String joinRequestAction) {
         this.joinRequestAction = joinRequestAction;
+        return this;
     }
 
-    public void lfgTime(Instant lfgTime) {
+    /**
+     * Set the 'looking for game' time.
+     *
+     * @param lfgTime the LFG time
+     * @return this
+     */
+    public PartyMeta lfgTime(Instant lfgTime) {
         this.lfgTime = lfgTime;
+        return this;
     }
 
-    public void invitePermission(String invitePermission) {
+    /**
+     * Set the invite permission
+     *
+     * @param invitePermission the invite permission
+     * @return this
+     */
+    public PartyMeta invitePermission(String invitePermission) {
         this.invitePermission = invitePermission;
+        return this;
     }
 
-    public void tileStates(TileStates tileStates) {
+    /**
+     * An empty array.
+     *
+     * @param tileStates the states.
+     * @return this
+     */
+    public PartyMeta tileStates(TileStates tileStates) {
         this.tileStates = tileStates;
+        return this;
     }
 
-    public void squadAssignments(List<SquadAssignments> squadAssignments) {
+    /**
+     * Set the squad assignments
+     *
+     * @param squadAssignments the list of squad assignments
+     * @return this
+     */
+    public PartyMeta squadAssignments(List<SquadAssignment> squadAssignments) {
         this.squadAssignments = squadAssignments;
+        return this;
     }
 
-    public void theaterId(String theaterId) {
+    /**
+     * Set the theater ID, usually ""
+     *
+     * @param theaterId the theater ID.
+     * @return this
+     */
+    public PartyMeta theaterId(String theaterId) {
         this.theaterId = theaterId;
+        return this;
     }
 
-    public void notAcceptingMembersReason(String notAcceptingMembersReason) {
+    /**
+     * Set the not accepting members reason. {@code "7"} for private
+     *
+     * @param notAcceptingMembersReason the reason
+     * @return this
+     */
+    public PartyMeta notAcceptingMembersReason(String notAcceptingMembersReason) {
         this.notAcceptingMembersReason = notAcceptingMembersReason;
+        return this;
     }
 
-    public void matchmakingState(String matchmakingState) {
+    /**
+     * Set the matchmaking state, ex: "BattleRoyaleView"
+     *
+     * @param matchmakingState the state
+     * @return this
+     */
+    public PartyMeta matchmakingState(String matchmakingState) {
         this.matchmakingState = matchmakingState;
+        return this;
     }
 
-    public void partyState(String partyState) {
+    /**
+     * Set the party state, ex: "BattleRoyaleView"
+     *
+     * @param partyState the state
+     * @return this
+     */
+    public PartyMeta partyState(String partyState) {
         this.partyState = partyState;
+        return this;
     }
 
-    public void chatEnabled(String chatEnabled) {
+    /**
+     * Set chat enabled.
+     *
+     * @param chatEnabled {@code "Enabled" or "Disabled"}
+     * @return this
+     */
+    public PartyMeta chatEnabled(String chatEnabled) {
         this.chatEnabled = chatEnabled;
+        return this;
     }
 
-    public void sessionId(String sessionId) {
+    /**
+     * Set the game session ID.
+     *
+     * @param sessionId the session ID.
+     * @return this
+     */
+    public PartyMeta sessionId(String sessionId) {
         this.sessionId = sessionId;
+        return this;
     }
 
-    public void zoneTileIndex(String zoneTileIndex) {
+    /**
+     * Usually -1
+     *
+     * @param zoneTileIndex the index
+     * @return this
+     */
+    public PartyMeta zoneTileIndex(String zoneTileIndex) {
         this.zoneTileIndex = zoneTileIndex;
+        return this;
     }
 
-    public void sessionKey(String sessionKey) {
+    /**
+     * Set the game session join key
+     *
+     * @param sessionKey the key
+     * @return this
+     */
+    public PartyMeta sessionKey(String sessionKey) {
         this.sessionKey = sessionKey;
+        return this;
     }
 
-    public void canJoin(String canJoin) {
+    /**
+     * Set if can join.
+     *
+     * @param canJoin {@code "true" or "false}
+     * @return this
+     */
+    public PartyMeta canJoin(String canJoin) {
         this.canJoin = canJoin;
+        return this;
     }
 
-    public void playlistData(PartyPlaylistData playlistData) {
+    /**
+     * Set the playlist data
+     *
+     * @param playlistData the playlist data
+     * @return this
+     */
+    public PartyMeta playlistData(PartyPlaylistData playlistData) {
         this.playlistData = playlistData;
+        return this;
     }
 
-    public void squadFill(String squadFill) {
+    /**
+     * Set the squad fill status.
+     *
+     * @param squadFill the squad fill state
+     * @return this
+     */
+    public PartyMeta squadFill(String squadFill) {
         this.squadFill = squadFill;
+        return this;
     }
 
     /**
@@ -588,13 +798,13 @@ public final class PartyMeta {
          * The build ID or -1
          * The hotfix version or -1
          */
-        private int buildId, hotfixVersion;
+        private int buildId = -1, hotfixVersion = -1;
 
         /**
          * Region, playlist, tournament, eventWindow and linkCode??
          * see {@link athena.events.Events}
          */
-        private String regionId, playlistName, tournamentId, eventWindowId, linkCode;
+        private String regionId = "", playlistName = "None", tournamentId = "", eventWindowId = "", linkCode = "";
 
         /**
          * @return the build ID.
@@ -650,18 +860,18 @@ public final class PartyMeta {
      * Platform sessions.
      * Usually empty.
      */
-    private static final class PlatformSessions {
+    public static final class PlatformSessions {
         @SerializedName("PlatformSessions")
-        private JsonArray platformSessions;
+        private JsonArray platformSessions = new JsonArray();
     }
 
     /**
      * Tile states.
      * Usually empty.
      */
-    private static final class TileStates {
+    public static final class TileStates {
         @SerializedName("TileStates")
-        private JsonArray tileStates;
+        private JsonArray tileStates = new JsonArray();
     }
 
 }

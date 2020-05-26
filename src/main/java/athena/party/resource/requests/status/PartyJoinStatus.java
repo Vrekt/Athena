@@ -1,4 +1,4 @@
-package athena.party.resource.authentication.status;
+package athena.party.resource.requests.status;
 
 import com.google.gson.annotations.SerializedName;
 

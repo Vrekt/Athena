@@ -196,6 +196,12 @@ public final class PartyMemberMeta {
     private String playersLeft;
 
     /**
+     * The join request users.
+     */
+    //@SerializedName("urn:epic:member:joinrequestusers_j")
+    //  private JoinRequestUsers joinRequestUsers;
+
+    /**
      * Set the platform.
      */
     @PostDeserialize

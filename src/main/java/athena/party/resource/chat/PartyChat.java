@@ -8,6 +8,9 @@ import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Represents the party chat.
  */
@@ -23,8 +26,22 @@ public final class PartyChat {
      */
     private MultiUserChat chat;
 
+    /**
+     * Keeps track of the last time we joined a party so we can queue messages.
+     */
+    private long lastJoinTime;
+
     public PartyChat(MultiUserChatManager manager) {
         this.manager = manager;
+    }
+
+    /**
+     * Set the last join time internally. (Only to be used internally)
+     *
+     * @param time the time
+     */
+    public void setLastJoinTimeInternal(long time) {
+        this.lastJoinTime = time;
     }
 
     /**
@@ -79,6 +96,21 @@ public final class PartyChat {
      * @param message the message
      */
     public void sendMessage(String message) {
+        final var delta = System.currentTimeMillis() - lastJoinTime;
+        if (delta <= 2000) {
+            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> sendMessageInternal(message));
+        } else {
+            sendMessageInternal(message);
+        }
+    }
+
+
+    /**
+     * Send a message to this chat.
+     *
+     * @param message the message
+     */
+    private void sendMessageInternal(String message) {
         try {
             chat.sendMessage(message);
         } catch (SmackException.NotConnectedException | InterruptedException exception) {

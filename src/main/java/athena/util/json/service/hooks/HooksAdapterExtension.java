@@ -25,22 +25,6 @@ public final class HooksAdapterExtension<T> {
     }
 
     /**
-     * Invoked before a object is serialized
-     *
-     * @param value the object
-     */
-    public void preSerialize(T value) {
-        final var methods = inspector.getMethods(value.getClass(), PreDeserialize.class);
-        for (final var method : methods) {
-            try {
-                method.invoke(value);
-            } catch (IllegalAccessException | InvocationTargetException exception) {
-                exception.printStackTrace();
-            }
-        }
-    }
-
-    /**
      * Invoked after the object has been deserialized.
      *
      * @param deserialized the object

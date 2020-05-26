@@ -29,11 +29,21 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
     private final Map<Type, WrappedField> fields = new HashMap<>();
 
     /**
+     * Initialize a new instance.
+     *
+     * @param baseType the type
+     * @return a new {@link WrappedTypeAdapterFactory}
+     */
+    public static WrappedTypeAdapterFactory of(Class<?> baseType) {
+        return new WrappedTypeAdapterFactory(baseType);
+    }
+
+    /**
      * Initialize
      *
      * @param baseType the base type class.
      */
-    public WrappedTypeAdapterFactory(Class<?> baseType) {
+    private WrappedTypeAdapterFactory(Class<?> baseType) {
 
         // Add our list of typeObject field types.
         FieldUtils.getFieldsListWithAnnotation(baseType, WrappedObject.class)
@@ -85,12 +95,9 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
                     final var adapterToUse = (value instanceof ArrayList) ?
                             (TypeAdapter<R>) gson.getDelegateAdapter(WrappedTypeAdapterFactory.this, TypeToken.get(value.getClass()))
                             : fieldTypeAdapter;
-
-                    final var toString = adapterToUse.toJson(value);
-                    final var writeObject = new JsonObject();
-                    writeObject.addProperty(field.wrappedValue, toString);
-                    // finally write this.
-                    gson.toJson(writeObject, out);
+                    final var object = new JsonObject();
+                    object.add(field.wrappedValue, adapterToUse.toJsonTree(value));
+                    out.value(object.toString());
                 }
             }
 

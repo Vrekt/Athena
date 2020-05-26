@@ -35,16 +35,6 @@ public interface AuthenticationService {
     Call<Reputation> reputation(@Header("x-xsrf-token") String xsrfToken);
 
     /**
-     * Login normally.
-     *
-     * @param xsrfToken the XSRF token
-     * @param body      the form
-     * @return Void
-     */
-    //@POST("login")
-    // Call<Void> login(@Header("x-xsrf-token") String xsrfToken, @Body FormBody body);
-
-    /**
      * Login using 2FA.
      *
      * @param xsrfToken the XSRF token

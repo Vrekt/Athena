@@ -82,6 +82,12 @@ final class PartyEventNotifier implements StanzaListener {
 
     }
 
+    /**
+     * Handle the party notification
+     *
+     * @param notification the notification
+     * @param object       the json payload
+     */
     private void handleNotification(PartyNotification notification, JsonObject object) {
         if (notification == PartyNotification.PING) {
             // adapt to the event.
@@ -108,6 +114,7 @@ final class PartyEventNotifier implements StanzaListener {
             final var event = gson.fromJson(object, PartyMemberJoinedEvent.class);
             // update our party first.
             parties.updatePartyInformation();
+            parties.refreshSquadAssignments();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
@@ -115,6 +122,7 @@ final class PartyEventNotifier implements StanzaListener {
             final var event = gson.fromJson(object, PartyMemberLeftEvent.class);
             // update our party first.
             parties.updatePartyInformation();
+            parties.refreshSquadAssignments();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
@@ -142,6 +150,7 @@ final class PartyEventNotifier implements StanzaListener {
             final var event = gson.fromJson(object, PartyMemberKickedEvent.class);
             // update our party first.
             parties.updatePartyInformation();
+            parties.refreshSquadAssignments();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
@@ -157,13 +166,20 @@ final class PartyEventNotifier implements StanzaListener {
             final var event = gson.fromJson(object, PartyMemberExpiredEvent.class);
             // update our party first.
             parties.updatePartyInformation();
+            parties.refreshSquadAssignments();
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);
         } else if (notification == PartyNotification.PARTY_UPDATED) {
             final var event = gson.fromJson(object, PartyUpdatedEvent.class);
             // update the party meta
-            parties.updatePartyMeta(event.updated());
+            parties.updateMetaFromEvent(event.updated());
+            event.party(parties.party());
+            // fire event now
+            eventFactory.invoke(PartyEvent.class, event);
+        } else if (notification == PartyNotification.MEMBER_REQUIRE_CONFIRMATION) {
+            final var event = gson.fromJson(object, PartyMemberRequireConfirmationEvent.class);
+            // update party
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);

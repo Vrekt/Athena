@@ -3,6 +3,9 @@ package athena.exception;
 import athena.util.json.JsonFind;
 import com.google.gson.JsonObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * An exception that is thrown due to an error being returned by an endpoint.
  */
@@ -10,7 +13,8 @@ public final class EpicGamesErrorException extends RuntimeException {
 
     private int numericErrorCode;
     private JsonObject jsonObject;
-    private String url, errorCode, errorMessage, messageVars, service, intent;
+    private String url, errorCode, errorMessage, service, intent;
+    private List<String> messageVars = new ArrayList<>();
 
     /**
      * Initialize this exception.
@@ -27,7 +31,8 @@ public final class EpicGamesErrorException extends RuntimeException {
 
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
-        this.messageVars = JsonFind.findArray(jsonObject, "messageVars").toString();
+        final var vars = JsonFind.findArray(jsonObject, "messageVars");
+        vars.forEach(element -> messageVars.add(element.getAsJsonPrimitive().getAsString()));
         this.numericErrorCode = JsonFind.findInt(jsonObject, "numericErrorCode");
         this.service = JsonFind.findString(jsonObject, "originatingService");
         this.intent = JsonFind.findString(jsonObject, "intent");
@@ -123,7 +128,7 @@ public final class EpicGamesErrorException extends RuntimeException {
     /**
      * @return the variables that gave the error, for example two account IDs
      */
-    public String messageVars() {
+    public List<String> messageVars() {
         return messageVars;
     }
 

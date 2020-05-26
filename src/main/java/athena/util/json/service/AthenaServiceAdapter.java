@@ -43,7 +43,6 @@ public final class AthenaServiceAdapter<T> extends TypeAdapter<T> {
 
     @Override
     public void write(JsonWriter out, T value) throws IOException {
-        if (useHooks) hooksExtension.preSerialize(value);
         adapter.write(out, value);
     }
 

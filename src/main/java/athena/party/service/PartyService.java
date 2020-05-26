@@ -1,7 +1,7 @@
 package athena.party.service;
 
 import athena.party.resource.Party;
-import athena.party.resource.authentication.status.PartyJoinStatus;
+import athena.party.resource.requests.status.PartyJoinStatus;
 import athena.party.resource.notification.UndeliveredNotifications;
 import athena.party.resource.user.UserPartyProfile;
 import com.google.gson.JsonObject;
@@ -10,27 +10,26 @@ import retrofit2.http.*;
 
 import java.util.List;
 
+/**
+ * The party service.
+ */
 public interface PartyService {
 
     String BASE_URL = "https://party-service-prod.ol.epicgames.com/";
 
     //	Line 1183324: /api/v1/{namespace}/parties/{partyId}/invites/{accountId} TODO
-    //	Line 1183331: /api/v1/{namespace}/parties/{partyId}/invites/{accountId}/decline TODO
-    //	Line 1183378: /api/v1/{namespace}/parties/{partyId}/members/{accountId} [x]
-    //	Line 1183380: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/conferences/connection [x]
-    //	Line 1183382: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/confirm TODO
     //	Line 1183384: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/disconnect TODO
-    //	Line 1183386: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/join [x]
-    //	Line 1183388: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/meta [x]
-    //	Line 1183390: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/promote [x]
     //	Line 1183392: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/reject TODO
     //	Line 1183438: /api/v1/{namespace}/parties TODO
-    //	Line 1183439: /api/v1/{namespace}/parties/{partyId} [x]
-    //	Line 1183445: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId} [x]
-    //	Line 1183449: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId}/join [x]
-    //	Line 1183451: /api/v1/{namespace}/user/{accountId}/pings/{fromAccountId}/parties [x]
-    //	Line 1183460: /api/v1/{namespace}/user/{accountId} [x]
-    //	Line 1183463: /api/v1/{namespace}/user/{accountId}/notifications/undelivered/count [x]
+
+    /**
+     * Create a new party.
+     *
+     * @param payload the payload
+     * @return a new {@link Party}
+     */
+    @POST("party/api/v1/Fortnite/parties")
+    Call<Party> createParty(@Body JsonObject payload);
 
     /**
      * Get a party by the provided {@code partyId}
@@ -74,7 +73,7 @@ public interface PartyService {
      *
      * @param accountId     the account ID.
      * @param fromAccountId the account ID of who sent the ping
-     * @param payload       the join payload {@link athena.party.resource.authentication.PartyJoinRequest}
+     * @param payload       the join payload {@link athena.party.resource.requests.PartyJoinRequest}
      * @return a {@link PartyJoinStatus}
      */
     @POST("party/api/v1/Fortnite/user/{accountId}/pings/{fromAccountId}/join")
@@ -103,7 +102,7 @@ public interface PartyService {
      *
      * @param partyId   the ID of the party
      * @param accountId the account ID.
-     * @param payload   the join payload {@link athena.party.resource.authentication.PartyJoinRequest}
+     * @param payload   the join payload {@link athena.party.resource.requests.PartyJoinRequest}
      * @return a {@link PartyJoinStatus}
      */
     @POST("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/join")
@@ -149,5 +148,25 @@ public interface PartyService {
      */
     @DELETE("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}")
     Call<Void> kick(@Path("partyId") String partyId, @Path("accountId") String accountId);
+
+    /**
+     * Declines an invite for the account {@code accountId}
+     *
+     * @param partyId   the party ID.
+     * @param accountId the account ID.
+     * @return Void
+     */
+    @POST("party/api/v1/Fortnite/parties/{partyId}/invites/{accountId}/decline")
+    Call<Void> declineInvite(@Path("partyId") String partyId, @Path("accountId") String accountId);
+
+    /**
+     * Confirm a member to join
+     *
+     * @param partyId   the party ID.
+     * @param accountId the account ID.
+     * @return Void
+     */
+    @POST("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/confirm")
+    Call<Void> confirm(@Path("partyId") String partyId, @Path("accountId") String accountId);
 
 }
