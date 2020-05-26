@@ -2,7 +2,8 @@
 Athena is a java library for interacting with the Fortnite/Epic Games API.
 
 # Features
-Check out all the features of Athena [here](https://github.com/Vrekt/Athena2/wiki/Features)
+Check out all the features of Athena [here](https://github.com/Vrekt/Athena2/wiki/Features).
+
 This list is probably outdated but will give you a good idea of capabilities!
 
 # Examples
