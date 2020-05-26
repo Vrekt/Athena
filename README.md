@@ -33,7 +33,9 @@ This list is probably outdated but will give you a good idea of capabilities!
                     .build()
 ```
 
-Check out other examples with parties and more [here](https://github.com/Vrekt/Athena2/wiki/Examples)
+You can find party example code [here](https://github.com/Vrekt/Athena2/wiki/Parties).
+
+Check out other examples [here](https://github.com/Vrekt/Athena2/wiki/Examples)
 
 # Documentation
 The wiki will cover some stuff, but not all. Contact me on discord `vrekt#4387` for further help or questions.
