@@ -108,6 +108,15 @@ public final class ClientPartyMember {
     }
 
     /**
+     * Update cosmetics
+     */
+    public void updateCosmetic() {
+        // set these values in the update meta.
+        updateMeta.campaignHero(campaignHero);
+        updateMeta.cosmeticLoadout(cosmeticLoadout);
+    }
+
+    /**
      * Sets the desired skin/character.
      *
      * @param character the character value.

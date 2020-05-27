@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
  */
 public final class JsonObjectBuilder {
 
-    private JsonObject jsonObject = new JsonObject();
+    private final JsonObject jsonObject = new JsonObject();
 
     public JsonObjectBuilder add(String key, String value) {
         jsonObject.addProperty(key, value);
@@ -32,14 +32,6 @@ public final class JsonObjectBuilder {
 
     public JsonObject build() {
         return jsonObject;
-    }
-
-    public void clear() {
-        jsonObject = new JsonObject();
-    }
-
-    public boolean isEmpty() {
-        return jsonObject.size() == 0;
     }
 
 }

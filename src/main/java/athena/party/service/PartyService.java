@@ -1,6 +1,7 @@
 package athena.party.service;
 
 import athena.party.resource.Party;
+import athena.party.resource.requests.PartyInvitationRequest;
 import athena.party.resource.requests.status.PartyJoinStatus;
 import athena.party.resource.notification.UndeliveredNotifications;
 import athena.party.resource.user.UserPartyProfile;
@@ -17,7 +18,6 @@ public interface PartyService {
 
     String BASE_URL = "https://party-service-prod.ol.epicgames.com/";
 
-    //	Line 1183324: /api/v1/{namespace}/parties/{partyId}/invites/{accountId} TODO
     //	Line 1183384: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/disconnect TODO
     //	Line 1183392: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/reject TODO
     //	Line 1183438: /api/v1/{namespace}/parties TODO
@@ -158,6 +158,17 @@ public interface PartyService {
      */
     @POST("party/api/v1/Fortnite/parties/{partyId}/invites/{accountId}/decline")
     Call<Void> declineInvite(@Path("partyId") String partyId, @Path("accountId") String accountId);
+
+    /**
+     * Invite a user to a party.
+     *
+     * @param partyId   the party ID.
+     * @param accountId the account ID.
+     * @param request   the request
+     * @return Void
+     */
+    @POST("party/api/v1/Fortnite/parties/{partyId}/invites/{accountId}?sendPing=true")
+    Call<Void> invite(@Path("partyId") String partyId, @Path("accountId") String accountId, @Body PartyInvitationRequest request);
 
     /**
      * Confirm a member to join

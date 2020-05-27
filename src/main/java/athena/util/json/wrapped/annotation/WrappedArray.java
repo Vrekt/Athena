@@ -30,10 +30,18 @@ public @interface WrappedArray {
     Class<?> type();
 
     /**
-     * Used for objects that are always usually empty (like empty arrays)
+     * Used for objects that are always constant values.
+     * For example empty JSON arrays.
      *
-     * @return {@code true} for raw types
+     * @return if the value is constant.
      */
-    boolean useRawType() default false;
+    boolean isConstant() default false;
+
+    /**
+     * Identifies if this type is NOT a list.
+     *
+     * @return if this type is not a list.
+     */
+    boolean isNotList() default false;
 
 }

@@ -2,14 +2,10 @@ package athena.util.json.wrapped;
 
 import athena.util.json.wrapped.annotation.WrappedArray;
 import athena.util.json.wrapped.annotation.WrappedObject;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.TypeAdapter;
-import com.google.gson.TypeAdapterFactory;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -26,7 +22,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
     /**
      * A list of all type fields by the annotations {@link WrappedArray} and {@link WrappedObject}
      */
-    private final Map<Type, WrappedField> fields = new HashMap<>();
+    private final Map<Type, AnnotatedField> fields = new HashMap<>();
 
     /**
      * Initialize a new instance.
@@ -44,22 +40,20 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
      * @param baseType the base type class.
      */
     private WrappedTypeAdapterFactory(Class<?> baseType) {
+        for (var field : baseType.getDeclaredFields()) {
+            final var objectAnnotation = field.getAnnotation(WrappedObject.class);
+            final var arrayAnnotation = field.getAnnotation(WrappedArray.class);
 
-        // Add our list of typeObject field types.
-        FieldUtils.getFieldsListWithAnnotation(baseType, WrappedObject.class)
-                .forEach(field -> {
-                    final var annotation = field.getAnnotation(WrappedObject.class);
-                    fields.put(field.getType(), new WrappedField(field.getType(), null, annotation.value(), false));
-                });
-
-        // Add our list of WrappedArray field types.
-        // Register each type with either the annotation type if useRawTypes == true otherwise parameterize it with List.class
-        FieldUtils.getFieldsListWithAnnotation(baseType, WrappedArray.class)
-                .forEach(field -> {
-                    final var annotation = field.getAnnotation(WrappedArray.class);
-                    final var type = annotation.useRawType() ? annotation.type() : TypeToken.getParameterized(List.class, annotation.type()).getType();
-                    fields.put(type, new WrappedField(annotation.type(), annotation.type(), annotation.value(), annotation.useRawType()));
-                });
+            if (objectAnnotation != null) {
+                // we have a field with the wrapped object annotation.
+                fields.put(field.getType(), new AnnotatedField(field.getType(), null, objectAnnotation.value()));
+            } else if (arrayAnnotation != null) {
+                // we have a field with the wrapped array annotation.
+                // if we have no list use the default type, otherwise get a parameterized List type of the type
+                final var arrayType = arrayAnnotation.isNotList() ? arrayAnnotation.type() : TypeToken.getParameterized(List.class, arrayAnnotation.type()).getType();
+                fields.put(arrayType, new AnnotatedField(arrayAnnotation.type(), arrayAnnotation.type(), arrayAnnotation.value(), arrayAnnotation.isConstant()));
+            }
+        }
     }
 
     @Override
@@ -71,12 +65,11 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
         final var field = fields.get(type.getType());
         return new TypeAdapter<>() {
 
+            // our adapter to use
             final TypeAdapter<R> fieldTypeAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(WrappedTypeAdapterFactory.this, TypeToken.get(field.fieldType));
-            final TypeAdapter<R> arrayTypeAdapter = field.arrayType == null ? null : (TypeAdapter<R>) gson.getDelegateAdapter(WrappedTypeAdapterFactory.this, TypeToken.get(field.arrayType));
 
             @Override
             public void write(JsonWriter out, R value) throws IOException {
-
                 // we have no value so pass this onto the original delegate adapter.
                 if (value == null) {
                     fieldTypeAdapter.write(out, null);
@@ -89,6 +82,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
                     object.add(field.wrappedValue, fieldTypeAdapter.toJsonTree(value));
                     out.value(object.toString());
                 } else {
+
                     // find the adapter to use.
                     // if we are writing a list value then grab the delegate adapter for that.
                     // otherwise, use the field type adapter.
@@ -96,7 +90,15 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
                             (TypeAdapter<R>) gson.getDelegateAdapter(WrappedTypeAdapterFactory.this, TypeToken.get(value.getClass()))
                             : fieldTypeAdapter;
                     final var object = new JsonObject();
-                    object.add(field.wrappedValue, adapterToUse.toJsonTree(value));
+                    if (field.isConstant) {
+                        // WORK-AROUND:
+                        // Since we have a constant value (JsonArray)
+                        // just write it instead of deserializing with GSON.
+                        object.add(field.wrappedValue, new JsonArray());
+                    } else {
+                        // otherwise.
+                        object.add(field.wrappedValue, adapterToUse.toJsonTree(value));
+                    }
                     out.value(object.toString());
                 }
             }
@@ -111,15 +113,17 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
 
                 // if we have a JsonObject just read normally.
                 if (element.isJsonObject()) return fieldTypeAdapter.fromJsonTree(element);
-
+                // WORK-AROUND:
+                // If we have a constant JSON value (for example tile states and platform sessions)
+                // just return it normally here.
+                if (field.isConstant) return fieldTypeAdapter.fromJsonTree(asObjectWrapped);
                 // otherwise we can assume its an array.
                 final var asArray = element.getAsJsonArray();
                 // if we want to use raw types just return wrapped object.
-                if (field.useRawType) return arrayTypeAdapter.fromJsonTree(asObjectWrapped);
                 // finally we can create a new list from the R type and add each element to that list.
                 // TODO: Figure out a way to just deserialize straight to an array rather than deserializing each element then adding it.
                 final var list = new ArrayList<R>();
-                asArray.forEach(jsonElement -> list.add(arrayTypeAdapter.fromJsonTree(jsonElement)));
+                asArray.forEach(jsonElement -> list.add(fieldTypeAdapter.fromJsonTree(jsonElement)));
                 // cast and return.
                 return (R) list;
             }
@@ -129,7 +133,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
     /**
      * Represents one of the two annotations {@link WrappedArray} or {@link WrappedObject}
      */
-    private static final class WrappedField {
+    private static final class AnnotatedField {
 
         /**
          * The field type and the array type.
@@ -140,15 +144,19 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
          */
         private final String wrappedValue;
         /**
-         * {@code true} to ignore returning a list and just returning the type.
+         * {@code true} if this value is a constant array.
          */
-        private final boolean useRawType;
+        private final boolean isConstant;
 
-        private WrappedField(Class<?> fieldType, Class<?> arrayType, String wrappedValue, boolean useRawType) {
+        private AnnotatedField(Class<?> fieldType, Class<?> arrayType, String wrappedValue) {
+            this(fieldType, arrayType, wrappedValue, false);
+        }
+
+        private AnnotatedField(Class<?> fieldType, Class<?> arrayType, String wrappedValue, boolean isConstant) {
             this.fieldType = fieldType;
             this.arrayType = arrayType;
             this.wrappedValue = wrappedValue;
-            this.useRawType = useRawType;
+            this.isConstant = isConstant;
         }
     }
 

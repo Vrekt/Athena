@@ -20,6 +20,7 @@ import athena.party.resource.member.role.PartyRole;
 import athena.party.resource.meta.PartyMeta;
 import athena.party.resource.playlist.PartyPlaylistData;
 import athena.party.resource.requests.PartyCreateRequest;
+import athena.party.resource.requests.PartyInvitationRequest;
 import athena.party.resource.requests.PartyJoinRequest;
 import athena.party.service.PartyService;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
@@ -47,7 +48,7 @@ public final class Parties {
     /**
      * The current build ID.
      */
-    public static final String BUILD_ID = "''";
+    public static final String BUILD_ID = "1:1:";
 
     /**
      * The party service.
@@ -117,6 +118,7 @@ public final class Parties {
         // reset our client
         client.set(partyId);
         client.initializeBaseMeta();
+        client.updateCosmetic();
         // join the party.
         Requests.executeCall(service.joinParty(partyId, context.localAccountId(), payload));
         // send our meta
@@ -148,6 +150,8 @@ public final class Parties {
         // reset our client
         client.set(party.partyId());
         client.initializeBaseMeta();
+        client.updateCosmetic();
+        client.update();
         // join the party chat
         chat.joinNewChat(party.partyId(), context.displayName(), context.localAccountId(), context.connectionManager().connection().getUser().getResourceOrEmpty().toString());
         // finally, update the party information
@@ -193,11 +197,21 @@ public final class Parties {
     }
 
     /**
+     * Invite a member to this party.
+     * TODO: May error with certain configurations not sure
+     *
+     * @param accountId the account ID.
+     */
+    public void invite(String accountId) {
+        if (party == null) return;
+        Requests.executeCall(service.invite(party.partyId(), accountId, new PartyInvitationRequest(context.displayName(), context.platform())));
+    }
+
+    /**
      * Updates/refreshes squad assignments.
      * Only updates if the current account is leader.
      */
     public void refreshSquadAssignments() {
-        System.err.println(party.leader() == null);
         if (!party.leader().accountId().equals(context.localAccountId())) return;
         final var assignments = createSquadAssignments();
         clientParty.setSquadAssignments(assignments);

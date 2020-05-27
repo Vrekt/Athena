@@ -6,6 +6,7 @@ import athena.party.resource.playlist.PartyPlaylistData;
 import athena.util.json.wrapped.annotation.WrappedArray;
 import athena.util.json.wrapped.annotation.WrappedObject;
 import com.google.gson.JsonArray;
+import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -28,7 +29,7 @@ public final class PartyMeta {
      * An empty array []
      */
     @SerializedName("PlatformSessions_j")
-    @WrappedArray(value = "PlatformSessions", type = PlatformSessions.class, useRawType = true)
+    @WrappedArray(value = "PlatformSessions", type = PlatformSessions.class, isConstant = true, isNotList = true)
     private PlatformSessions platformSessions;
 
     /**
@@ -124,7 +125,8 @@ public final class PartyMeta {
      * Tile states usually []
      */
     @SerializedName("TileStates_j")
-    @WrappedArray(value = "TileStates", type = TileStates.class, useRawType = true)
+    @WrappedArray(value = "TileStates", type = TileStates.class, isConstant = true, isNotList = true)
+    @Expose(deserialize = false)
     private TileStates tileStates;
 
     /**
@@ -248,13 +250,6 @@ public final class PartyMeta {
     }
 
     /**
-     * @return platform sessions
-     */
-    public PlatformSessions platformSessions() {
-        return platformSessions;
-    }
-
-    /**
      * @return {@code true} if the lobby connection has been started
      */
     public boolean lobbyConnectionStarted() {
@@ -365,13 +360,6 @@ public final class PartyMeta {
     }
 
     /**
-     * @return []
-     */
-    public TileStates tileStates() {
-        return tileStates;
-    }
-
-    /**
      * @return list of squad assignments
      */
     public List<SquadAssignment> squadAssignments() {
@@ -472,13 +460,12 @@ public final class PartyMeta {
     }
 
     /**
-     * Set platform sessions, usually an empty array
+     * Create new platform sessions
      *
-     * @param platformSessions the platform sessions
      * @return this
      */
-    public PartyMeta platformSessions(PlatformSessions platformSessions) {
-        this.platformSessions = platformSessions;
+    public PartyMeta platformSessions() {
+        this.platformSessions = new PlatformSessions();
         return this;
     }
 
@@ -648,13 +635,12 @@ public final class PartyMeta {
     }
 
     /**
-     * An empty array.
+     * Create new tile states
      *
-     * @param tileStates the states.
      * @return this
      */
-    public PartyMeta tileStates(TileStates tileStates) {
-        this.tileStates = tileStates;
+    public PartyMeta tileStates() {
+        this.tileStates = new TileStates();
         return this;
     }
 
@@ -860,7 +846,7 @@ public final class PartyMeta {
      * Platform sessions.
      * Usually empty.
      */
-    public static final class PlatformSessions {
+    private static final class PlatformSessions {
         @SerializedName("PlatformSessions")
         private JsonArray platformSessions = new JsonArray();
     }
@@ -869,7 +855,7 @@ public final class PartyMeta {
      * Tile states.
      * Usually empty.
      */
-    public static final class TileStates {
+    private static final class TileStates {
         @SerializedName("TileStates")
         private JsonArray tileStates = new JsonArray();
     }

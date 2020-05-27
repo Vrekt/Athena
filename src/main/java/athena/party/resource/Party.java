@@ -108,6 +108,16 @@ public final class Party extends AthenaContext {
     }
 
     /**
+     * Invite a member to this party.
+     * TODO: May error with certain configurations not sure
+     *
+     * @param accountId the account ID.
+     */
+    public void invite(String accountId) {
+        parties.invite(accountId);
+    }
+
+    /**
      * @return the joinability of this party.
      */
     public Joinability joinability() {

@@ -122,7 +122,10 @@ final class PartyEventNotifier implements StanzaListener {
             final var event = gson.fromJson(object, PartyMemberLeftEvent.class);
             // update our party first.
             parties.updatePartyInformation();
-            parties.refreshSquadAssignments();
+            // refresh if we didn't leave
+            if (!event.accountId().equalsIgnoreCase(context.localAccountId())) {
+                parties.refreshSquadAssignments();
+            }
             event.party(parties.party());
             // fire event now
             eventFactory.invoke(PartyEvent.class, event);

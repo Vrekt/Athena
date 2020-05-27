@@ -133,7 +133,7 @@ public final class ClientParty {
     public PartyMeta initializeBaseMeta(PartyPrivacy privacy) {
         return newMeta()
                 .partyMatchmakingInfo(new PartyMeta.PartyMatchmakingInfo())
-                .platformSessions(new PartyMeta.PlatformSessions())
+                .platformSessions()
                 .lobbyConnectionStarted("false")
                 .customMatchKey("")
                 .zoneInstanceId("")
@@ -147,7 +147,7 @@ public final class ClientParty {
                 .joinRequestAction("Manual")
                 .lfgTime(Instant.parse("0001-01-01T00:00:00.000Z"))
                 .invitePermission("Anyone")
-                .tileStates(new PartyMeta.TileStates())
+                .tileStates()
                 .theaterId("")
                 .notAcceptingMembersReason(privacy.isPrivate() ? "7" : null)
                 .matchmakingState("NotMatchmaking")
@@ -157,7 +157,7 @@ public final class ClientParty {
                 .zoneTileIndex("-1")
                 .sessionKey("")
                 .canJoin("true")
-                .playlistData(new PartyPlaylistData("Playlist_DefaultSolo", "", "", "NAE"))
+                .playlistData(new PartyPlaylistData("Playlist_DefaultSquad", "", "", "NAE"))
                 .squadFill("false");
     }
 
@@ -169,15 +169,6 @@ public final class ClientParty {
     public void resetParty(Party party) {
         this.party = party;
         revision = party.revision();
-    }
-
-    /**
-     * Update the party instance
-     *
-     * @param party the party.
-     */
-    public void updateParty(Party party) {
-        this.party = party;
     }
 
     /**
@@ -205,7 +196,6 @@ public final class ClientParty {
      * @param meta the meta
      */
     private void updateInternal(Meta meta) {
-        System.err.println("Update " + (meta.update.privacySettings() == null ? "Hi" : "!"));
         if (queue.size() == 0) {
             queue.add(meta);
             // run async
@@ -221,7 +211,6 @@ public final class ClientParty {
                 }
             });
         } else {
-            System.err.println("UPDAT2");
             queue.add(meta);
         }
     }
@@ -290,7 +279,7 @@ public final class ClientParty {
      * @throws EpicGamesErrorException if an error occurred
      */
     private void patch(JsonObject payload) throws EpicGamesErrorException {
-        System.err.println(payload.toString());
+        System.err.println(payload.toString() + " PAYLOAD");
         final var patch = service.updateParty(party.partyId(), payload);
         Requests.executeCall(patch);
     }

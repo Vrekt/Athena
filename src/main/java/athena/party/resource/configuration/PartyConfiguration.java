@@ -101,7 +101,7 @@ public final class PartyConfiguration {
      * @return a new {@link PartyConfiguration}
      */
     public static PartyConfiguration closed() {
-        return new PartyConfiguration(Joinability.INVITE_AND_FORMER, "ALL", 16, true);
+        return new PartyConfiguration(Joinability.INVITE_AND_FORMER, "INVITED_ONLY", 16, true);
     }
 
     /**
