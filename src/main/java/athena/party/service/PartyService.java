@@ -19,8 +19,6 @@ public interface PartyService {
     String BASE_URL = "https://party-service-prod.ol.epicgames.com/";
 
     //	Line 1183384: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/disconnect TODO
-    //	Line 1183392: /api/v1/{namespace}/parties/{partyId}/members/{accountId}/reject TODO
-    //	Line 1183438: /api/v1/{namespace}/parties TODO
 
     /**
      * Create a new party.
@@ -179,5 +177,15 @@ public interface PartyService {
      */
     @POST("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/confirm")
     Call<Void> confirm(@Path("partyId") String partyId, @Path("accountId") String accountId);
+
+    /**
+     * Reject a member to join
+     *
+     * @param partyId   the party ID.
+     * @param accountId the account ID.
+     * @return Void
+     */
+    @POST("party/api/v1/Fortnite/parties/{partyId}/members/{accountId}/reject")
+    Call<Void> reject(@Path("partyId") String partyId, @Path("accountId") String accountId);
 
 }

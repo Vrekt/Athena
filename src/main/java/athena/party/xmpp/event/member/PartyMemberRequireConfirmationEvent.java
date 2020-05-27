@@ -159,6 +159,13 @@ public final class PartyMemberRequireConfirmationEvent extends AthenaContext {
     }
 
     /**
+     * Reject this member from joining.
+     */
+    public void reject() {
+        Requests.executeCall(partyService.reject(partyId, accountId));
+    }
+
+    /**
      * @return the account of who joined.
      */
     public Account account() {
