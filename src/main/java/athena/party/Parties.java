@@ -18,21 +18,30 @@ import athena.party.resource.member.meta.cosmetic.variant.CosmeticVariant;
 import athena.party.resource.member.meta.readiness.GameReadiness;
 import athena.party.resource.member.role.PartyRole;
 import athena.party.resource.meta.PartyMeta;
+import athena.party.resource.notification.regular.PartyNotification;
 import athena.party.resource.playlist.PartyPlaylistData;
 import athena.party.resource.requests.PartyCreateRequest;
 import athena.party.resource.requests.PartyInvitationRequest;
 import athena.party.resource.requests.PartyJoinRequest;
 import athena.party.service.PartyService;
+import athena.party.xmpp.annotation.PartyEvent;
 import athena.party.xmpp.event.invite.PartyInviteEvent;
 import athena.party.xmpp.event.invite.PartyPingEvent;
+import athena.party.xmpp.event.member.*;
+import athena.party.xmpp.event.party.PartyUpdatedEvent;
 import athena.types.Input;
 import athena.types.Platform;
-import athena.util.cleanup.AfterRefresh;
-import athena.util.cleanup.BeforeRefresh;
-import athena.util.cleanup.Shutdown;
+import athena.util.event.EventFactory;
 import athena.util.request.Requests;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,43 +52,44 @@ import java.util.function.Consumer;
 /**
  * Provides easy access and management for the party system and {@link athena.party.service.PartyService}
  */
-public final class Parties {
+public final class Parties implements Closeable {
 
     /**
      * The current build ID.
      */
     public static final String BUILD_ID = "1:1:";
-
     /**
      * The party service.
      */
     private final PartyService service;
-
     /**
      * The context
      */
     private final DefaultAthenaContext context;
-
     /**
-     * The XMPP notifier.
+     * The GSON instance
      */
-    private final PartyEventNotifier notifier;
-
+    private final Gson gson;
+    /**
+     * The event factory.
+     */
+    private final EventFactory eventFactory = EventFactory.createAnnotatedFactory(PartyEvent.class);
+    /**
+     * The XMPP event listener.
+     */
+    private final Listener eventListener = new Listener();
     /**
      * The current party.
      */
     private Party party;
-
     /**
-     * Our client
+     * Our client member controller
      */
     private ClientPartyMember client;
-
     /**
      * The client party controller.
      */
     private ClientParty clientParty;
-
     /**
      * The party chat
      */
@@ -88,10 +98,11 @@ public final class Parties {
     public Parties(DefaultAthenaContext context) {
         this.context = context;
         this.service = context.partyService();
-        this.notifier = new PartyEventNotifier(context, this);
+        this.gson = context.gson();
         this.client = new ClientPartyMember(context);
         this.clientParty = new ClientParty(service, null, context.gson());
         this.chat = new PartyChat(MultiUserChatManager.getInstanceFor(context.connectionManager().connection()));
+        context.connection().addAsyncStanzaListener(eventListener, MessageTypeFilter.NORMAL);
     }
 
     public void onPing(Consumer<PartyPingEvent> event) {
@@ -114,7 +125,7 @@ public final class Parties {
         // retrieve the new parties information
         party = Requests.executeCall(service.getParty(partyId));
         // craft our join payload
-        final var payload = PartyJoinRequest.forUser(context.localAccountId(), context.displayName(), context.connectionManager().connection().getUser(), context.platform());
+        final var payload = PartyJoinRequest.forUser(context.localAccountId(), context.displayName(), context.connection().getUser(), context.platform());
         // reset our client
         client.set(partyId);
         client.initializeBaseMeta();
@@ -124,7 +135,7 @@ public final class Parties {
         // send our meta
         client.update();
         // join the party chat
-        chat.joinNewChat(partyId, context.displayName(), context.localAccountId(), context.connectionManager().connection().getUser().getResourceOrEmpty().toString());
+        chat.joinNewChat(partyId, context.displayName(), context.localAccountId(), context.connection().getUser().getResourceOrEmpty().toString());
         // set when we last joined
         chat.setLastJoinTimeInternal(System.currentTimeMillis());
         return party;
@@ -142,7 +153,7 @@ public final class Parties {
         final var base = clientParty.initializeBaseMeta(privacy);
         // create the party.
         party = Requests.executeCall(service.createParty(
-                PartyCreateRequest.forParty(configuration, context.connectionManager().connection().getUser().asUnescapedString(), context.platform())));
+                PartyCreateRequest.forParty(configuration, context.connection().getUser().asUnescapedString(), context.platform())));
         // set our client party.
         clientParty.resetParty(party);
         // send our base meta
@@ -153,7 +164,7 @@ public final class Parties {
         client.updateCosmetic();
         client.update();
         // join the party chat
-        chat.joinNewChat(party.partyId(), context.displayName(), context.localAccountId(), context.connectionManager().connection().getUser().getResourceOrEmpty().toString());
+        chat.joinNewChat(party.partyId(), context.displayName(), context.localAccountId(), context.connection().getUser().getResourceOrEmpty().toString());
         // finally, update the party information
         updatePartyInformation();
         return party;
@@ -694,7 +705,7 @@ public final class Parties {
      * @param listener the listener.
      */
     public void registerEventListener(Object listener) {
-        notifier.registerEventListener(listener);
+        eventFactory.registerEventListener(listener);
     }
 
     /**
@@ -703,25 +714,145 @@ public final class Parties {
      * @param listener the listener
      */
     public void unregisterEventListener(Object listener) {
-        notifier.unregisterEventListener(listener);
+        eventFactory.registerEventListener(listener);
     }
 
-    @AfterRefresh
-    private void after(DefaultAthenaContext context) {
-        notifier.afterRefresh(context);
-        chat = new PartyChat(MultiUserChatManager.getInstanceFor(context.connectionManager().connection()));
-    }
-
-    @BeforeRefresh
-    private void before() {
-        notifier.beforeRefresh();
-        chat.leave();
-    }
-
-    @Shutdown
-    private void shutdown() {
+    @Override
+    public void close() {
         leaveParty();
-        notifier.shutdown();
+        eventFactory.dispose();
+        context.connection().removeAsyncStanzaListener(eventListener);
+    }
+
+    /**
+     * The XMPP event listener.
+     */
+    private final class Listener implements StanzaListener {
+
+        @Override
+        public void processStanza(Stanza packet) {
+            final var message = (Message) packet;
+            // adapt the message to a JSON object.
+            final var object = gson.fromJson(message.getBody(), JsonObject.class);
+            if (object.has("interactions")) {
+                // we have an interaction type.
+                // TODO
+            } else {
+                // we have a regular message type, retrieve the notification.
+                final var notification = PartyNotification.of(object.getAsJsonPrimitive("type").getAsString());
+                // log if we have an unknown type.
+                if (notification == PartyNotification.UNKNOWN) {
+                    System.err.println("Received unknown notification party type, please report this.");
+                    System.err.println(object.toString());
+                    return;
+                }
+                handleNotification(notification, object);
+            }
+
+        }
+
+        /**
+         * Handle the party notification
+         *
+         * @param notification the notification
+         * @param object       the json payload
+         */
+        private void handleNotification(PartyNotification notification, JsonObject object) {
+            if (notification == PartyNotification.PING) {
+                // adapt to the event.
+                final var event = gson.fromJson(object, PartyPingEvent.class);
+                // handle our ping notification.
+                // we need to grab the party.
+                final var call = service.getUserParties(context.localAccountId(), event.fromAccountId());
+                final var response = Requests.executeCall(call);
+                if (response.size() > 0) event.party(response.get(0));
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.INITIAL_INVITE) {
+                // adapt to the event
+                final var event = gson.fromJson(object, PartyInviteEvent.class);
+                // grab the party information
+                final var call = service.getParty(event.partyId());
+                final var party = Requests.executeCall(call);
+                event.party(party);
+                // fire event
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_JOINED) {
+                final var event = gson.fromJson(object, PartyMemberJoinedEvent.class);
+                // update our party first.
+                updatePartyInformation();
+                refreshSquadAssignments();
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_LEFT) {
+                final var event = gson.fromJson(object, PartyMemberLeftEvent.class);
+                // update our party first.
+                updatePartyInformation();
+                // refresh if we didn't leave
+                if (!event.accountId().equalsIgnoreCase(context.localAccountId())) refreshSquadAssignments();
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_STATE_UPDATED) {
+                final var event = gson.fromJson(object, PartyMemberUpdatedEvent.class);
+                if (event.accountId().equals(context.localAccountId())) return;
+                // update our member
+                final var member = updateMember(event.accountId(), event.updated());
+                event.member(member);
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_NEW_CAPTAIN) {
+                final var event = gson.fromJson(object, PartyMemberNewCaptainEvent.class);
+                // update our member
+                final var member = updateMember(event.accountId(), event.updated());
+                // update who the captain is
+                updateCaptain(member);
+                // set
+                event.member(member);
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_KICKED) {
+                final var event = gson.fromJson(object, PartyMemberKickedEvent.class);
+                // update our party first.
+                updatePartyInformation();
+                refreshSquadAssignments();
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_DISCONNECTED) {
+                final var event = gson.fromJson(object, PartyMemberDisconnectedEvent.class);
+                // update our party first.
+                updatePartyInformation();
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_EXPIRED) {
+                final var event = gson.fromJson(object, PartyMemberExpiredEvent.class);
+                // update our party first.
+                updatePartyInformation();
+                refreshSquadAssignments();
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.PARTY_UPDATED) {
+                final var event = gson.fromJson(object, PartyUpdatedEvent.class);
+                // update the party meta
+                updateMetaFromEvent(event.updated());
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            } else if (notification == PartyNotification.MEMBER_REQUIRE_CONFIRMATION) {
+                final var event = gson.fromJson(object, PartyMemberRequireConfirmationEvent.class);
+                // update party
+                event.party(party);
+                // fire event now
+                eventFactory.invoke(PartyEvent.class, event);
+            }
+
+        }
+
     }
 
 }

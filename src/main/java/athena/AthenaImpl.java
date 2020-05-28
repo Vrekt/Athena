@@ -2,7 +2,6 @@ package athena;
 
 import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.account.resource.external.ExternalAuth;
 import athena.account.service.AccountPublicService;
 import athena.authentication.FortniteAuthenticationManager;
 import athena.authentication.service.AuthenticationService;
@@ -24,7 +23,6 @@ import athena.groups.service.GroupsService;
 import athena.interceptor.InterceptorAction;
 import athena.party.Parties;
 import athena.party.resource.Party;
-import athena.party.resource.connection.Connection;
 import athena.party.resource.invite.PartyInvitation;
 import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.meta.PartyMemberMeta;
@@ -46,13 +44,9 @@ import athena.stats.service.StatsproxyPublicService;
 import athena.types.Input;
 import athena.types.Platform;
 import athena.types.Region;
-import athena.util.cleanup.AfterRefresh;
-import athena.util.cleanup.BeforeRefresh;
-import athena.util.cleanup.Shutdown;
-import athena.util.event.EventFactory;
 import athena.util.json.converters.*;
 import athena.util.json.service.AthenaServiceAdapterFactory;
-import athena.util.json.wrapped.WrappedTypeAdapterFactory;
+import athena.util.json.wrapped.FortniteTypeAdapterFactory;
 import athena.util.request.Requests;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.common.flogger.FluentLogger;
@@ -64,6 +58,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jxmpp.jid.Jid;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -113,10 +108,6 @@ final class AthenaImpl implements Athena, Interceptor {
      * A list of interceptor hooks.
      */
     private final CopyOnWriteArrayList<InterceptorAction> interceptorActions = new CopyOnWriteArrayList<>();
-    /**
-     * The event factory.
-     */
-    private final EventFactory eventFactory = EventFactory.createAnnotatedFactory(BeforeRefresh.class, AfterRefresh.class, Shutdown.class);
 
     /**
      * Manages account hooks like: Finding them by ID and display name.
@@ -171,10 +162,6 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private final Gson gson;
     /**
-     * This context.
-     */
-    private final DefaultAthenaContext context;
-    /**
      * The platform
      */
     private final Platform platform;
@@ -200,7 +187,6 @@ final class AthenaImpl implements Athena, Interceptor {
                 .cookieJar(new JavaNetCookieJar(manager))
                 .addInterceptor(this).build();
 
-        LOGGER.atInfo().log("Creating GSON instance and initializing retrofit.");
         gson = initializeGson();
         final var factory = GsonConverterFactory.create(gson);
         accountPublicService = initializeRetrofitService(AccountPublicService.BASE_URL, factory, AccountPublicService.class);
@@ -238,25 +224,21 @@ final class AthenaImpl implements Athena, Interceptor {
         // authenticate
         final var session = fortniteAuthenticationManager.authenticate();
         this.session.set(session); // set the session
-
-        LOGGER.atInfo().log("Account " + session.accountId() + " successfully authenticated.");
         // schedule the refresh and handle the shutdown hook.
         if (builder.shouldHandleShutdown()) Runtime.getRuntime().addShutdownHook(new Thread(this::close));
         if (builder.shouldRefreshAutomatically()) scheduleRefresh();
         // kill other sessions and accept the EULA.
         if (builder.shouldKillOtherSessions()) fortniteAuthenticationManager.killOtherSessions();
         if (builder.shouldAcceptEula()) fortniteAuthenticationManager.acceptEulaIfNeeded(session.accountId());
-        LOGGER.atInfo().log("Finished post-authentication requests.");
 
         // handle connecting the XMPP service.
         if (builder.shouldEnableXmpp()) {
-            LOGGER.atInfo().log("Connecting to the Fortnite XMPP service.");
             connectionManager = new XMPPConnectionManager(builder.shouldLoadRoster(), builder.shouldReconnectOnError(), builder.debugXmpp(), builder.platform(), builder.appType());
             connectionManager.connect(session.accountId(), session.accessToken());
         }
 
         // initialize our context
-        context = new DefaultAthenaContext();
+        final var context = new DefaultAthenaContext();
         context.initializeServicesOnly(this);
         context.initializeOtherOnly(this);
 
@@ -268,30 +250,16 @@ final class AthenaImpl implements Athena, Interceptor {
         context.initializeAccountOnly(this);
 
         // initialize other resources
-        friends = new Friends(context, builder.shouldEnableXmpp());
+        friends = new Friends(context);
         statisticsV2 = new StatisticsV2(context);
         events = new Events(context);
         fortnite = new Fortnite(context);
-        presences = new Presences(context, builder.shouldEnableXmpp());
-
-        // Initialize XMPP dependant resources.
-        if (builder.shouldEnableXmpp()) {
-            chat = new FriendChat(context);
-            parties = new Parties(context);
-
-            // register XMPP resources with the event factory.
-            eventFactory.registerEventListener(chat);
-            eventFactory.registerEventListener(parties);
-            eventFactory.registerEventListener(friends);
-            eventFactory.registerEventListener(presences);
-        } else {
-            chat = null;
-            parties = null;
-        }
-
+        presences = new Presences(context);
+        chat = builder.shouldEnableXmpp() ? new FriendChat(context) : null;
+        parties = builder.shouldEnableXmpp() ? new Parties(context) : null;
         // finally initialize resources inside the context.
         context.initializeResourcesOnly(this);
-        LOGGER.atInfo().log("Ready!");
+        LOGGER.atInfo().log("Account " + session.accountId() + " successfully authenticated.");
     }
 
     /**
@@ -301,12 +269,8 @@ final class AthenaImpl implements Athena, Interceptor {
      */
     private Gson initializeGson() {
         final var gsonBuilder = new GsonBuilder();
-
         // hooks only
         gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(UnfilteredStatistic.class, this));
-        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(ExternalAuth.class, this));
-        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(Connection.class, this));
-        gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withHooksOnly(PartyMemberMeta.class, this));
         // context only
         gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(FortnitePresence.class, this));
         gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.withContextOnly(LastOnlineResponse.class, this));
@@ -329,15 +293,16 @@ final class AthenaImpl implements Athena, Interceptor {
         gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.of(Friend.class, this));
         gsonBuilder.registerTypeAdapterFactory(AthenaServiceAdapterFactory.of(Party.class, this));
         // other
-        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(JoinRequestUsers.class));
-        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(PartyMeta.class));
-        gsonBuilder.registerTypeAdapterFactory(WrappedTypeAdapterFactory.of(PartyMemberMeta.class));
+        gsonBuilder.registerTypeAdapterFactory(FortniteTypeAdapterFactory.of(JoinRequestUsers.class));
+        gsonBuilder.registerTypeAdapterFactory(FortniteTypeAdapterFactory.of(PartyMeta.class));
+        gsonBuilder.registerTypeAdapterFactory(FortniteTypeAdapterFactory.of(PartyMemberMeta.class));
 
         // converters.
         gsonBuilder.registerTypeAdapter(Input.class, new InputConverter());
         gsonBuilder.registerTypeAdapter(Instant.class, new InstantConverter());
         gsonBuilder.registerTypeAdapter(Platform.class, new PlatformConverter());
         gsonBuilder.registerTypeAdapter(Region.class, new RegionConverter());
+        gsonBuilder.registerTypeAdapter(Jid.class, new JidConverter());
         gsonBuilder.registerTypeAdapter(LastOnlineResponse.class, new LastOnlineResponseConverter());
 
         // ignore protected, static and transient fields.
@@ -384,31 +349,15 @@ final class AthenaImpl implements Athena, Interceptor {
             scheduleRefresh();
 
             // refresh our XMPP connection and resources
-            if (connectionManager != null) {
-                beforeRefresh();
-
-                connectionManager.disconnect();
-                connectionManager.connect(session().accountId(), session().accessToken());
-                afterRefresh();
+            if (xmppEnabled()) {
+                connectionManager.reconnect(session().accountId(), session().accessToken());
             }
+
+            LOGGER.atInfo().log("Successfully re-authenticated.");
         } catch (EpicGamesErrorException exception) {
             LOGGER.atSevere().withCause(exception).log("Failed to refresh session.");
             close();
         }
-    }
-
-    /**
-     * Invoked before refreshing.
-     */
-    private void beforeRefresh() {
-        eventFactory.invoke(BeforeRefresh.class);
-    }
-
-    /**
-     * Invoked after refreshing
-     */
-    private void afterRefresh() {
-        eventFactory.invoke(AfterRefresh.class, context);
     }
 
     @Override
@@ -564,8 +513,11 @@ final class AthenaImpl implements Athena, Interceptor {
 
     @Override
     public void close() {
-        // invoke all of our shutdown hooks
-        eventFactory.invoke(Shutdown.class);
+        chat.close();
+        parties.close();
+        friends.close();
+        presences.close();
+
         // close the XMPP connection
         if (connectionManager != null) connectionManager.close();
         // kill our token
@@ -573,8 +525,6 @@ final class AthenaImpl implements Athena, Interceptor {
         // shutdown OkHttp
         client.dispatcher().executorService().shutdownNow();
         client.connectionPool().evictAll();
-
-        LOGGER.atInfo().log("Shutdown successfully.");
     }
 
     @NotNull
@@ -598,7 +548,7 @@ final class AthenaImpl implements Athena, Interceptor {
         // TODO: diff random uuid gen for fn requests
         final var finalRequest = nextRequestChain.newBuilder()
                 .addHeader("Authorization", "bearer " + session.get().accessToken())
-                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-12.10-CL-11883027 {0}")
+                .addHeader("User-Agent", "Fortnite/++Fortnite+Release-12.61-CL-13498980 IOS/13.4.1")
                 .addHeader("X-Epic-Correlation-ID", UUID.randomUUID().toString())
                 .build();
         return chain.proceed(finalRequest);

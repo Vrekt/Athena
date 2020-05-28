@@ -8,20 +8,34 @@ import athena.friend.resource.settings.FriendSettings;
 import athena.friend.resource.summary.Profile;
 import athena.friend.resource.summary.Summary;
 import athena.friend.service.FriendsPublicService;
+import athena.friend.xmpp.annotation.FriendEvent;
+import athena.friend.xmpp.event.events.*;
 import athena.friend.xmpp.listener.FriendEventListener;
-import athena.util.cleanup.AfterRefresh;
-import athena.util.cleanup.BeforeRefresh;
-import athena.util.cleanup.Shutdown;
+import athena.friend.xmpp.type.FriendType;
+import athena.friend.xmpp.types.blocklist.BlockListEntry;
+import athena.friend.xmpp.types.blocklist.BlockListUpdate;
+import athena.friend.xmpp.types.friend.FriendApiObject;
+import athena.friend.xmpp.types.friend.Friendship;
+import athena.util.event.EventFactory;
 import athena.util.request.Requests;
+import com.google.gson.JsonElement;
 import okhttp3.RequestBody;
+import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Stanza;
 
+import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
  * Provides easy access to the {@link FriendsPublicService} and XMPP.
  */
-public final class Friends {
+public final class Friends implements Closeable {
 
     /**
      * The athena context.
@@ -33,14 +47,27 @@ public final class Friends {
     private final FriendsPublicService service;
 
     /**
-     * The XMPP provider.
+     * The XMPP event listener.
      */
-    private final FriendsEventNotifier provider;
+    private final Listener eventListener = new Listener();
 
-    public Friends(DefaultAthenaContext context, boolean enableXMPP) {
+    /**
+     * Provides event handling and registering/unregistering.
+     */
+    private final EventFactory factory = EventFactory.createAnnotatedFactory(FriendEvent.class);
+    /**
+     * A list of all listeners registered.
+     */
+    private final CopyOnWriteArrayList<FriendEventListener> listeners = new CopyOnWriteArrayList<>();
+    /**
+     * Keeps a friend event listener for each account ID.
+     */
+    private final ConcurrentHashMap<String, List<FriendEventListener>> accountListeners = new ConcurrentHashMap<>();
+
+    public Friends(DefaultAthenaContext context) {
         this.context = context;
         this.service = context.friendsService();
-        provider = enableXMPP ? new FriendsEventNotifier(context) : null;
+        if (context.xmppEnabled()) context.connection().addAsyncStanzaListener(eventListener, MessageTypeFilter.NORMAL);
     }
 
     /**
@@ -266,28 +293,10 @@ public final class Friends {
     /**
      * Register an event listener.
      *
-     * @param listener the listener.
-     */
-    public void registerEventListener(FriendEventListener listener) {
-        if (provider != null) provider.registerEventListener(listener);
-    }
-
-    /**
-     * Unregister an event listener.
-     *
-     * @param listener the listener
-     */
-    public void unregisterEventListener(FriendEventListener listener) {
-        if (provider != null) provider.unregisterEventListener(listener);
-    }
-
-    /**
-     * Register an event listener.
-     *
      * @param type the class/type to register.
      */
     public void registerEventListener(Object type) {
-        if (provider != null) provider.registerEventListener(type);
+        factory.registerEventListener(type);
     }
 
     /**
@@ -296,7 +305,25 @@ public final class Friends {
      * @param type the class/type to register.
      */
     public void unregisterEventListener(Object type) {
-        if (provider != null) provider.unregisterEventListener(type);
+        factory.unregisterEventListener(type);
+    }
+
+    /**
+     * Register an event listener.
+     *
+     * @param listener the listener.
+     */
+    public void registerEventListener(FriendEventListener listener) {
+        listeners.add(listener);
+    }
+
+    /**
+     * Unregister an event listener.
+     *
+     * @param listener the listener
+     */
+    public void unregisterEventListener(FriendEventListener listener) {
+        listeners.remove(listener);
     }
 
     /**
@@ -306,46 +333,205 @@ public final class Friends {
      * @param listener  the listener.
      */
     public void registerEventListenerForAccount(String accountId, FriendEventListener listener) {
-        if (provider != null) provider.registerEventListenerForAccount(accountId, listener);
+        final var list = accountListeners.getOrDefault(accountId, new ArrayList<>());
+        list.add(listener);
+
+        accountListeners.put(accountId, list);
     }
 
     /**
      * Unregister an event listener for the account {@code accountId}
      *
      * @param accountId the account ID.
-     * @param listener  the event listener.
      */
-    public void unregisterEventListenerForAccount(String accountId, FriendEventListener listener) {
-        if (provider != null) provider.unregisterEventListenerForAccount(accountId, listener);
+    public void unregisterEventListenerForAccount(String accountId, FriendEventListener eventListener) {
+        accountListeners.computeIfPresent(accountId, (k, v) -> {
+            v.remove(eventListener);
+            return v;
+        });
     }
 
     /**
      * Unregister all event listeners.
      */
     public void unregisterAllEventListeners() {
-        if (provider != null) provider.unregisterAllEventListeners();
+        factory.unregisterAll();
     }
 
     /**
      * Unregister all account event listeners.
      */
     public void unregisterAllAccountEventListeners() {
-        if (provider != null) provider.unregisterAllAccountEventListeners();
+        accountListeners.clear();
     }
 
-    @AfterRefresh
-    private void after(DefaultAthenaContext context) {
-        if (provider != null) provider.afterRefresh(context);
+    @Override
+    public void close() {
+        if (context.xmppEnabled()) context.connection().removeAsyncStanzaListener(eventListener);
+
+        factory.dispose();
+        listeners.clear();
+        accountListeners.clear();
     }
 
-    @BeforeRefresh
-    private void before() {
-        if (provider != null) provider.beforeRefresh();
-    }
+    /**
+     * The XMPP event listener.
+     */
+    private final class Listener implements StanzaListener {
+        @Override
+        public void processStanza(Stanza packet) {
+            final var message = (Message) packet;
+            // Make sure we don't have a JSON array.
+            // This fixes a new issue discovered, epic changed their backend
+            // to include a new message type that is an array - not an object.
+            // 1/29/2020 - 6:08PM
+            final var element = context.gson().fromJson(message.getBody(), JsonElement.class);
+            final var object = element.getAsJsonObject();
+            if (object.has("interactions")) return; // ignore interactions types.
+            final var type = object.getAsJsonPrimitive("type").getAsString();
+            final var of = FriendType.typeOf(type);
+            if (of == FriendType.UNKNOWN) return;
 
-    @Shutdown
-    private void shutdown() {
-        if (provider != null) provider.shutdown();
+            switch (of) {
+                case FRIEND:
+                case FRIEND_REMOVAL:
+                    final var friendApiObject = context.gson().fromJson(message.getBody(), FriendApiObject.class);
+                    friendApiObject(friendApiObject, of);
+                    break;
+                case FRIENDSHIP_REQUEST:
+                case FRIENDSHIP_REMOVE:
+                    final var friendship = context.gson().fromJson(message.getBody(), Friendship.class);
+                    friendship(friendship, of);
+                    break;
+                case BLOCK_LIST_ENTRY_ADDED:
+                case BLOCK_LIST_ENTRY_REMOVED:
+                    final var blockListEntry = context.gson().fromJson(message.getBody(), BlockListEntry.class);
+                    blockListEntry(blockListEntry, of);
+                    break;
+                case USER_BLOCKLIST_UPDATE:
+                    final var blockListUpdate = context.gson().fromJson(message.getBody(), BlockListUpdate.class);
+                    blockListUpdate(blockListUpdate);
+                    break;
+            }
+        }
+
+        /**
+         * Handles the type {@link BlockListEntry}
+         * TODO: Refactor at some point.
+         * TODO: Currently users must manually distinguish between blocked/unblocked events for annotated methods.
+         *
+         * @param entry      the entry
+         * @param friendType the friend-type.
+         */
+        private void blockListEntry(BlockListEntry entry, FriendType friendType) {
+            if (friendType == FriendType.BLOCK_LIST_ENTRY_ADDED) {
+                listeners.forEach(listener -> listener.blockListEntryAdded(entry));
+                factory.invoke(FriendEvent.class, entry);
+            } else if (friendType == FriendType.BLOCK_LIST_ENTRY_REMOVED) {
+                listeners.forEach(listener -> listener.blockListEntryRemoved(entry));
+                factory.invoke(FriendEvent.class, entry);
+            }
+        }
+
+        /**
+         * Handles the type {@link BlockListUpdate}
+         * TODO: Refactor at some point.
+         * TODO: Currently users must manually distinguish between blocked/unblocked events for annotated methods.
+         *
+         * @param blockListUpdate the blocklist update
+         */
+        private void blockListUpdate(BlockListUpdate blockListUpdate) {
+            final var status = blockListUpdate.status();
+            // user was blocked.
+            if (status.equalsIgnoreCase("BLOCKED")) {
+                listeners.forEach(listener -> listener.blockListEntryAdded(blockListUpdate));
+                factory.invoke(FriendEvent.class, blockListUpdate);
+                // user was unblocked.
+            } else if (status.equalsIgnoreCase("UNBLOCKED")) {
+                listeners.forEach(listener -> listener.blockListEntryRemoved(blockListUpdate));
+                factory.invoke(FriendEvent.class, blockListUpdate);
+            }
+        }
+
+        /**
+         * Handle the type {@link FriendApiObject}
+         * TODO: Hopefully refactor this in the future
+         *
+         * @param friendApiObject the API object.
+         */
+        private void friendApiObject(FriendApiObject friendApiObject, FriendType friendType) {
+            final var direction = friendApiObject.direction();
+            // ensure the notification is valid for us.
+            if (direction == null || direction.equalsIgnoreCase("OUTBOUND")) return;
+            final var status = friendApiObject.status();
+
+            // if a pending friend request is incoming.
+            if (status.equalsIgnoreCase("PENDING")) {
+                final var event = new FriendRequestEvent(friendApiObject, friendType, context);
+                listeners.forEach(listener -> listener.friendRequest(event));
+                factory.invoke(FriendEvent.class, event);
+
+                if (accountListeners.containsKey(event.accountId()))
+                    accountListeners
+                            .get(event.accountId())
+                            .forEach(listener -> listener.friendRequest(event));
+                // if a friend is deleted.
+            } else if (status.equalsIgnoreCase("DELETED")) {
+                final var event = new FriendDeletedEvent(friendApiObject, friendType, context);
+                listeners.forEach(listener -> listener.friendDeleted(event));
+                factory.invoke(FriendEvent.class, event);
+
+                if (accountListeners.containsKey(event.accountId()))
+                    accountListeners
+                            .get(event.accountId())
+                            .forEach(listener -> listener.friendDeleted(event));
+            }
+
+        }
+
+        /**
+         * Handle the type {@link Friendship}
+         * TODO: Hopefully refactor this in the future.
+         * TODO: Possibly change behaviour, right now if you accept a friend request it will fire events.
+         * TODO: Maybe its only desirable to fire events if its from someone else (they accepted, they rejected, etc).
+         *
+         * @param friendship the friendship
+         */
+        private void friendship(Friendship friendship, FriendType friendType) {
+            final var status = friendship.status();
+
+            // the friend request was aborted.
+            if (status.equalsIgnoreCase("ABORTED")) {
+                final var event = new FriendAbortedEvent(friendship, friendType, context);
+                listeners.forEach(listener -> listener.friendAborted(event));
+                factory.invoke(FriendEvent.class, event);
+
+                if (accountListeners.containsKey(event.accountId()))
+                    accountListeners
+                            .get(event.accountId())
+                            .forEach(listener -> listener.friendAborted(event));
+                // the friend request was accepted.
+            } else if (status.equalsIgnoreCase("ACCEPTED")) {
+                final var event = new FriendAcceptedEvent(friendship, friendType, context);
+                listeners.forEach(listener -> listener.friendAccepted(event));
+                factory.invoke(FriendEvent.class, event);
+
+                if (accountListeners.containsKey(event.accountId()))
+                    accountListeners
+                            .get(event.accountId())
+                            .forEach(listener -> listener.friendAccepted(event));
+                // the friend request was rejected.
+            } else if (status.equalsIgnoreCase("REJECTED")) {
+                final var event = new FriendRejectedEvent(friendship, friendType, context);
+                listeners.forEach(listener -> listener.friendRejected(event));
+                factory.invoke(FriendEvent.class, event);
+
+                if (accountListeners.containsKey(event.accountId()))
+                    accountListeners
+                            .get(event.accountId())
+                            .forEach(listener -> listener.friendRejected(event));
+            }
+        }
     }
 
 }

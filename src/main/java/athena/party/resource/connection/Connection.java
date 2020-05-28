@@ -1,10 +1,8 @@
 package athena.party.resource.connection;
 
 import athena.types.Platform;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
 import com.google.gson.annotations.SerializedName;
 import org.jxmpp.jid.Jid;
-import org.jxmpp.jid.impl.JidCreate;
 
 import java.time.Instant;
 
@@ -16,12 +14,7 @@ public final class Connection {
     /**
      * The JID of this connection.
      */
-    private String id;
-
-    /**
-     * The JID of this connection.
-     */
-    private Jid jid;
+    private Jid id;
 
     /**
      * When they connected.
@@ -45,23 +38,11 @@ public final class Connection {
      */
     private ConnectionMeta meta;
 
-    @PostDeserialize
-    private void postDeserialize() {
-        jid = JidCreate.fromOrThrowUnchecked(id);
-    }
-
-    /**
-     * @return the ID of this connection.
-     */
-    public String id() {
-        return id;
-    }
-
     /**
      * @return the JID of this connection.
      */
     public Jid jid() {
-        return jid;
+        return id;
     }
 
     /**

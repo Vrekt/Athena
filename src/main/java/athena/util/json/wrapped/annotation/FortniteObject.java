@@ -6,14 +6,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates if the field value is wrapped inside a json string, the wrapped value must be a JsonObject.
+ * * Represents a 'FortniteObject'
+ * * A JSON value that is wrapped inside a string.
  * For example:
- *
- * @WrappedObject("MyValue") "MyValue_j" : "{\"MyValue\":123}",
+ * <p>
+ * "MyValue_j" : "{\"MyValue\":123}",
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface WrappedObject {
+public @interface FortniteObject {
     /**
      * The wrapped name.
      * Using the example above this value would be "MyValue"

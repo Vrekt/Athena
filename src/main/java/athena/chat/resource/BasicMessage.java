@@ -52,7 +52,7 @@ public final class BasicMessage {
 
         this.accountPublicService = context.account();
         this.friendsPublicService = context.friendsService();
-        this.connection = context.connectionManager().connection();
+        this.connection = context.connection();
     }
 
     /**

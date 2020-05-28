@@ -3,8 +3,8 @@ package athena.party.resource.meta;
 import athena.party.resource.assignment.SquadAssignment;
 import athena.party.resource.configuration.privacy.PartyPrivacy;
 import athena.party.resource.playlist.PartyPlaylistData;
-import athena.util.json.wrapped.annotation.WrappedArray;
-import athena.util.json.wrapped.annotation.WrappedObject;
+import athena.util.json.wrapped.annotation.FortniteArray;
+import athena.util.json.wrapped.annotation.FortniteObject;
 import com.google.gson.JsonArray;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -22,14 +22,14 @@ public final class PartyMeta {
      * Build, hotfix, region and playlist information.
      */
     @SerializedName("PartyMatchmakingInfo_j")
-    @WrappedObject("PartyMatchmakingInfo")
+    @FortniteObject("PartyMatchmakingInfo")
     private PartyMatchmakingInfo partyMatchmakingInfo;
 
     /**
      * An empty array []
      */
     @SerializedName("PlatformSessions_j")
-    @WrappedArray(value = "PlatformSessions", type = PlatformSessions.class, isConstant = true, isNotList = true)
+    @FortniteArray(value = "PlatformSessions", type = PlatformSessions.class, isConstant = true, isNotList = true)
     private PlatformSessions platformSessions;
 
     /**
@@ -100,7 +100,7 @@ public final class PartyMeta {
      * The party privacy settings.
      */
     @SerializedName("PrivacySettings_j")
-    @WrappedObject("PrivacySettings")
+    @FortniteObject("PrivacySettings")
     private PartyPrivacy privacySettings;
 
     /**
@@ -125,7 +125,7 @@ public final class PartyMeta {
      * Tile states usually []
      */
     @SerializedName("TileStates_j")
-    @WrappedArray(value = "TileStates", type = TileStates.class, isConstant = true, isNotList = true)
+    @FortniteArray(value = "TileStates", type = TileStates.class, isConstant = true, isNotList = true)
     @Expose(deserialize = false)
     private TileStates tileStates;
 
@@ -134,7 +134,7 @@ public final class PartyMeta {
      * Basically its how each member is arranged in an index.
      */
     @SerializedName("RawSquadAssignments_j")
-    @WrappedArray(value = "RawSquadAssignments", type = SquadAssignment.class)
+    @FortniteArray(value = "RawSquadAssignments", type = SquadAssignment.class)
     private List<SquadAssignment> squadAssignments;
 
     /**
@@ -194,7 +194,7 @@ public final class PartyMeta {
      * Playlist name, tournament info, region.
      */
     @SerializedName("PlaylistData_j")
-    @WrappedObject("PlaylistData")
+    @FortniteObject("PlaylistData")
     private PartyPlaylistData playlistData;
 
     /**

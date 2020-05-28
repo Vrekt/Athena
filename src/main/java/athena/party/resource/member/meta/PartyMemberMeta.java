@@ -9,8 +9,7 @@ import athena.party.resource.member.meta.emote.FrontendEmote;
 import athena.party.resource.member.meta.hero.CampaignHero;
 import athena.types.Input;
 import athena.types.Platform;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
-import athena.util.json.wrapped.annotation.WrappedObject;
+import athena.util.json.wrapped.annotation.FortniteObject;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -30,14 +29,14 @@ public final class PartyMemberMeta {
      * The campaign hero skin HID.
      */
     @SerializedName("CampaignHero_j")
-    @WrappedObject("CampaignHero")
+    @FortniteObject("CampaignHero")
     private CampaignHero campaignHero;
 
     /**
      * The squad assignment request.
      */
     @SerializedName("MemberSquadAssignmentRequest_j")
-    @WrappedObject("MemberSquadAssignmentRequest")
+    @FortniteObject("MemberSquadAssignmentRequest")
     private MemberSquadAssignmentRequest memberSquadAssignmentRequest;
 
     /**
@@ -62,7 +61,7 @@ public final class PartyMemberMeta {
      * Assisted challenge information
      */
     @SerializedName("AssistedChallengeInfo_j")
-    @WrappedObject("AssistedChallengeInfo")
+    @FortniteObject("AssistedChallengeInfo")
     private AssistedChallenge challengeInfo;
 
     /**
@@ -75,7 +74,7 @@ public final class PartyMemberMeta {
      * Battle pass information
      */
     @SerializedName("BattlePassInfo_j")
-    @WrappedObject("BattlePassInfo")
+    @FortniteObject("BattlePassInfo")
     private BattlePass battlePass;
 
     /**
@@ -106,7 +105,7 @@ public final class PartyMemberMeta {
      * Emote information
      */
     @SerializedName("FrontendEmote_j")
-    @WrappedObject("FrontendEmote")
+    @FortniteObject("FrontendEmote")
     private FrontendEmote frontendEmote;
 
     /**
@@ -125,7 +124,7 @@ public final class PartyMemberMeta {
      * Banner information
      */
     @SerializedName("AthenaBannerInfo_j")
-    @WrappedObject("AthenaBannerInfo")
+    @FortniteObject("AthenaBannerInfo")
     private AthenaBanner banner;
 
     /**
@@ -147,22 +146,17 @@ public final class PartyMemberMeta {
     private String gameReadiness;
 
     /**
-     * The raw platform
+     * Represents the platform
      */
     @SerializedName("Platform_j")
-    @WrappedObject("Platform")
-    private PlatformObject platformObject;
-
-    /**
-     * The platform, set after deserializing.
-     */
-    private Platform platform;
+    @FortniteObject("Platform")
+    private FortnitePlatform platform;
 
     /**
      * The cosmetics
      */
     @SerializedName("AthenaCosmeticLoadout_j")
-    @WrappedObject("AthenaCosmeticLoadout")
+    @FortniteObject("AthenaCosmeticLoadout")
     private CosmeticLoadout cosmeticLoadout;
 
     /**
@@ -201,13 +195,6 @@ public final class PartyMemberMeta {
     //@SerializedName("urn:epic:member:joinrequestusers_j")
     //  private JoinRequestUsers joinRequestUsers;
 
-    /**
-     * Set the platform.
-     */
-    @PostDeserialize
-    private void postDeserialize() {
-        if (platformObject != null) platform = platformObject.platform;
-    }
 
     /**
      * Updates this meta.
@@ -402,7 +389,7 @@ public final class PartyMemberMeta {
      * @return the platform
      */
     public Platform platform() {
-        return platform;
+        return platform.platform;
     }
 
     /**
@@ -528,8 +515,8 @@ public final class PartyMemberMeta {
     }
 
     public void platform(Platform platform) {
-        platformObject = new PlatformObject();
-        platformObject.platform = platform;
+        this.platform = new FortnitePlatform();
+        this.platform.platform = platform;
     }
 
     public void cosmeticLoadout(CosmeticLoadout cosmeticLoadout) {
@@ -559,7 +546,7 @@ public final class PartyMemberMeta {
     /**
      * Represents the platform object that contains their platform.
      */
-    private static final class PlatformObject {
+    private static final class FortnitePlatform {
         @SerializedName("platformStr")
         private Platform platform;
     }

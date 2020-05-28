@@ -5,7 +5,7 @@ import java.time.Instant;
 /**
  * Represents a blocklist entry api object.
  */
-public final class BlockListEntryApiObject {
+public final class BlockListEntry {
 
     /**
      * The payload

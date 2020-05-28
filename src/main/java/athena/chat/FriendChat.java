@@ -7,9 +7,6 @@ import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.Friend;
 import athena.friend.resource.summary.Profile;
-import athena.util.cleanup.AfterRefresh;
-import athena.util.cleanup.BeforeRefresh;
-import athena.util.cleanup.Shutdown;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
@@ -18,13 +15,14 @@ import org.jivesoftware.smack.packet.Stanza;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 
+import java.io.Closeable;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
  * Provides access to the XMPP chat.
  */
-public final class FriendChat implements StanzaListener {
+public final class FriendChat implements StanzaListener, Closeable {
 
     /**
      * List of consumers/listeners to accept messages.
@@ -39,7 +37,7 @@ public final class FriendChat implements StanzaListener {
 
     public FriendChat(DefaultAthenaContext context) {
         this.context = context;
-        context.connectionManager().connection().addAsyncStanzaListener(this, MessageTypeFilter.CHAT);
+        context.connection().addAsyncStanzaListener(this, MessageTypeFilter.CHAT);
     }
 
     /**
@@ -125,7 +123,7 @@ public final class FriendChat implements StanzaListener {
         packet.setBody(message);
 
         try {
-            context.connectionManager().connection().sendStanza(packet);
+            context.connection().sendStanza(packet);
         } catch (SmackException.NotConnectedException | InterruptedException exception) {
             throw EpicGamesErrorException.createFromOther(exception);
         }
@@ -139,35 +137,9 @@ public final class FriendChat implements StanzaListener {
         messageListeners.forEach(messageListener -> messageListener.onMessage(toBasicMessage));
     }
 
-    /**
-     * Invoked after refreshing to re-add the stanza listener.
-     *
-     * @param context the new context.
-     */
-    @AfterRefresh
-    private void afterRefresh(DefaultAthenaContext context) {
-        this.context = context;
-
-        context
-                .connectionManager()
-                .connection()
-                .addAsyncStanzaListener(this, MessageTypeFilter.NORMAL);
-    }
-
-    /**
-     * Invoked before a refresh to remove the stanza listener.
-     */
-    @BeforeRefresh
-    private void beforeRefresh() {
-        context.connectionManager().connection().removeAsyncStanzaListener(this);
-    }
-
-    /**
-     * Invoked to shutdown this provider.
-     */
-    @Shutdown
-    private void shutdown() {
-        context.connectionManager().connection().removeAsyncStanzaListener(this);
+    @Override
+    public void close() {
+        context.connection().removeAsyncStanzaListener(this);
 
         messageConsumers.clear();
         messageListeners.clear();

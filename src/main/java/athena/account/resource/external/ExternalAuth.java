@@ -1,7 +1,6 @@
 package athena.account.resource.external;
 
 import athena.types.Platform;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,13 +11,17 @@ import java.util.Optional;
 public final class ExternalAuth {
 
     /**
+     * Platform type
+     */
+    private Platform type;
+    /**
      * "nintendo",
      * "XXX" (only present for PSN)
      * "psn_user_id, xuid, nsa_id"
      * "accountId",
      * external display name
      */
-    private String type, externalAuthId, externalAuthIdType, accountId, externalDisplayName;
+    private String externalAuthId, externalAuthIdType, accountId, externalDisplayName;
     /**
      * List of external auth IDs.
      * {
@@ -31,18 +34,6 @@ public final class ExternalAuth {
      * }
      */
     private List<ExternalAuthId> authIds;
-    /**
-     * That platform of this external auth.
-     */
-    private Platform platform;
-
-    /**
-     * Retrieve the platform from the {@code type}
-     */
-    @PostDeserialize
-    private void postDeserialize() {
-        platform = Platform.typeOf(type);
-    }
 
     /**
      * Get a {@link ExternalAuthId} by the type.
@@ -52,13 +43,6 @@ public final class ExternalAuth {
      */
     public Optional<ExternalAuthId> getByType(String type) {
         return authIds.stream().filter(externalAuthId -> externalAuthId.type().equalsIgnoreCase(type)).findAny();
-    }
-
-    /**
-     * @return the type
-     */
-    public String type() {
-        return type;
     }
 
     /**
@@ -79,7 +63,7 @@ public final class ExternalAuth {
      * @return the platform of this external auth
      */
     public Platform platform() {
-        return platform;
+        return type;
     }
 
     /**
@@ -87,7 +71,7 @@ public final class ExternalAuth {
      */
     public String externalAuthId() {
         if (externalAuthId != null) return externalAuthId;
-        final var authId = getByType(type);
+        final var authId = getByType(platform().primaryName());
         if (authId.isEmpty()) return null;
         return authId.get().id();
     }

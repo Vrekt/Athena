@@ -89,15 +89,22 @@ public final class XMPPConnectionManager implements ConnectionListener {
      * @throws EpicGamesErrorException if any of these exceptions occurred, {@link IOException}, {@link SmackException}, {@link XMPPException}, {@link InterruptedException}
      */
     public void connect(String accountId, String accessToken) throws EpicGamesErrorException {
-        final var resource = "V2:" + application + ":" + platform.primaryName() + "::" + RandomStringUtils.random(32, HEX_UUID);
-
-        if (!loadRoster) {
-            Roster.setRosterLoadedAtLoginDefault(false);
-            Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
-        }
-        if (debug) SmackConfiguration.DEBUG = true;
-
         try {
+            // if we already have a connection connect again.
+            if (connection != null) {
+                connection.connect().login(accountId, accessToken);
+                return;
+            }
+            // otherwise initialize.
+            final var resource = "V2:" + application + ":" + platform.primaryName() + "::" + RandomStringUtils.random(32, HEX_UUID);
+
+            if (!loadRoster) {
+                Roster.setRosterLoadedAtLoginDefault(false);
+                Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
+            }
+
+            if (debug) SmackConfiguration.DEBUG = true;
+
             connection = new XMPPTCPConnection(
                     XMPPTCPConnectionConfiguration.builder()
                             .setXmppDomain(XMPP_DOMAIN)
@@ -137,6 +144,19 @@ public final class XMPPConnectionManager implements ConnectionListener {
     public void disconnect() {
         if (pingManager != null) pingManager.setPingInterval(-1);
         if (connection != null) connection.disconnect();
+    }
+
+    /**
+     * Reconnect
+     * * @param accountId   the account ID.
+     * * @param accessToken the access token.
+     */
+    public void reconnect(String accountId, String accessToken) {
+        try {
+            connection.disconnect();
+        } finally {
+            connect(accountId, accessToken);
+        }
     }
 
     /**

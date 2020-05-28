@@ -14,6 +14,7 @@ import athena.stats.service.StatsproxyPublicService;
 import athena.types.Platform;
 import athena.xmpp.XMPPConnectionManager;
 import com.google.gson.Gson;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 
 /**
  * Basic implementation of the {@link AthenaContext}
@@ -138,6 +139,13 @@ public final class DefaultAthenaContext extends AthenaContext {
      */
     public XMPPConnectionManager connectionManager() {
         return connectionManager;
+    }
+
+    /**
+     * @return the XMPP connection
+     */
+    public XMPPTCPConnection connection() {
+        return connectionManager.connection();
     }
 
     /**

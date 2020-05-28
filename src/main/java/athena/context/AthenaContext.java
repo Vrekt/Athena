@@ -109,6 +109,7 @@ public abstract class AthenaContext {
         this.connectionManager = athena.xmpp();
         this.gson = athena.gson();
         this.localAccountId = athena.accountId();
+        this.xmppEnabled = athena.xmppEnabled();
     }
 
     protected void initializeResources(Athena athena) {

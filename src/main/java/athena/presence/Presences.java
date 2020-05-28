@@ -2,32 +2,62 @@ package athena.presence;
 
 import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
+import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
+import athena.presence.resource.annotation.PresenceEvent;
 import athena.presence.resource.filter.PresenceFilter;
 import athena.presence.resource.listener.FortnitePresenceListener;
 import athena.presence.resource.subscription.PresenceSubscription;
 import athena.presence.resource.subscription.SubscriptionSettings;
 import athena.presence.service.PresencePublicService;
-import athena.util.cleanup.AfterRefresh;
-import athena.util.cleanup.BeforeRefresh;
-import athena.util.cleanup.Shutdown;
+import athena.util.event.EventFactory;
 import athena.util.request.Requests;
+import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.filter.PresenceTypeFilter;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 
+import java.io.Closeable;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Provides easy access to the {@link athena.presence.service.PresencePublicService} and XMPP.
  */
-public final class Presences {
+public final class Presences implements Closeable {
 
+    /**
+     * The presence service.
+     */
     private final PresencePublicService service;
-    private PresenceEventNotifier provider;
-    private final String localAccountId;
 
-    public Presences(DefaultAthenaContext context, boolean enableXmpp) {
+    /**
+     * The athena context.
+     */
+    private final DefaultAthenaContext context;
+
+    /**
+     * The event factory for presence events
+     */
+    private final EventFactory factory = EventFactory.createAnnotatedFactory(PresenceEvent.class);
+    /**
+     * COW list of listeners.
+     */
+    private final CopyOnWriteArrayList<FortnitePresenceListener> listeners = new CopyOnWriteArrayList<>();
+    /**
+     * COW list of filters.
+     */
+    private final CopyOnWriteArrayList<PresenceFilter> filters = new CopyOnWriteArrayList<>();
+
+    /**
+     * The XMPP event listener.
+     */
+    private final Listener eventListener = new Listener();
+
+    public Presences(DefaultAthenaContext context) {
+        this.context = context;
         this.service = context.presence();
-        this.localAccountId = context.localAccountId();
-        provider = enableXmpp ? new PresenceEventNotifier(context) : null;
+        if (context.xmppEnabled()) context.connection().addAsyncStanzaListener(eventListener, PresenceTypeFilter.AVAILABLE);
     }
 
     /**
@@ -37,7 +67,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public LastOnlineResponse lastOnline() throws EpicGamesErrorException {
-        final var call = service.lastOnline(localAccountId);
+        final var call = service.lastOnline(context.localAccountId());
         return Requests.executeCall(call);
     }
 
@@ -48,7 +78,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public SubscriptionSettings settings() throws EpicGamesErrorException {
-        final var call = service.subscriptionSettings(localAccountId);
+        final var call = service.subscriptionSettings(context.localAccountId());
         return Requests.executeCall(call);
     }
 
@@ -59,7 +89,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void setSettings(SubscriptionSettings settings) throws EpicGamesErrorException {
-        final var call = service.setSubscriptionSettings(localAccountId, settings);
+        final var call = service.setSubscriptionSettings(context.localAccountId(), settings);
         Requests.executeVoidCall(call);
     }
 
@@ -70,7 +100,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void subscribe(String accountId) throws EpicGamesErrorException {
-        final var call = service.subscribe(localAccountId, accountId);
+        final var call = service.subscribe(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -81,7 +111,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void unsubscribe(String accountId) throws EpicGamesErrorException {
-        final var call = service.unsubscribe(localAccountId, accountId);
+        final var call = service.unsubscribe(context.localAccountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -92,7 +122,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<PresenceSubscription> subscriptions() throws EpicGamesErrorException {
-        final var call = service.subscriptions(localAccountId);
+        final var call = service.subscriptions(context.localAccountId());
         return Requests.executeCall(call);
     }
 
@@ -103,7 +133,7 @@ public final class Presences {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void broadcast() throws EpicGamesErrorException {
-        final var call = service.broadcast("fn", localAccountId);
+        final var call = service.broadcast("fn", context.localAccountId());
         Requests.executeVoidCall(call);
     }
 
@@ -113,7 +143,7 @@ public final class Presences {
      * @param filter the filter
      */
     public void useFilter(PresenceFilter filter) {
-        if (provider != null) provider.useFilter(filter);
+        filters.add(filter);
     }
 
     /**
@@ -122,7 +152,7 @@ public final class Presences {
      * @param filter the filter
      */
     public void removeFilter(PresenceFilter filter) {
-        if (provider != null) provider.removeFilter(filter);
+        filters.remove(filter);
     }
 
     /**
@@ -131,7 +161,7 @@ public final class Presences {
      * @param listener the listener
      */
     public void registerPresenceListener(FortnitePresenceListener listener) {
-        if (provider != null) provider.registerPresenceListener(listener);
+        listeners.add(listener);
     }
 
     /**
@@ -140,7 +170,7 @@ public final class Presences {
      * @param listener the listener.
      */
     public void unregisterPresenceListener(FortnitePresenceListener listener) {
-        if (provider != null) provider.unregisterPresenceListener(listener);
+        listeners.remove(listener);
     }
 
     /**
@@ -149,7 +179,7 @@ public final class Presences {
      * @param type the class/type to register.
      */
     public void registerEventListener(Object type) {
-        if (provider != null) provider.registerEventListener(type);
+        factory.registerEventListener(type);
     }
 
     /**
@@ -158,21 +188,37 @@ public final class Presences {
      * @param type the class/type to register.
      */
     public void unregisterEventListener(Object type) {
-        if (provider != null) provider.unregisterEventListener(type);
+        factory.unregisterEventListener(type);
     }
 
-    @AfterRefresh
-    private void after(DefaultAthenaContext context) {
-        if (provider != null) provider.afterRefresh(context);
+    @Override
+    public void close() {
+        if (context.xmppEnabled()) context.connection().removeAsyncStanzaListener(eventListener);
+
+        factory.dispose();
+        listeners.clear();
+        filters.clear();
     }
 
-    @BeforeRefresh
-    private void before() {
-        if (provider != null) provider.beforeRefresh();
+    /**
+     * The XMPP event listener
+     */
+    private final class Listener implements StanzaListener {
+        @Override
+        public void processStanza(Stanza packet) {
+            final var presence = (Presence) packet;
+            if (presence.getStatus() == null) return;
+            final var accountId = presence.getFrom().getLocalpartOrNull().asUnescapedString();
+            final var fortnitePresence = context.gson().fromJson(presence.getStatus(), FortnitePresence.class);
+            // ignore presences that aren't Fortnite
+            // ideally we want to ignore them before deserializing but whatever
+            if (fortnitePresence.productName() == null || !fortnitePresence.productName().equalsIgnoreCase("Fortnite")) return;
+
+            fortnitePresence.setFrom(presence.getFrom());
+            factory.invoke(PresenceEvent.class, fortnitePresence);
+            listeners.forEach(listener -> listener.presenceReceived(fortnitePresence));
+            filters.stream().filter(filter -> filter.active() && filter.ready() && filter.isRelevant(accountId)).forEach(filter -> filter.consume(fortnitePresence));
+        }
     }
 
-    @Shutdown
-    private void shutdown() {
-        if (provider != null) provider.shutdown();
-    }
 }

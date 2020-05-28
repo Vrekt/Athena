@@ -1,7 +1,7 @@
 package athena.util.json.wrapped;
 
-import athena.util.json.wrapped.annotation.WrappedArray;
-import athena.util.json.wrapped.annotation.WrappedObject;
+import athena.util.json.wrapped.annotation.FortniteArray;
+import athena.util.json.wrapped.annotation.FortniteObject;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -15,12 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Used for classes that have to deserialize objects type in JSON strings.
+ * Used for reading and writing {@link FortniteArray} and {@link FortniteObject} types
  */
-public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
+public final class FortniteTypeAdapterFactory implements TypeAdapterFactory {
 
     /**
-     * A list of all type fields by the annotations {@link WrappedArray} and {@link WrappedObject}
+     * A list of all type fields by the annotations {@link FortniteArray} and {@link FortniteObject}
      */
     private final Map<Type, AnnotatedField> fields = new HashMap<>();
 
@@ -28,10 +28,10 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
      * Initialize a new instance.
      *
      * @param baseType the type
-     * @return a new {@link WrappedTypeAdapterFactory}
+     * @return a new {@link FortniteTypeAdapterFactory}
      */
-    public static WrappedTypeAdapterFactory of(Class<?> baseType) {
-        return new WrappedTypeAdapterFactory(baseType);
+    public static FortniteTypeAdapterFactory of(Class<?> baseType) {
+        return new FortniteTypeAdapterFactory(baseType);
     }
 
     /**
@@ -39,10 +39,10 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
      *
      * @param baseType the base type class.
      */
-    private WrappedTypeAdapterFactory(Class<?> baseType) {
+    private FortniteTypeAdapterFactory(Class<?> baseType) {
         for (var field : baseType.getDeclaredFields()) {
-            final var objectAnnotation = field.getAnnotation(WrappedObject.class);
-            final var arrayAnnotation = field.getAnnotation(WrappedArray.class);
+            final var objectAnnotation = field.getAnnotation(FortniteObject.class);
+            final var arrayAnnotation = field.getAnnotation(FortniteArray.class);
 
             if (objectAnnotation != null) {
                 // we have a field with the wrapped object annotation.
@@ -66,7 +66,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
         return new TypeAdapter<>() {
 
             // our adapter to use
-            final TypeAdapter<R> fieldTypeAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(WrappedTypeAdapterFactory.this, TypeToken.get(field.fieldType));
+            final TypeAdapter<R> fieldTypeAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(FortniteTypeAdapterFactory.this, TypeToken.get(field.fieldType));
 
             @Override
             public void write(JsonWriter out, R value) throws IOException {
@@ -87,7 +87,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
                     // if we are writing a list value then grab the delegate adapter for that.
                     // otherwise, use the field type adapter.
                     final var adapterToUse = (value instanceof ArrayList) ?
-                            (TypeAdapter<R>) gson.getDelegateAdapter(WrappedTypeAdapterFactory.this, TypeToken.get(value.getClass()))
+                            (TypeAdapter<R>) gson.getDelegateAdapter(FortniteTypeAdapterFactory.this, TypeToken.get(value.getClass()))
                             : fieldTypeAdapter;
                     final var object = new JsonObject();
                     if (field.isConstant) {
@@ -131,7 +131,7 @@ public final class WrappedTypeAdapterFactory implements TypeAdapterFactory {
     }
 
     /**
-     * Represents one of the two annotations {@link WrappedArray} or {@link WrappedObject}
+     * Represents one of the two annotations {@link FortniteArray} or {@link FortniteObject}
      */
     private static final class AnnotatedField {
 

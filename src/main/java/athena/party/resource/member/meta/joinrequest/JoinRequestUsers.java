@@ -1,7 +1,7 @@
 package athena.party.resource.member.meta.joinrequest;
 
 import athena.types.Platform;
-import athena.util.json.wrapped.annotation.WrappedArray;
+import athena.util.json.wrapped.annotation.FortniteArray;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -13,7 +13,7 @@ public final class JoinRequestUsers {
     /**
      * List of users.
      */
-    @WrappedArray(value = "users", type = User.class)
+    @FortniteArray(value = "users", type = User.class)
     private List<User> users;
 
     /**

@@ -1,7 +1,7 @@
 package athena.friend.xmpp.listener;
 
 import athena.friend.xmpp.event.events.*;
-import athena.friend.xmpp.types.blocklist.BlockListEntryApiObject;
+import athena.friend.xmpp.types.blocklist.BlockListEntry;
 import athena.friend.xmpp.types.blocklist.BlockListUpdate;
 
 /**
@@ -55,7 +55,7 @@ public interface FriendEventListener {
      *
      * @param blockListEntryApiObject the API object.
      */
-    default void blockListEntryRemoved(BlockListEntryApiObject blockListEntryApiObject) {
+    default void blockListEntryRemoved(BlockListEntry blockListEntryApiObject) {
 
     }
 
@@ -75,7 +75,7 @@ public interface FriendEventListener {
      *
      * @param blockListEntryApiObject the API object.
      */
-    default void blockListEntryAdded(BlockListEntryApiObject blockListEntryApiObject) {
+    default void blockListEntryAdded(BlockListEntry blockListEntryApiObject) {
 
     }
 

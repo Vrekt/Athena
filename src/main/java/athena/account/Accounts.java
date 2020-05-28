@@ -6,6 +6,7 @@ import athena.account.resource.EpicGamesProfile;
 import athena.account.resource.device.Device;
 import athena.account.resource.device.DeviceAuth;
 import athena.account.service.AccountPublicService;
+import athena.context.AthenaContext;
 import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
@@ -20,7 +21,7 @@ import java.util.Optional;
  *
  * @author Vrekt
  */
-public final class Accounts {
+public final class Accounts extends AthenaContext {
 
     /**
      * The service that handles the requests.

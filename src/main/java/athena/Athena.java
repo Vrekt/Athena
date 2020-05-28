@@ -498,8 +498,10 @@ public interface Athena {
          * @throws EpicGamesErrorException   if there was an authentication exception
          */
         public Athena build() throws UnsupportedBuildException, EpicGamesErrorException {
-            if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");
-            if (password == null || password.isEmpty()) throw new UnsupportedBuildException("Athena needs a password to login.");
+            if (grantType != GrantType.DEVICE_AUTH) {
+                if (email == null || email.isEmpty()) throw new UnsupportedBuildException("Athena needs an email address to login.");
+                if (password == null || password.isEmpty()) throw new UnsupportedBuildException("Athena needs a password to login.");
+            }
             if (enableXmpp && (platform == null || appType == null)) throw new UnsupportedBuildException("Platform and app must be set for XMPP.");
             if (kairos && authorizationToken.equals(EPIC_GAMES_LAUNCHER_TOKEN)) authorizationToken = KAIROS_TOKEN;
             return new AthenaImpl(this);
