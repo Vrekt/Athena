@@ -513,10 +513,10 @@ final class AthenaImpl implements Athena, Interceptor {
 
     @Override
     public void close() {
-        chat.close();
-        parties.close();
-        friends.close();
-        presences.close();
+        if (chat != null) chat.close();
+        if (parties != null) parties.close();
+        if (friends != null) friends.close();
+        if (presences != null) presences.close();
 
         // close the XMPP connection
         if (connectionManager != null) connectionManager.close();
