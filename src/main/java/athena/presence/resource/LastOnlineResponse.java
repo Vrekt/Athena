@@ -1,8 +1,9 @@
 package athena.presence.resource;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
-import athena.exception.EpicGamesErrorException;
+import athena.account.service.AccountPublicService;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
@@ -15,12 +16,24 @@ import java.util.Map;
 /**
  * Represents the response from last-online in {@link athena.presence.service.PresencePublicService}
  */
-public final class LastOnlineResponse extends AthenaContext {
+public final class LastOnlineResponse {
 
     /**
      * The map for storing times by account ID.
      */
     private Map<String, Instant> lastOnline;
+
+    /**
+     * The accounts provider
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
+
+    /**
+     * The accounts service
+     */
+    @Request(item = AccountPublicService.class)
+    private AccountPublicService service;
 
     public LastOnlineResponse(Map<String, Instant> lastOnline) {
         this.lastOnline = lastOnline;
@@ -52,10 +65,8 @@ public final class LastOnlineResponse extends AthenaContext {
      * @return a {@link Pair} with the account and last online time (instant UTC).
      */
     public Pair<Account, Instant> getAndConvertToAccount(String accountId) {
-        final var call = accountPublicService.findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
-        return Pair.of(result[0], get(accountId));
+        final var account = accounts.findByAccountId(accountId);
+        return Pair.of(account, get(accountId));
     }
 
     /**
@@ -71,7 +82,7 @@ public final class LastOnlineResponse extends AthenaContext {
         final var partitioned = Lists.partition(accountIds, 100);
         partitioned.forEach(list -> {
             // find and execute then put in map.
-            final var call = accountPublicService.findManyByAccountId(list.toArray(String[]::new));
+            final var call = service.findManyByAccountId(list.toArray(String[]::new));
             final var result = Requests.executeCall(call);
             result.forEach(account -> map.put(account, lastOnline.get(account.accountId())));
         });

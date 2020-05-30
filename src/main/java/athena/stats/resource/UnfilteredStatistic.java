@@ -2,7 +2,7 @@ package athena.stats.resource;
 
 import athena.stats.resource.type.StatisticType;
 import athena.types.Input;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
+import athena.util.json.hooks.PostDeserialize;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,83 +144,83 @@ public final class UnfilteredStatistic {
      * @return total number of players outlived all together.
      */
     public int playersOutlived() {
-        return statsByType.get(StatisticType.PLAYERS_OUTLIVED).intValue();
+        return statsByType.getOrDefault(StatisticType.PLAYERS_OUTLIVED, 0L).intValue();
     }
 
     /**
      * @return total number of kills all together.
      */
     public int kills() {
-        return statsByType.get(StatisticType.KILLS).intValue();
+        return statsByType.getOrDefault(StatisticType.KILLS, 0L).intValue();
     }
 
     /**
      * @return total number of wins all together.
      */
     public int wins() {
-        return statsByType.get(StatisticType.PLACED_TOP1).intValue();
+        return statsByType.getOrDefault(StatisticType.PLACED_TOP1, 0L).intValue();
     }
 
     /**
      * @return total number of 3rd places all together.
      */
     public int timesPlaced3rd() {
-        return statsByType.get(StatisticType.PLACED_TOP3).intValue();
+        return statsByType.getOrDefault(StatisticType.PLACED_TOP3, 0L).intValue();
     }
 
     /**
      * @return total number of 5th places all together.
      */
     public int timesPlaced5th() {
-        return statsByType.get(StatisticType.PLACED_TOP5).intValue();
+        return statsByType.getOrDefault(StatisticType.PLACED_TOP5, 0L).intValue();
     }
 
     /**
      * @return total number of 6th places all together.
      */
     public int timesPlaced6th() {
-        return statsByType.get(StatisticType.PLACED_TOP6).intValue();
+        return statsByType.getOrDefault(StatisticType.PLACED_TOP6, 0L).intValue();
     }
 
     /**
      * @return total number of 10th places all together.
      */
     public int timesPlaced10th() {
-        return statsByType.get(StatisticType.PLACED_TOP10).intValue();
+        return statsByType.getOrDefault(StatisticType.PLACED_TOP10, 0L).intValue();
     }
 
     /**
      * @return total number of 25th places all together.
      */
     public int timesPlaced25th() {
-        return statsByType.get(StatisticType.PLACED_TOP25).intValue();
+        return statsByType.getOrDefault(StatisticType.PLACED_TOP25, 0L).intValue();
     }
 
     /**
      * @return total number of minutes played all together
      */
     public int minutesPlayed() {
-        return statsByType.get(StatisticType.MINUTES_PLAYED).intValue();
+        return statsByType.getOrDefault(StatisticType.MINUTES_PLAYED, 0L).intValue();
     }
 
     /**
      * @return total number of matches played all together
      */
     public int matchesPlayed() {
-        return statsByType.get(StatisticType.MATCHES_PLAYED).intValue();
+        return statsByType.getOrDefault(StatisticType.MATCHES_PLAYED, 0L).intValue();
     }
 
     /**
      * @return total score all together
      */
     public int score() {
-        return statsByType.get(StatisticType.SCORE).intValue();
+        return statsByType.getOrDefault(StatisticType.SCORE, 0L).intValue();
     }
 
     /**
      * @return current BP level.
      */
     public int battlePassLevel() {
-        return statsByType.get(StatisticType.BP_LEVEL).intValue();
+        return statsByType.getOrDefault(StatisticType.BP_LEVEL, 0L).intValue();
     }
 }

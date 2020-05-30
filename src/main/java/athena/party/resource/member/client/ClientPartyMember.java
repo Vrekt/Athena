@@ -1,6 +1,5 @@
 package athena.party.resource.member.client;
 
-import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.member.meta.assignments.MemberSquadAssignmentRequest;
@@ -33,7 +32,6 @@ public final class ClientPartyMember {
     /**
      * Essentials
      */
-    private final DefaultAthenaContext context;
     private final PartyService service;
     private final Gson gson;
 
@@ -49,6 +47,16 @@ public final class ClientPartyMember {
     private final CampaignHero campaignHero = new CampaignHero();
 
     /**
+     * Local account ID and display name
+     */
+    private final String localAccountId, displayName;
+
+    /**
+     * Local platform
+     */
+    private final Platform platform;
+
+    /**
      * Party ID and revision information
      */
     private String partyId;
@@ -59,10 +67,12 @@ public final class ClientPartyMember {
      */
     private boolean isEmoting;
 
-    public ClientPartyMember(DefaultAthenaContext context) {
-        this.context = context;
-        this.service = context.partyService();
-        this.gson = context.gson();
+    public ClientPartyMember(PartyService service, Gson gson, String localAccountId, String displayName, Platform platform) {
+        this.service = service;
+        this.gson = gson;
+        this.localAccountId = localAccountId;
+        this.displayName = displayName;
+        this.platform = platform;
         initializeBaseMeta();
     }
 
@@ -88,7 +98,7 @@ public final class ClientPartyMember {
         updateMeta.challengeInfo(new AssistedChallenge());
         updateMeta.voiceChatMuted("false");
         updateMeta.battlePass(new BattlePass());
-        updateMeta.displayName(context.displayName());
+        updateMeta.displayName(displayName);
         updateMeta.hiddenMatchmakingDelayMax("0");
         updateMeta.homeBaseVersion("1");
         updateMeta.currentInputType(Input.KEYBOARD_AND_MOUSE);
@@ -99,7 +109,7 @@ public final class ClientPartyMember {
         updateMeta.hasPreloaded("false");
         updateMeta.voiceChatStatus("Enabled");
         updateMeta.gameReadiness("NotReady");
-        updateMeta.platform(context.platform());
+        updateMeta.platform(platform);
         updateMeta.timeStartedMatch(Instant.parse("0001-01-01T00:00:00.000Z"));
         updateMeta.location("PreLobby");
         updateMeta.crossplayPreference("OptedIn");
@@ -355,6 +365,16 @@ public final class ClientPartyMember {
     }
 
     /**
+     * Update this client with custom meta.
+     *
+     * @param meta the meta
+     */
+    public void update(PartyMemberMeta meta) {
+        updateMeta = meta;
+        update();
+    }
+
+    /**
      * Builds the payload
      *
      * @return the payload.
@@ -374,7 +394,7 @@ public final class ClientPartyMember {
      * @throws EpicGamesErrorException if an error occurred
      */
     private void patch(JsonObject payload) throws EpicGamesErrorException {
-        final var patch = service.patch(partyId, context.localAccountId(), payload);
+        final var patch = service.patch(partyId, localAccountId, payload);
         Requests.executeCall(patch);
     }
 

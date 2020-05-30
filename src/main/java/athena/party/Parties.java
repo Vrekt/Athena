@@ -1,6 +1,5 @@
 package athena.party;
 
-import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.party.resource.ClientParty;
 import athena.party.resource.Party;
@@ -39,6 +38,7 @@ import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 
 import java.io.Closeable;
@@ -58,18 +58,6 @@ public final class Parties implements Closeable {
      * The current build ID.
      */
     public static final String BUILD_ID = "1:1:";
-    /**
-     * The party service.
-     */
-    private final PartyService service;
-    /**
-     * The context
-     */
-    private final DefaultAthenaContext context;
-    /**
-     * The GSON instance
-     */
-    private final Gson gson;
     /**
      * The event factory.
      */
@@ -95,14 +83,43 @@ public final class Parties implements Closeable {
      */
     private PartyChat chat;
 
-    public Parties(DefaultAthenaContext context) {
-        this.context = context;
-        this.service = context.partyService();
-        this.gson = context.gson();
-        this.client = new ClientPartyMember(context);
-        this.clientParty = new ClientParty(service, null, context.gson());
-        this.chat = new PartyChat(MultiUserChatManager.getInstanceFor(context.connectionManager().connection()));
-        context.connection().addAsyncStanzaListener(eventListener, MessageTypeFilter.NORMAL);
+    /**
+     * The party service.
+     */
+    private final PartyService service;
+
+    /**
+     * The XMPP connection
+     */
+    private final XMPPTCPConnection connection;
+
+    /**
+     * The local account ID and display name.
+     */
+    private final String localAccountId, displayName;
+
+    /**
+     * The gson instance
+     */
+    private final Gson gson;
+
+    /**
+     * The athena platform.
+     */
+    private final Platform platform;
+
+    public Parties(PartyService service, Gson gson, XMPPTCPConnection connection, String localAccountId, String displayName, Platform platform) {
+        this.service = service;
+        this.gson = gson;
+        this.connection = connection;
+        this.localAccountId = localAccountId;
+        this.displayName = displayName;
+        this.platform = platform;
+
+        this.client = new ClientPartyMember(service, gson, localAccountId, displayName, platform);
+        this.clientParty = new ClientParty(service, null, gson);
+        this.chat = new PartyChat(MultiUserChatManager.getInstanceFor(connection));
+        connection.addAsyncStanzaListener(eventListener, MessageTypeFilter.NORMAL);
     }
 
     public void onPing(Consumer<PartyPingEvent> event) {
@@ -125,17 +142,17 @@ public final class Parties implements Closeable {
         // retrieve the new parties information
         party = Requests.executeCall(service.getParty(partyId));
         // craft our join payload
-        final var payload = PartyJoinRequest.forUser(context.localAccountId(), context.displayName(), context.connection().getUser(), context.platform());
+        final var payload = PartyJoinRequest.forUser(localAccountId, displayName, connection.getUser(), platform);
         // reset our client
         client.set(partyId);
         client.initializeBaseMeta();
         client.updateCosmetic();
         // join the party.
-        Requests.executeCall(service.joinParty(partyId, context.localAccountId(), payload));
+        Requests.executeCall(service.joinParty(partyId, localAccountId, payload));
         // send our meta
         client.update();
         // join the party chat
-        chat.joinNewChat(partyId, context.displayName(), context.localAccountId(), context.connection().getUser().getResourceOrEmpty().toString());
+        chat.joinNewChat(partyId, displayName, localAccountId, connection.getUser().getResourceOrEmpty().toString());
         // set when we last joined
         chat.setLastJoinTimeInternal(System.currentTimeMillis());
         return party;
@@ -153,7 +170,7 @@ public final class Parties implements Closeable {
         final var base = clientParty.initializeBaseMeta(privacy);
         // create the party.
         party = Requests.executeCall(service.createParty(
-                PartyCreateRequest.forParty(configuration, context.connection().getUser().asUnescapedString(), context.platform())));
+                PartyCreateRequest.forParty(configuration, connection.getUser().asUnescapedString(), platform)));
         // set our client party.
         clientParty.resetParty(party);
         // send our base meta
@@ -164,7 +181,7 @@ public final class Parties implements Closeable {
         client.updateCosmetic();
         client.update();
         // join the party chat
-        chat.joinNewChat(party.partyId(), context.displayName(), context.localAccountId(), context.connection().getUser().getResourceOrEmpty().toString());
+        chat.joinNewChat(party.partyId(), displayName, localAccountId, connection.getUser().getResourceOrEmpty().toString());
         // finally, update the party information
         updatePartyInformation();
         return party;
@@ -177,7 +194,7 @@ public final class Parties implements Closeable {
      */
     public void leaveParty() throws EpicGamesErrorException {
         if (party != null) {
-            Requests.executeCall(service.leaveParty(party.partyId(), context.localAccountId()));
+            Requests.executeCall(service.leaveParty(party.partyId(), localAccountId));
 
             // TODO: Rearrange squad assignments on leave
 
@@ -215,7 +232,7 @@ public final class Parties implements Closeable {
      */
     public void invite(String accountId) {
         if (party == null) return;
-        Requests.executeCall(service.invite(party.partyId(), accountId, new PartyInvitationRequest(context.displayName(), context.platform())));
+        Requests.executeCall(service.invite(party.partyId(), accountId, new PartyInvitationRequest(displayName, platform)));
     }
 
     /**
@@ -223,7 +240,7 @@ public final class Parties implements Closeable {
      * Only updates if the current account is leader.
      */
     public void refreshSquadAssignments() {
-        if (!party.leader().accountId().equals(context.localAccountId())) return;
+        if (!party.leader().accountId().equals(localAccountId)) return;
         final var assignments = createSquadAssignments();
         clientParty.setSquadAssignments(assignments);
     }
@@ -691,11 +708,22 @@ public final class Parties implements Closeable {
         newCaptain.role(PartyRole.CAPTAIN);
 
         // if we were promoted, get the revision.
-        if (newCaptain.accountId().equals(context.localAccountId())) {
+        if (newCaptain.accountId().equals(localAccountId)) {
             updatePartyInformation();
             clientParty.resetParty(party);
         }
 
+        return this;
+    }
+
+    /**
+     * Update the client with custom meta
+     *
+     * @param meta the meta
+     * @return this
+     */
+    public Parties updateClientWithCustomMeta(PartyMemberMeta meta) {
+        client.update(meta);
         return this;
     }
 
@@ -721,7 +749,7 @@ public final class Parties implements Closeable {
     public void close() {
         leaveParty();
         eventFactory.dispose();
-        context.connection().removeAsyncStanzaListener(eventListener);
+        connection.removeAsyncStanzaListener(eventListener);
     }
 
     /**
@@ -763,7 +791,7 @@ public final class Parties implements Closeable {
                 final var event = gson.fromJson(object, PartyPingEvent.class);
                 // handle our ping notification.
                 // we need to grab the party.
-                final var call = service.getUserParties(context.localAccountId(), event.fromAccountId());
+                final var call = service.getUserParties(localAccountId, event.fromAccountId());
                 final var response = Requests.executeCall(call);
                 if (response.size() > 0) event.party(response.get(0));
                 eventFactory.invoke(PartyEvent.class, event);
@@ -789,13 +817,13 @@ public final class Parties implements Closeable {
                 // update our party first.
                 updatePartyInformation();
                 // refresh if we didn't leave
-                if (!event.accountId().equalsIgnoreCase(context.localAccountId())) refreshSquadAssignments();
+                if (!event.accountId().equalsIgnoreCase(localAccountId)) refreshSquadAssignments();
                 event.party(party);
                 // fire event now
                 eventFactory.invoke(PartyEvent.class, event);
             } else if (notification == PartyNotification.MEMBER_STATE_UPDATED) {
                 final var event = gson.fromJson(object, PartyMemberUpdatedEvent.class);
-                if (event.accountId().equals(context.localAccountId())) return;
+                if (event.accountId().equals(localAccountId)) return;
                 // update our member
                 final var member = updateMember(event.accountId(), event.updated());
                 event.member(member);

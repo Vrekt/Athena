@@ -40,7 +40,7 @@ public interface AccountPublicService {
      * @return a {@link Call} returned by retrofit containing the {@link Account[]} if the call was successful.
      */
     @GET("account/api/public/account")
-    Call<Account[]> findOneByAccountId(@Query("accountId") String account);
+    Call<List<Account>> findOneByAccountId(@Query("accountId") String account);
 
     /**
      * Finds multiple accounts by account ID.

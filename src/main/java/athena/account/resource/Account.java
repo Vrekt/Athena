@@ -2,15 +2,18 @@ package athena.account.resource;
 
 import athena.account.resource.action.FriendAcceptor;
 import athena.account.resource.external.ExternalAuth;
-import athena.context.AthenaContext;
+import athena.chat.FriendChat;
+import athena.friend.Friends;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
 import athena.friend.xmpp.event.events.FriendRequestEvent;
 import athena.friend.xmpp.listener.FriendEventListener;
 import athena.types.Platform;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
-import athena.util.other.EmptyAction;
+import athena.util.json.hooks.PostDeserialize;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.impl.JidCreate;
 
@@ -23,7 +26,7 @@ import java.util.function.Consumer;
 /**
  * Represents a Fortnite account.
  */
-public final class Account extends AthenaContext {
+public final class Account {
     /**
      * The account ID for this account.
      */
@@ -41,9 +44,26 @@ public final class Account extends AthenaContext {
      * Bare JID of this account.
      */
     private BareJid jid;
-
-    private Account() {
-    }
+    /**
+     * The friends public service.
+     */
+    @Request(item = FriendsPublicService.class)
+    private transient FriendsPublicService friendsPublicService;
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private transient Account account;
+    /**
+     * The friends provider
+     */
+    @Request(item = Friends.class)
+    private transient Friends friends;
+    /**
+     * Friend chat provider.
+     */
+    @Request(item = FriendChat.class)
+    private transient FriendChat chat;
 
     @PostDeserialize
     private void postDeserialize() {
@@ -122,28 +142,28 @@ public final class Account extends AthenaContext {
      * Add this account as a friend.
      */
     public void friend() {
-        Requests.executeVoidCall(friendsPublicService.add(localAccountId, accountId));
+        Requests.executeVoidCall(friendsPublicService.add(account.accountId(), accountId));
     }
 
     /**
      * Remove this account as a friend.
      */
     public void unfriend() {
-        Requests.executeVoidCall(friendsPublicService.remove(localAccountId, accountId));
+        Requests.executeVoidCall(friendsPublicService.remove(account.accountId(), accountId));
     }
 
     /**
      * Block this account.
      */
     public void block() {
-        Requests.executeVoidCall(friendsPublicService.block(localAccountId, accountId));
+        Requests.executeVoidCall(friendsPublicService.block(account.accountId(), accountId));
     }
 
     /**
      * Unblock this account.
      */
     public void unblock() {
-        Requests.executeVoidCall(friendsPublicService.unblock(localAccountId, accountId));
+        Requests.executeVoidCall(friendsPublicService.unblock(account.accountId(), accountId));
     }
 
     /**
@@ -153,7 +173,7 @@ public final class Account extends AthenaContext {
      * @throws athena.exception.EpicGamesErrorException if an API error occurred or they are not a friend
      */
     public Profile friendProfile() {
-        return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
+        return Requests.executeCall(friendsPublicService.profile(account.accountId(), accountId, true));
     }
 
     /**
@@ -206,7 +226,7 @@ public final class Account extends AthenaContext {
     private final class DefaultFriendAcceptor implements FriendAcceptor, FriendEventListener {
 
         private Executor delayed;
-        private EmptyAction action;
+        private Runnable action;
         private Consumer<Profile> profileConsumer;
 
         @Override
@@ -215,9 +235,7 @@ public final class Account extends AthenaContext {
                 delayed = CompletableFuture.delayedExecutor(seconds, TimeUnit.SECONDS);
                 delayed.execute(() -> {
                     Account.this.friends.unregisterEventListenerForAccount(Account.this.accountId, this);
-                    if (action != null) {
-                        action.execute();
-                    }
+                    if (action != null) action.run();
                 });
             } else {
                 throw new UnsupportedOperationException("Wait until was already set!");
@@ -226,7 +244,7 @@ public final class Account extends AthenaContext {
         }
 
         @Override
-        public FriendAcceptor onExpired(EmptyAction run) {
+        public FriendAcceptor onExpired(Runnable run) {
             this.action = run;
             return this;
         }
@@ -245,4 +263,21 @@ public final class Account extends AthenaContext {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Account account = (Account) o;
+        return account.accountId.equals(accountId);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(accountId)
+                .toHashCode();
+    }
 }

@@ -1,6 +1,5 @@
 package athena.events;
 
-import athena.context.DefaultAthenaContext;
 import athena.events.resource.download.event.FortniteEventDownload;
 import athena.events.resource.download.player.EventPlayer;
 import athena.events.resource.leaderboard.EventLeaderboard;
@@ -23,9 +22,9 @@ public final class Events {
      */
     private final EventsPublicService service;
 
-    public Events(DefaultAthenaContext context) {
-        this.service = context.events();
-        this.localAccountId = context.localAccountId();
+    public Events(String localAccountId, EventsPublicService service) {
+        this.localAccountId = localAccountId;
+        this.service = service;
     }
 
     /**

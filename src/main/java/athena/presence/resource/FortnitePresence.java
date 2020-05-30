@@ -1,19 +1,19 @@
 package athena.presence.resource;
 
 import athena.Athena;
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
-import athena.context.AthenaContext;
-import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import org.jxmpp.jid.Jid;
 
 /**
  * Represents a Fortnite presence.
  */
-public final class FortnitePresence extends AthenaContext {
+public final class FortnitePresence {
 
     /**
      * The JSON status.
@@ -44,7 +44,7 @@ public final class FortnitePresence extends AthenaContext {
     @SerializedName("bIsJoinable")
     private boolean joinable;
     /**
-     * ??
+     * If the client has voice support
      */
     @SerializedName("bHasVoiceSupport")
     private boolean voiceSupport;
@@ -64,8 +64,23 @@ public final class FortnitePresence extends AthenaContext {
      */
     private Jid from;
 
-    private FortnitePresence() {
-    }
+    /**
+     * The accounts provider
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
+
+    /**
+     * The friends service
+     */
+    @Request(item = FriendsPublicService.class)
+    private FriendsPublicService service;
+
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account localAccount;
 
     /**
      * @return the JSON status
@@ -269,11 +284,7 @@ public final class FortnitePresence extends AthenaContext {
      */
     public Account account() {
         if (account == null) {
-            final var call = accountPublicService.findOneByAccountId(from.getLocalpartOrNull().asUnescapedString());
-            final var result = Requests.executeCall(call);
-            if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + from.getLocalpartOrNull().asUnescapedString());
-            account = result[0];
-            return account;
+            account = accounts.findByAccountId(from.getLocalpartOrThrow().asUnescapedString());
         }
         return account;
     }
@@ -282,7 +293,7 @@ public final class FortnitePresence extends AthenaContext {
      * @return the profile for this presence sender.
      */
     public Profile profile() {
-        final var call = friendsPublicService.profile(localAccountId, from.getLocalpartOrNull().asUnescapedString(), true);
+        final var call = service.profile(localAccount.accountId(), from.getLocalpartOrNull().asUnescapedString(), true);
         return Requests.executeCall(call);
     }
 
@@ -307,7 +318,9 @@ public final class FortnitePresence extends AthenaContext {
          * The kairos profile JSON as a string.
          */
         private String KairosProfile_s;
-        @Expose(deserialize = false)
+        /**
+         * Kairos profile
+         */
         private KairosProfile kairosProfile;
 
         /**
@@ -375,7 +388,7 @@ public final class FortnitePresence extends AthenaContext {
     }
 
     /**
-     * Gameplat stats.
+     * Gameplay stats.
      */
     private static final class GameplayStats {
         /**

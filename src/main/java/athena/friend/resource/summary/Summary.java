@@ -32,9 +32,6 @@ public final class Summary {
         return friends;
     }
 
-    private Summary() {
-    }
-
     /**
      * Get a profile that has the {@code accountId}
      *

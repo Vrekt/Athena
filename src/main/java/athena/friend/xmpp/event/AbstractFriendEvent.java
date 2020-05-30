@@ -1,13 +1,8 @@
 package athena.friend.xmpp.event;
 
-import athena.account.resource.Account;
-import athena.context.AthenaContext;
-import athena.context.DefaultAthenaContext;
-import athena.exception.EpicGamesErrorException;
+import athena.friend.xmpp.type.FriendType;
 import athena.friend.xmpp.types.friend.FriendApiObject;
 import athena.friend.xmpp.types.friend.Friendship;
-import athena.friend.xmpp.type.FriendType;
-import athena.util.request.Requests;
 
 import java.time.Instant;
 
@@ -15,7 +10,6 @@ import java.time.Instant;
  * Used as a base for all friend events.
  */
 public abstract class AbstractFriendEvent {
-
 
     /**
      * The {@link Friendship} object.
@@ -25,10 +19,6 @@ public abstract class AbstractFriendEvent {
      * The {@link FriendApiObject} object.
      */
     protected final FriendApiObject friendApiObject;
-    /**
-     * The athena context.
-     */
-    protected final DefaultAthenaContext context;
 
     /**
      * Account ID of this event.
@@ -43,36 +33,22 @@ public abstract class AbstractFriendEvent {
      */
     protected final FriendType friendType;
 
-    public AbstractFriendEvent(Friendship friendship, FriendType friendType, DefaultAthenaContext context) {
+    public AbstractFriendEvent(Friendship friendship, FriendType friendType) {
         this.friendship = friendship;
         this.friendApiObject = null;
         this.friendType = friendType;
-        this.context = context;
 
         this.accountId = friendship.from();
         this.timestamp = friendship.timestamp();
     }
 
-    public AbstractFriendEvent(FriendApiObject friendApiObject, FriendType friendType, DefaultAthenaContext context) {
+    public AbstractFriendEvent(FriendApiObject friendApiObject, FriendType friendType) {
         this.friendApiObject = friendApiObject;
         this.friendship = null;
         this.friendType = friendType;
-        this.context = context;
 
         this.accountId = friendApiObject.accountId();
         this.timestamp = friendApiObject.timestamp();
-    }
-
-    /**
-     * Retrieve the account of this friend request.
-     *
-     * @return their account.
-     */
-    public Account account() {
-        final var call = context.account().findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
-        return result[0];
     }
 
     /**
@@ -87,13 +63,6 @@ public abstract class AbstractFriendEvent {
      */
     public FriendApiObject friendType() {
         return friendApiObject;
-    }
-
-    /**
-     * @return the athena context.
-     */
-    public AthenaContext context() {
-        return context;
     }
 
     /**

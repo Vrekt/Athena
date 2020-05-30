@@ -1,7 +1,6 @@
 package athena.account.resource.action;
 
 import athena.friend.resource.summary.Profile;
-import athena.util.other.EmptyAction;
 
 import java.util.function.Consumer;
 
@@ -22,7 +21,7 @@ public interface FriendAcceptor {
      *
      * @param run the action to run.
      */
-    FriendAcceptor onExpired(EmptyAction run);
+    FriendAcceptor onExpired(Runnable run);
 
     /**
      * Once the friend request is accepted the {@code profileConsumer} will be accepted.

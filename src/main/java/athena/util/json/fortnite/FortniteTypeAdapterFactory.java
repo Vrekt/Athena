@@ -1,7 +1,7 @@
-package athena.util.json.wrapped;
+package athena.util.json.fortnite;
 
-import athena.util.json.wrapped.annotation.FortniteArray;
-import athena.util.json.wrapped.annotation.FortniteObject;
+import athena.util.json.fortnite.annotation.FortniteArray;
+import athena.util.json.fortnite.annotation.FortniteObject;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -64,9 +64,8 @@ public final class FortniteTypeAdapterFactory implements TypeAdapterFactory {
         // retrieve our field
         final var field = fields.get(type.getType());
         return new TypeAdapter<>() {
-
             // our adapter to use
-            final TypeAdapter<R> fieldTypeAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(FortniteTypeAdapterFactory.this, TypeToken.get(field.fieldType));
+            private final TypeAdapter<R> fieldTypeAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(FortniteTypeAdapterFactory.this, TypeToken.get(field.fieldType));
 
             @Override
             public void write(JsonWriter out, R value) throws IOException {

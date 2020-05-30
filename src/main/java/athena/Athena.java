@@ -1,6 +1,7 @@
 package athena;
 
 import athena.account.Accounts;
+import athena.account.resource.Account;
 import athena.account.resource.device.Device;
 import athena.account.service.AccountPublicService;
 import athena.authentication.service.AuthenticationService;
@@ -208,6 +209,11 @@ public interface Athena {
     String displayName();
 
     /**
+     * @return our local account
+     */
+    Account localAccount();
+
+    /**
      * @return the session of this athena instance.
      */
     Session session();
@@ -258,6 +264,11 @@ public interface Athena {
          * {@code debugXmpp} if true xmpp traffic will be logged.
          */
         private boolean enableXmpp, loadRoster, reconnectOnError, debugXmpp;
+
+        /**
+         * Configuration options to disable certain components
+         */
+        private boolean disableChat, disableParties, disablePresences, disableFriends;
 
         /**
          * Platform and app types.
@@ -391,6 +402,26 @@ public interface Athena {
             return this;
         }
 
+        public Builder disableChat() {
+            disableChat = true;
+            return this;
+        }
+
+        public Builder disableParties() {
+            disableParties = true;
+            return this;
+        }
+
+        public Builder disablePresences() {
+            disablePresences = true;
+            return this;
+        }
+
+        public Builder disableFriends() {
+            disableFriends = true;
+            return this;
+        }
+
         public Builder platform(Platform platform) {
             this.platform = platform;
             return this;
@@ -472,6 +503,22 @@ public interface Athena {
 
         boolean authenticateKairos() {
             return kairos;
+        }
+
+        boolean shouldDisableChat() {
+            return disableChat;
+        }
+
+        boolean shouldDisableParties() {
+            return disableParties;
+        }
+
+        boolean shouldDisablePresences() {
+            return disablePresences;
+        }
+
+        boolean shouldDisableFriends() {
+            return disableFriends;
         }
 
         Platform platform() {

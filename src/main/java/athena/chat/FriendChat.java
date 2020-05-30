@@ -1,17 +1,19 @@
 package athena.chat;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
 import athena.chat.resource.BasicMessage;
 import athena.chat.resource.listener.IncomingMessageListener;
-import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.Friend;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 
@@ -31,13 +33,28 @@ public final class FriendChat implements StanzaListener, Closeable {
     private final CopyOnWriteArraySet<IncomingMessageListener> messageListeners = new CopyOnWriteArraySet<>();
 
     /**
-     * The context
+     * The XMPP connection
      */
-    private DefaultAthenaContext context;
+    private final XMPPTCPConnection connection;
+    /**
+     * The local account ID.
+     */
+    private final String localAccountId;
+    /**
+     * Accounts provider
+     */
+    private final Accounts accounts;
+    /**
+     * The friends public service
+     */
+    private final FriendsPublicService friendsPublicService;
 
-    public FriendChat(DefaultAthenaContext context) {
-        this.context = context;
-        context.connection().addAsyncStanzaListener(this, MessageTypeFilter.CHAT);
+    public FriendChat(XMPPTCPConnection connection, String localAccountId, Accounts accounts, FriendsPublicService friendsPublicService) {
+        this.connection = connection;
+        this.localAccountId = localAccountId;
+        this.accounts = accounts;
+        this.friendsPublicService = friendsPublicService;
+        connection.addAsyncStanzaListener(this, MessageTypeFilter.CHAT);
     }
 
     /**
@@ -123,7 +140,7 @@ public final class FriendChat implements StanzaListener, Closeable {
         packet.setBody(message);
 
         try {
-            context.connection().sendStanza(packet);
+            connection.sendStanza(packet);
         } catch (SmackException.NotConnectedException | InterruptedException exception) {
             throw EpicGamesErrorException.createFromOther(exception);
         }
@@ -132,14 +149,14 @@ public final class FriendChat implements StanzaListener, Closeable {
     @Override
     public void processStanza(Stanza packet) {
         final var message = (Message) packet;
-        final var toBasicMessage = new BasicMessage(message.getBody(), message.getFrom(), context);
+        final var toBasicMessage = new BasicMessage(message.getBody(), message.getFrom(), localAccountId, accounts, friendsPublicService, connection);
         messageConsumers.forEach(consumer -> consumer.accept(toBasicMessage));
         messageListeners.forEach(messageListener -> messageListener.onMessage(toBasicMessage));
     }
 
     @Override
     public void close() {
-        context.connection().removeAsyncStanzaListener(this);
+        connection.removeAsyncStanzaListener(this);
 
         messageConsumers.clear();
         messageListeners.clear();

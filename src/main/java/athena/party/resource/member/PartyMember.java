@@ -1,14 +1,14 @@
 package athena.party.resource.member;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
-import athena.exception.EpicGamesErrorException;
+import athena.party.Parties;
 import athena.party.resource.connection.Connection;
 import athena.party.resource.member.meta.PartyMemberMeta;
 import athena.party.resource.member.role.PartyRole;
 import athena.types.Input;
 import athena.types.Platform;
-import athena.util.request.Requests;
+import athena.util.json.request.Request;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Represents a party member.
  */
-public final class PartyMember extends AthenaContext {
+public final class PartyMember {
 
     /**
      * The account ID of this member.
@@ -55,6 +55,18 @@ public final class PartyMember extends AthenaContext {
      */
     @SerializedName("joined_at")
     private Instant joinedAt;
+
+    /**
+     * Parties
+     */
+    @Request(item = Parties.class)
+    private Parties parties;
+
+    /**
+     * The accounts provider
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
 
     /**
      * The role of this member.
@@ -256,10 +268,7 @@ public final class PartyMember extends AthenaContext {
      * @return the account
      */
     public Account account() {
-        final var call = accountPublicService.findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + accountId);
-        return result[0];
+        return accounts.findByAccountId(accountId);
     }
 
 }

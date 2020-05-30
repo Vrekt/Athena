@@ -1,7 +1,8 @@
 package athena.party.resource;
 
-import athena.context.AthenaContext;
+import athena.account.resource.Account;
 import athena.exception.EpicGamesErrorException;
+import athena.party.Parties;
 import athena.party.resource.assignment.SquadAssignment;
 import athena.party.resource.chat.PartyChat;
 import athena.party.resource.configuration.PartyConfiguration;
@@ -19,7 +20,8 @@ import athena.party.resource.meta.PartyMeta;
 import athena.party.resource.playlist.PartyPlaylistData;
 import athena.types.Input;
 import athena.types.Platform;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
+import athena.util.json.hooks.PostDeserialize;
+import athena.util.json.request.Request;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -28,7 +30,7 @@ import java.util.List;
 /**
  * Represents a Fortnite party.
  */
-public final class Party extends AthenaContext {
+public final class Party {
 
     /**
      * The ID of this party.
@@ -71,6 +73,16 @@ public final class Party extends AthenaContext {
      * Current revision for this party.
      */
     private int revision;
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+    /**
+     * Parties
+     */
+    @Request(item = Parties.class)
+    private Parties parties;
 
     /**
      * @return the party ID.
@@ -785,7 +797,7 @@ public final class Party extends AthenaContext {
      */
     public Party kickAll() {
         members.forEach(member -> {
-            if (!member.accountId().equalsIgnoreCase(localAccountId)) kick(member);
+            if (!member.accountId().equalsIgnoreCase(account.accountId())) kick(member);
         });
         return this;
     }

@@ -1,11 +1,15 @@
 package athena.party.xmpp.event.member;
 
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
+import athena.account.service.AccountPublicService;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
+import athena.party.Parties;
 import athena.party.resource.Party;
 import athena.party.resource.connection.Connection;
 import athena.party.resource.member.meta.PartyMemberMeta;
+import athena.party.service.PartyService;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
@@ -14,7 +18,7 @@ import java.time.Instant;
 /**
  * An event for when a member requires confirmation to join.
  */
-public final class PartyMemberRequireConfirmationEvent extends AthenaContext {
+public final class PartyMemberRequireConfirmationEvent {
 
     /**
      * When this event was sent.
@@ -66,6 +70,36 @@ public final class PartyMemberRequireConfirmationEvent extends AthenaContext {
      */
     @SerializedName("updated_at")
     private Instant updatedAt;
+
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+
+    /**
+     * Parties
+     */
+    @Request(item = Parties.class)
+    private Parties parties;
+
+    /**
+     * The party service
+     */
+    @Request(item = PartyService.class)
+    private PartyService partyService;
+
+    /**
+     * The friends service
+     */
+    @Request(item = FriendsPublicService.class)
+    private FriendsPublicService friendsPublicService;
+
+    /**
+     * The accounts service
+     */
+    @Request(item = AccountPublicService.class)
+    private AccountPublicService accountPublicService;
 
     /**
      * The party
@@ -179,7 +213,7 @@ public final class PartyMemberRequireConfirmationEvent extends AthenaContext {
      * @return the friend profile
      */
     public Profile friendProfile() {
-        return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
+        return Requests.executeCall(friendsPublicService.profile(account.accountId(), accountId, true));
     }
 
 }

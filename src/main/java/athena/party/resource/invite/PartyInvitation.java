@@ -1,11 +1,13 @@
 package athena.party.resource.invite;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
-import athena.exception.EpicGamesErrorException;
+import athena.account.service.AccountPublicService;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
 import athena.party.resource.meta.invites.PingOrInvitationMeta;
 import athena.types.Platform;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
@@ -14,7 +16,7 @@ import java.time.Instant;
 /**
  * Represents a party invitation
  */
-public final class PartyInvitation extends AthenaContext {
+public final class PartyInvitation {
 
     /**
      * The ID of the party ID.
@@ -60,6 +62,30 @@ public final class PartyInvitation extends AthenaContext {
     private String status;
 
     /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+
+    /**
+     * The accounts provider
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
+
+    /**
+     * The accounts service
+     */
+    @Request(item = AccountPublicService.class)
+    private AccountPublicService accountPublicService;
+
+    /**
+     * The friends service
+     */
+    @Request(item = FriendsPublicService.class)
+    private FriendsPublicService friendsPublicService;
+
+    /**
      * @return the ID of the party
      */
     public String partyId() {
@@ -84,7 +110,7 @@ public final class PartyInvitation extends AthenaContext {
      * @return the friend profile of who sent this invite.
      */
     public Profile sentByProfile() {
-        return Requests.executeCall(friendsPublicService.profile(localAccountId, sentBy, true));
+        return Requests.executeCall(friendsPublicService.profile(account.accountId(), sentBy, true));
     }
 
     /**
@@ -133,10 +159,7 @@ public final class PartyInvitation extends AthenaContext {
      * @return the {@link Account} of who the invite was sent to.
      */
     public Account sentToAccount() {
-        final var call = accountPublicService.findOneByAccountId(sentTo);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + sentTo);
-        return result[0];
+        return accounts.findByAccountId(sentTo);
     }
 
     /**
@@ -144,7 +167,7 @@ public final class PartyInvitation extends AthenaContext {
      * They must be a friend for this call to succeed.
      */
     public Profile sentToProfile() {
-        return Requests.executeCall(friendsPublicService.profile(localAccountId, sentTo, true));
+        return Requests.executeCall(friendsPublicService.profile(account.accountId(), sentTo, true));
     }
 
     /**

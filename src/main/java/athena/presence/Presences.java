@@ -1,6 +1,5 @@
 package athena.presence;
 
-import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.presence.resource.FortnitePresence;
 import athena.presence.resource.LastOnlineResponse;
@@ -12,10 +11,12 @@ import athena.presence.resource.subscription.SubscriptionSettings;
 import athena.presence.service.PresencePublicService;
 import athena.util.event.EventFactory;
 import athena.util.request.Requests;
+import com.google.gson.Gson;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.PresenceTypeFilter;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 
 import java.io.Closeable;
 import java.util.List;
@@ -34,7 +35,17 @@ public final class Presences implements Closeable {
     /**
      * The athena context.
      */
-    private final DefaultAthenaContext context;
+    private final XMPPTCPConnection connection;
+
+    /**
+     * The local account ID
+     */
+    private final String localAccountId;
+
+    /**
+     * GSON
+     */
+    private final Gson gson;
 
     /**
      * The event factory for presence events
@@ -54,10 +65,12 @@ public final class Presences implements Closeable {
      */
     private final Listener eventListener = new Listener();
 
-    public Presences(DefaultAthenaContext context) {
-        this.context = context;
-        this.service = context.presence();
-        if (context.xmppEnabled()) context.connection().addAsyncStanzaListener(eventListener, PresenceTypeFilter.AVAILABLE);
+    public Presences(PresencePublicService service, XMPPTCPConnection connection, String localAccountId, Gson gson) {
+        this.service = service;
+        this.connection = connection;
+        this.localAccountId = localAccountId;
+        this.gson = gson;
+        if (connection != null) connection.addAsyncStanzaListener(eventListener, PresenceTypeFilter.AVAILABLE);
     }
 
     /**
@@ -67,7 +80,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public LastOnlineResponse lastOnline() throws EpicGamesErrorException {
-        final var call = service.lastOnline(context.localAccountId());
+        final var call = service.lastOnline(localAccountId);
         return Requests.executeCall(call);
     }
 
@@ -78,7 +91,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public SubscriptionSettings settings() throws EpicGamesErrorException {
-        final var call = service.subscriptionSettings(context.localAccountId());
+        final var call = service.subscriptionSettings(localAccountId);
         return Requests.executeCall(call);
     }
 
@@ -89,7 +102,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void setSettings(SubscriptionSettings settings) throws EpicGamesErrorException {
-        final var call = service.setSubscriptionSettings(context.localAccountId(), settings);
+        final var call = service.setSubscriptionSettings(localAccountId, settings);
         Requests.executeVoidCall(call);
     }
 
@@ -100,7 +113,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void subscribe(String accountId) throws EpicGamesErrorException {
-        final var call = service.subscribe(context.localAccountId(), accountId);
+        final var call = service.subscribe(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -111,7 +124,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void unsubscribe(String accountId) throws EpicGamesErrorException {
-        final var call = service.unsubscribe(context.localAccountId(), accountId);
+        final var call = service.unsubscribe(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -122,7 +135,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<PresenceSubscription> subscriptions() throws EpicGamesErrorException {
-        final var call = service.subscriptions(context.localAccountId());
+        final var call = service.subscriptions(localAccountId);
         return Requests.executeCall(call);
     }
 
@@ -133,7 +146,7 @@ public final class Presences implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void broadcast() throws EpicGamesErrorException {
-        final var call = service.broadcast("fn", context.localAccountId());
+        final var call = service.broadcast("fn", localAccountId);
         Requests.executeVoidCall(call);
     }
 
@@ -193,7 +206,7 @@ public final class Presences implements Closeable {
 
     @Override
     public void close() {
-        if (context.xmppEnabled()) context.connection().removeAsyncStanzaListener(eventListener);
+        if (connection != null) connection.removeAsyncStanzaListener(eventListener);
 
         factory.dispose();
         listeners.clear();
@@ -209,7 +222,8 @@ public final class Presences implements Closeable {
             final var presence = (Presence) packet;
             if (presence.getStatus() == null) return;
             final var accountId = presence.getFrom().getLocalpartOrNull().asUnescapedString();
-            final var fortnitePresence = context.gson().fromJson(presence.getStatus(), FortnitePresence.class);
+            final var fortnitePresence = gson.fromJson(presence.getStatus(), FortnitePresence.class);
+
             // ignore presences that aren't Fortnite
             // ideally we want to ignore them before deserializing but whatever
             if (fortnitePresence.productName() == null || !fortnitePresence.productName().equalsIgnoreCase("Fortnite")) return;

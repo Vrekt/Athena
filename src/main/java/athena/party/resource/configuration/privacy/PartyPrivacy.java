@@ -30,7 +30,7 @@ public final class PartyPrivacy {
     /**
      * Private privacy settings
      */
-    public static PartyPrivacy PRIVATE = new PartyPrivacy("Private", "AnyMember", false);
+    public static PartyPrivacy PRIVATE = new PartyPrivacy("Private", "NoInvites", false);
 
     private PartyPrivacy(String partyType, String partyInviteRestriction, boolean onlyLeaderFriendsCanJoin) {
         this.partyType = partyType;

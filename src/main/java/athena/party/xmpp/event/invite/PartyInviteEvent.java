@@ -1,8 +1,11 @@
 package athena.party.xmpp.event.invite;
 
-import athena.context.AthenaContext;
+import athena.account.resource.Account;
+import athena.party.Parties;
 import athena.party.resource.Party;
 import athena.party.resource.meta.invites.PingOrInvitationMeta;
+import athena.party.service.PartyService;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
@@ -12,7 +15,7 @@ import java.util.List;
 /**
  * Represents a party invitation event.
  */
-public final class PartyInviteEvent extends AthenaContext {
+public final class PartyInviteEvent {
 
     /**
      * When this invite was sent.
@@ -66,6 +69,24 @@ public final class PartyInviteEvent extends AthenaContext {
      */
     @SerializedName("members_count")
     private int membersCount;
+
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+
+    /**
+     * Parties
+     */
+    @Request(item = Parties.class)
+    private Parties parties;
+
+    /**
+     * The party service
+     */
+    @Request(item = PartyService.class)
+    private PartyService service;
 
     /**
      * The party
@@ -165,7 +186,7 @@ public final class PartyInviteEvent extends AthenaContext {
      * Decline this invite
      */
     public void decline() {
-        Requests.executeCall(partyService.declineInvite(partyId, localAccountId));
+        Requests.executeCall(service.declineInvite(partyId, account.accountId()));
     }
 
 }

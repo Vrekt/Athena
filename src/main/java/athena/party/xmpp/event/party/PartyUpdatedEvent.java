@@ -1,14 +1,13 @@
 package athena.party.xmpp.event.party;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
-import athena.exception.EpicGamesErrorException;
 import athena.party.resource.Party;
 import athena.party.resource.assignment.SquadAssignment;
 import athena.party.resource.configuration.privacy.PartyPrivacy;
 import athena.party.resource.meta.PartyMeta;
 import athena.party.resource.playlist.PartyPlaylistData;
-import athena.util.request.Requests;
+import athena.util.json.request.Request;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;
@@ -17,7 +16,7 @@ import java.util.List;
 /**
  * Represents an event for when the party is updated
  */
-public final class PartyUpdatedEvent extends AthenaContext {
+public final class PartyUpdatedEvent {
 
     /**
      * When this event was sent
@@ -85,6 +84,12 @@ public final class PartyUpdatedEvent extends AthenaContext {
     private Instant updatedAt;
 
     /**
+     * The accounts provider
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
+
+    /**
      * The party
      */
     private Party party;
@@ -121,10 +126,7 @@ public final class PartyUpdatedEvent extends AthenaContext {
      * @return The account of who is captain
      */
     public Account captainAccount() {
-        final var call = accountPublicService.findOneByAccountId(captainId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + captainId);
-        return result[0];
+        return accounts.findByAccountId(captainId);
     }
 
     /**

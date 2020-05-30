@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public final class MethodInspector {
 
     /**
-     * TODO: Watch for concurrency issues.
+     * The method cache.
      */
     private final Map<Class<?>, Map<Class<? extends Annotation>, MethodData>> cache = new HashMap<>();
 

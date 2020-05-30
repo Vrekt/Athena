@@ -9,7 +9,7 @@ import athena.party.resource.member.meta.emote.FrontendEmote;
 import athena.party.resource.member.meta.hero.CampaignHero;
 import athena.types.Input;
 import athena.types.Platform;
-import athena.util.json.wrapped.annotation.FortniteObject;
+import athena.util.json.fortnite.annotation.FortniteObject;
 import com.google.gson.annotations.SerializedName;
 
 import java.time.Instant;

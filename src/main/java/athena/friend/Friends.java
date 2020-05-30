@@ -1,6 +1,5 @@
 package athena.friend;
 
-import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.Friend;
 import athena.friend.resource.blocked.Blocked;
@@ -18,12 +17,14 @@ import athena.friend.xmpp.types.friend.FriendApiObject;
 import athena.friend.xmpp.types.friend.Friendship;
 import athena.util.event.EventFactory;
 import athena.util.request.Requests;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import okhttp3.RequestBody;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -38,13 +39,15 @@ import java.util.stream.Collectors;
 public final class Friends implements Closeable {
 
     /**
-     * The athena context.
-     */
-    private final DefaultAthenaContext context;
-    /**
      * The service.
      */
     private final FriendsPublicService service;
+
+    private final XMPPTCPConnection connection;
+
+    private final String localAccountId;
+
+    private final Gson gson;
 
     /**
      * The XMPP event listener.
@@ -64,10 +67,12 @@ public final class Friends implements Closeable {
      */
     private final ConcurrentHashMap<String, List<FriendEventListener>> accountListeners = new ConcurrentHashMap<>();
 
-    public Friends(DefaultAthenaContext context) {
-        this.context = context;
-        this.service = context.friendsService();
-        if (context.xmppEnabled()) context.connection().addAsyncStanzaListener(eventListener, MessageTypeFilter.NORMAL);
+    public Friends(FriendsPublicService service, XMPPTCPConnection connection, String localAccountId, Gson gson) {
+        this.service = service;
+        this.connection = connection;
+        this.localAccountId = localAccountId;
+        this.gson = gson;
+        if (connection != null) connection.addAsyncStanzaListener(eventListener, MessageTypeFilter.NORMAL);
     }
 
     /**
@@ -84,7 +89,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void add(String accountId) throws EpicGamesErrorException {
-        final var call = service.add(context.localAccountId(), accountId);
+        final var call = service.add(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -95,7 +100,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeOrDecline(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(context.localAccountId(), accountId);
+        final var call = service.remove(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -106,7 +111,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void block(String accountId) throws EpicGamesErrorException {
-        final var call = service.block(context.localAccountId(), accountId);
+        final var call = service.block(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -117,7 +122,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void unblock(String accountId) throws EpicGamesErrorException {
-        final var call = service.unblock(context.localAccountId(), accountId);
+        final var call = service.unblock(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -129,7 +134,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<Friend> friends(boolean includePending) throws EpicGamesErrorException {
-        final var call = service.friends(context.localAccountId(), includePending);
+        final var call = service.friends(localAccountId, includePending);
         return Requests.executeCall(call);
     }
 
@@ -140,7 +145,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public List<String> blocked() throws EpicGamesErrorException {
-        final var call = service.blocked(context.localAccountId());
+        final var call = service.blocked(localAccountId);
         return Requests.executeCall(call).stream().map(Blocked::accountId).collect(Collectors.toList());
     }
 
@@ -153,7 +158,7 @@ public final class Friends implements Closeable {
      */
     public void setFriendAlias(String accountId, String alias) throws EpicGamesErrorException {
         if (alias.length() < 3 || alias.length() > 16) throw new IllegalArgumentException("Alias must be 3 characters minimum and 16 characters maximum.");
-        final var call = service.setAlias(context.localAccountId(), accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
+        final var call = service.setAlias(localAccountId, accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -175,7 +180,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendAlias(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(context.localAccountId(), accountId);
+        final var call = service.remove(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -198,7 +203,7 @@ public final class Friends implements Closeable {
      */
     public void setFriendNote(String accountId, String note) throws EpicGamesErrorException {
         if (note.length() < 3 || note.length() > 255) throw new IllegalArgumentException("Note must be 3 characters minimum and 255 characters maximum.");
-        final var call = service.setNote(context.localAccountId(), accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
+        final var call = service.setNote(localAccountId, accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -220,7 +225,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public void removeFriendNote(String accountId) throws EpicGamesErrorException {
-        final var call = service.remove(context.localAccountId(), accountId);
+        final var call = service.remove(localAccountId, accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -242,7 +247,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public Profile friendProfile(String accountId) throws EpicGamesErrorException {
-        final var call = service.profile(context.localAccountId(), accountId, true);
+        final var call = service.profile(localAccountId, accountId, true);
         return Requests.executeCall(call);
     }
 
@@ -264,7 +269,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public Summary summary() throws EpicGamesErrorException {
-        final var call = service.summary(context.localAccountId(), true);
+        final var call = service.summary(localAccountId, true);
         return Requests.executeCall(call);
     }
 
@@ -275,7 +280,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public FriendSettings settings() throws EpicGamesErrorException {
-        final var call = service.settings(context.localAccountId());
+        final var call = service.settings(localAccountId);
         return Requests.executeCall(call);
     }
 
@@ -286,7 +291,7 @@ public final class Friends implements Closeable {
      * @throws EpicGamesErrorException if the API returned an error response.
      */
     public FriendSettings setSettings(FriendSettings settings) throws EpicGamesErrorException {
-        final var call = service.setSettings(context.localAccountId(), settings);
+        final var call = service.setSettings(localAccountId, settings);
         return Requests.executeCall(call);
     }
 
@@ -367,7 +372,7 @@ public final class Friends implements Closeable {
 
     @Override
     public void close() {
-        if (context.xmppEnabled()) context.connection().removeAsyncStanzaListener(eventListener);
+        if (connection != null) connection.removeAsyncStanzaListener(eventListener);
 
         factory.dispose();
         listeners.clear();
@@ -385,7 +390,7 @@ public final class Friends implements Closeable {
             // This fixes a new issue discovered, epic changed their backend
             // to include a new message type that is an array - not an object.
             // 1/29/2020 - 6:08PM
-            final var element = context.gson().fromJson(message.getBody(), JsonElement.class);
+            final var element = gson.fromJson(message.getBody(), JsonElement.class);
             final var object = element.getAsJsonObject();
             if (object.has("interactions")) return; // ignore interactions types.
             final var type = object.getAsJsonPrimitive("type").getAsString();
@@ -395,21 +400,21 @@ public final class Friends implements Closeable {
             switch (of) {
                 case FRIEND:
                 case FRIEND_REMOVAL:
-                    final var friendApiObject = context.gson().fromJson(message.getBody(), FriendApiObject.class);
+                    final var friendApiObject = gson.fromJson(message.getBody(), FriendApiObject.class);
                     friendApiObject(friendApiObject, of);
                     break;
                 case FRIENDSHIP_REQUEST:
                 case FRIENDSHIP_REMOVE:
-                    final var friendship = context.gson().fromJson(message.getBody(), Friendship.class);
+                    final var friendship = gson.fromJson(message.getBody(), Friendship.class);
                     friendship(friendship, of);
                     break;
                 case BLOCK_LIST_ENTRY_ADDED:
                 case BLOCK_LIST_ENTRY_REMOVED:
-                    final var blockListEntry = context.gson().fromJson(message.getBody(), BlockListEntry.class);
+                    final var blockListEntry = gson.fromJson(message.getBody(), BlockListEntry.class);
                     blockListEntry(blockListEntry, of);
                     break;
                 case USER_BLOCKLIST_UPDATE:
-                    final var blockListUpdate = context.gson().fromJson(message.getBody(), BlockListUpdate.class);
+                    final var blockListUpdate = gson.fromJson(message.getBody(), BlockListUpdate.class);
                     blockListUpdate(blockListUpdate);
                     break;
             }
@@ -467,7 +472,7 @@ public final class Friends implements Closeable {
 
             // if a pending friend request is incoming.
             if (status.equalsIgnoreCase("PENDING")) {
-                final var event = new FriendRequestEvent(friendApiObject, friendType, context);
+                final var event = new FriendRequestEvent(friendApiObject, friendType);
                 listeners.forEach(listener -> listener.friendRequest(event));
                 factory.invoke(FriendEvent.class, event);
 
@@ -477,7 +482,7 @@ public final class Friends implements Closeable {
                             .forEach(listener -> listener.friendRequest(event));
                 // if a friend is deleted.
             } else if (status.equalsIgnoreCase("DELETED")) {
-                final var event = new FriendDeletedEvent(friendApiObject, friendType, context);
+                final var event = new FriendDeletedEvent(friendApiObject, friendType);
                 listeners.forEach(listener -> listener.friendDeleted(event));
                 factory.invoke(FriendEvent.class, event);
 
@@ -502,7 +507,7 @@ public final class Friends implements Closeable {
 
             // the friend request was aborted.
             if (status.equalsIgnoreCase("ABORTED")) {
-                final var event = new FriendAbortedEvent(friendship, friendType, context);
+                final var event = new FriendAbortedEvent(friendship, friendType);
                 listeners.forEach(listener -> listener.friendAborted(event));
                 factory.invoke(FriendEvent.class, event);
 
@@ -512,7 +517,7 @@ public final class Friends implements Closeable {
                             .forEach(listener -> listener.friendAborted(event));
                 // the friend request was accepted.
             } else if (status.equalsIgnoreCase("ACCEPTED")) {
-                final var event = new FriendAcceptedEvent(friendship, friendType, context);
+                final var event = new FriendAcceptedEvent(friendship, friendType);
                 listeners.forEach(listener -> listener.friendAccepted(event));
                 factory.invoke(FriendEvent.class, event);
 
@@ -522,7 +527,7 @@ public final class Friends implements Closeable {
                             .forEach(listener -> listener.friendAccepted(event));
                 // the friend request was rejected.
             } else if (status.equalsIgnoreCase("REJECTED")) {
-                final var event = new FriendRejectedEvent(friendship, friendType, context);
+                final var event = new FriendRejectedEvent(friendship, friendType);
                 listeners.forEach(listener -> listener.friendRejected(event));
                 factory.invoke(FriendEvent.class, event);
 

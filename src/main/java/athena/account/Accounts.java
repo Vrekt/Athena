@@ -6,8 +6,6 @@ import athena.account.resource.EpicGamesProfile;
 import athena.account.resource.device.Device;
 import athena.account.resource.device.DeviceAuth;
 import athena.account.service.AccountPublicService;
-import athena.context.AthenaContext;
-import athena.context.DefaultAthenaContext;
 import athena.exception.EpicGamesErrorException;
 import athena.util.request.Requests;
 import athena.util.request.Result;
@@ -21,7 +19,7 @@ import java.util.Optional;
  *
  * @author Vrekt
  */
-public final class Accounts extends AthenaContext {
+public final class Accounts {
 
     /**
      * The service that handles the requests.
@@ -29,9 +27,9 @@ public final class Accounts extends AthenaContext {
     private final AccountPublicService service;
     private final String accountId;
 
-    public Accounts(DefaultAthenaContext context) {
-        this.service = context.account();
-        this.accountId = context.localAccountId();
+    public Accounts(AccountPublicService service, String accountId) {
+        this.service = service;
+        this.accountId = accountId;
     }
 
     /**
@@ -77,8 +75,8 @@ public final class Accounts extends AthenaContext {
         if (accountId == null) throw new NullPointerException("accountId is null.");
         final var call = service.findOneByAccountId(accountId);
         final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + accountId);
-        return result[0];
+        if (result.isEmpty()) throw EpicGamesErrorException.create("Failed to find account " + accountId);
+        return result.get(0);
     }
 
     /**
@@ -87,7 +85,7 @@ public final class Accounts extends AthenaContext {
      * @param accountId the ID of the account
      * @param callback  the callback
      */
-    public void findByAccountId(String accountId, Result<Account[]> callback) {
+    public void findByAccountId(String accountId, Result<List<Account>> callback) {
         if (accountId == null || callback == null) throw new NullPointerException("accountId or callback is null.");
         final var call = service.findOneByAccountId(accountId);
         Requests.executeCallAsync(call, callback);

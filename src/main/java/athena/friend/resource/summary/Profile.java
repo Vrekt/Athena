@@ -1,11 +1,13 @@
 package athena.friend.resource.summary;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.exception.EpicGamesErrorException;
+import athena.chat.FriendChat;
+import athena.friend.Friends;
 import athena.friend.service.FriendsPublicService;
-import athena.util.json.service.hooks.annotation.PostDeserialize;
+import athena.util.json.hooks.PostDeserialize;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
-import athena.context.AthenaContext;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.Expose;
 import okhttp3.RequestBody;
@@ -18,7 +20,7 @@ import java.util.Map;
 /**
  * Represents a friend profile.
  */
-public final class Profile extends AthenaContext {
+public final class Profile {
 
     /**
      * Account ID, their alias and note.
@@ -59,8 +61,33 @@ public final class Profile extends AthenaContext {
      */
     private BareJid jid;
 
-    private Profile() {
-    }
+    /**
+     * The friends public service.
+     */
+    @Request(item = FriendsPublicService.class)
+    private FriendsPublicService friendsPublicService;
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+
+    /**
+     * The accounts provider.
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
+
+    /**
+     * The friends provider
+     */
+    @Request(item = Friends.class)
+    private Friends friends;
+    /**
+     * Friend chat provider.
+     */
+    @Request(item = FriendChat.class)
+    private FriendChat chat;
 
     @PostDeserialize
     private void post() {
@@ -138,17 +165,18 @@ public final class Profile extends AthenaContext {
      * @return the account of this friend.
      */
     public Account account() {
-        final var call = accountPublicService.findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Cannot find account " + accountId);
-        return result[0];
+        return accounts.findByAccountId(accountId);
+    }
+
+    public Account getAccount() {
+        return account;
     }
 
     /**
      * Remove this friend.
      */
     public void unfriend() {
-        final var call = friendsPublicService.remove(localAccountId, accountId);
+        final var call = friendsPublicService.remove(account.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -156,7 +184,7 @@ public final class Profile extends AthenaContext {
      * Block this friend.
      */
     public void block() {
-        final var call = friendsPublicService.block(localAccountId, accountId);
+        final var call = friendsPublicService.block(account.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -164,7 +192,7 @@ public final class Profile extends AthenaContext {
      * Unblock this friend, if you just blocked them on accident I guess?
      */
     public void unblock() {
-        final var call = friendsPublicService.unblock(localAccountId, accountId);
+        final var call = friendsPublicService.unblock(account.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -175,7 +203,7 @@ public final class Profile extends AthenaContext {
      */
     public void setAlias(String alias) {
         if (alias.length() < 3 || alias.length() > 16) throw new IllegalArgumentException("Alias must be 3 characters minimum and 16 characters maximum.");
-        final var call = friendsPublicService.setAlias(localAccountId, accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
+        final var call = friendsPublicService.setAlias(account.accountId(), accountId, RequestBody.create(alias, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -183,7 +211,7 @@ public final class Profile extends AthenaContext {
      * Remove the alias set for this friend
      */
     public void removeAlias() {
-        final var call = friendsPublicService.removeAlias(localAccountId, accountId);
+        final var call = friendsPublicService.removeAlias(account.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 
@@ -194,7 +222,7 @@ public final class Profile extends AthenaContext {
      */
     public void setNote(String note) {
         if (note.length() < 3 || note.length() > 255) throw new IllegalArgumentException("Note must be 3 characters minimum and 255 characters maximum.");
-        final var call = friendsPublicService.setNote(localAccountId, accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
+        final var call = friendsPublicService.setNote(account.accountId(), accountId, RequestBody.create(note, FriendsPublicService.MEDIA_TYPE));
         Requests.executeVoidCall(call);
     }
 
@@ -202,7 +230,7 @@ public final class Profile extends AthenaContext {
      * Remove the note set for this friend.
      */
     public void removeNote() {
-        final var call = friendsPublicService.removeNote(localAccountId, accountId);
+        final var call = friendsPublicService.removeNote(account.accountId(), accountId);
         Requests.executeVoidCall(call);
     }
 

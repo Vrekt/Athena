@@ -1,11 +1,13 @@
 package athena.party.xmpp.event.member;
 
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
+import athena.account.service.AccountPublicService;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
 import athena.party.resource.Party;
 import athena.party.resource.member.PartyMember;
 import athena.party.resource.member.meta.PartyMemberMeta;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
@@ -14,7 +16,7 @@ import java.time.Instant;
 /**
  * Represents an event for when a member is promoted.
  */
-public final class PartyMemberNewCaptainEvent extends AthenaContext {
+public final class PartyMemberNewCaptainEvent {
 
     /**
      * When this event was sent.
@@ -61,6 +63,24 @@ public final class PartyMemberNewCaptainEvent extends AthenaContext {
      */
     @SerializedName("updated_at")
     private Instant updatedAt;
+
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+
+    /**
+     * The accounts provider.
+     */
+    @Request(item = AccountPublicService.class)
+    private AccountPublicService accountPublicService;
+
+    /**
+     * The friends service
+     */
+    @Request(item = FriendsPublicService.class)
+    private FriendsPublicService friendsPublicService;
 
     /**
      * The party
@@ -174,14 +194,14 @@ public final class PartyMemberNewCaptainEvent extends AthenaContext {
      * @return the friend profile
      */
     public Profile friendProfile() {
-        return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
+        return Requests.executeCall(friendsPublicService.profile(account.accountId(), accountId, true));
     }
 
     /**
      * @return {@code true} if you were promoted.
      */
     public boolean localAccountPromoted() {
-        return accountId.equals(localAccountId);
+        return accountId.equals(account.accountId());
     }
 
 }

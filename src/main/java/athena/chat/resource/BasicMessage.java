@@ -1,9 +1,7 @@
 package athena.chat.resource;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.account.service.AccountPublicService;
-import athena.context.DefaultAthenaContext;
-import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
 import athena.friend.service.FriendsPublicService;
 import athena.util.request.Requests;
@@ -29,7 +27,7 @@ public final class BasicMessage {
     /**
      * Services
      */
-    private final AccountPublicService accountPublicService;
+    private final Accounts accounts;
     private final FriendsPublicService friendsPublicService;
 
     /**
@@ -40,19 +38,22 @@ public final class BasicMessage {
     /**
      * Initialize
      *
-     * @param message the message
-     * @param from    who it was from
-     * @param context the athena context
+     * @param message              the message
+     * @param from                 who it was from
+     * @param localAccountId       the athena account ID
+     * @param accounts             accounts provider
+     * @param friendsPublicService friends public service
+     * @param connection           XMPP connection
      */
-    public BasicMessage(String message, Jid from, DefaultAthenaContext context) {
+    public BasicMessage(String message, Jid from, String localAccountId, Accounts accounts, FriendsPublicService friendsPublicService, XMPPTCPConnection connection) {
         this.message = message;
         this.from = from;
-        this.localAccountId = context.localAccountId();
+        this.localAccountId = localAccountId;
         this.accountId = from.getLocalpartOrThrow().asUnescapedString();
 
-        this.accountPublicService = context.account();
-        this.friendsPublicService = context.friendsService();
-        this.connection = context.connection();
+        this.accounts = accounts;
+        this.friendsPublicService = friendsPublicService;
+        this.connection = connection;
     }
 
     /**
@@ -91,10 +92,7 @@ public final class BasicMessage {
      * @return the account
      */
     public Account account() {
-        final var call = accountPublicService.findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + accountId);
-        return result[0];
+        return accounts.findByAccountId(accountId);
     }
 
     /**

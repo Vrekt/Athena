@@ -1,11 +1,12 @@
 package athena.party.xmpp.event.member;
 
+import athena.account.Accounts;
 import athena.account.resource.Account;
-import athena.context.AthenaContext;
-import athena.exception.EpicGamesErrorException;
 import athena.friend.resource.summary.Profile;
+import athena.friend.service.FriendsPublicService;
 import athena.party.resource.Party;
 import athena.party.resource.member.meta.PartyMemberMeta;
+import athena.util.json.request.Request;
 import athena.util.request.Requests;
 import com.google.gson.annotations.SerializedName;
 
@@ -14,7 +15,7 @@ import java.time.Instant;
 /**
  * Represents an event for when a member leaves.
  */
-public final class PartyMemberLeftEvent extends AthenaContext {
+public final class PartyMemberLeftEvent {
 
     /**
      * When this event was sent.
@@ -39,6 +40,24 @@ public final class PartyMemberLeftEvent extends AthenaContext {
      */
     @SerializedName("member_state_updated")
     private PartyMemberMeta updated;
+
+    /**
+     * The local account
+     */
+    @Request(item = Account.class, local = true)
+    private Account account;
+
+    /**
+     * The accounts provider
+     */
+    @Request(item = Accounts.class)
+    private Accounts accounts;
+
+    /**
+     * The friends service
+     */
+    @Request(item = FriendsPublicService.class)
+    private FriendsPublicService friendsPublicService;
 
     /**
      * The party
@@ -100,10 +119,7 @@ public final class PartyMemberLeftEvent extends AthenaContext {
      * @return the account of who left.
      */
     public Account account() {
-        final var call = accountPublicService.findOneByAccountId(accountId);
-        final var result = Requests.executeCall(call);
-        if (result.length == 0) throw EpicGamesErrorException.create("Failed to find account " + accountId);
-        return result[0];
+        return accounts.findByAccountId(accountId);
     }
 
     /**
@@ -113,7 +129,7 @@ public final class PartyMemberLeftEvent extends AthenaContext {
      * @return the friend profile
      */
     public Profile friendProfile() {
-        return Requests.executeCall(friendsPublicService.profile(localAccountId, accountId, true));
+        return Requests.executeCall(friendsPublicService.profile(account.accountId(), accountId, true));
     }
 
 }
