@@ -86,7 +86,6 @@ public final class Requestable implements TypeAdapterFactory {
      */
     public void registerRequestables() {
         requestables.put(Accounts.class, athena.account());
-        requestables.put(Account.class, athena.localAccount());
         requestables.put(AccountPublicService.class, athena.accountPublicService());
         requestables.put(FriendsPublicService.class, athena.friendsPublicService());
         requestables.put(PresencePublicService.class, athena.presencePublicService());

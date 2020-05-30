@@ -62,7 +62,7 @@ public interface AuthenticationService {
      * @param xsrfToken the XSRF token
      * @return the {@link Exchange}
      */
-    @GET("exchange")
+    @POST("exchange/generate")
     Call<Exchange> exchange(@Header("x-xsrf-token") String xsrfToken);
 
     /**
